@@ -1,33 +1,24 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Nav } from '@/components/nav'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Telegram Ads Tracker",
-  description: "Personal Telegram Ads campaign tracker",
-};
+  title: 'Telegram Ads Tracker',
+  description: 'Personal Telegram Ads campaign tracker',
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="th" className="dark">
+      <body className={inter.className}>
+        <Nav />
+        <main className="container mx-auto px-6 py-8 max-w-6xl">
+          {children}
+        </main>
+      </body>
     </html>
-  );
+  )
 }
