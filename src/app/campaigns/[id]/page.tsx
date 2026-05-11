@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { calcAggregateMetrics } from '@/lib/metrics'
 import { MetricCards } from '@/components/metric-cards'
 import { PerformanceTable } from '@/components/performance-table'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
@@ -52,12 +52,8 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           {campaign.note && <p className="text-sm text-muted-foreground mt-1">{campaign.note}</p>}
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/campaigns/${id}/edit`}>แก้ไข</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href={`/campaigns/${id}/entries/new`}>+ บันทึกวันนี้</Link>
-          </Button>
+          <Link href={`/campaigns/${id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>แก้ไข</Link>
+          <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกวันนี้</Link>
         </div>
       </div>
 

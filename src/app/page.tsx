@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { CampaignCard } from '@/components/campaign-card'
 import { calcAggregateMetrics } from '@/lib/metrics'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,9 +30,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button asChild size="sm">
-          <Link href="/campaigns/new">+ Campaign</Link>
-        </Button>
+        <Link href="/campaigns/new" className={buttonVariants({ size: 'sm' })}>+ Campaign</Link>
       </div>
 
       {summary && (
@@ -58,9 +56,7 @@ export default async function DashboardPage() {
       {campaigns.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <p className="mb-4">ยังไม่มี campaign</p>
-          <Button asChild>
-            <Link href="/campaigns/new">สร้าง campaign แรก</Link>
-          </Button>
+          <Link href="/campaigns/new" className={buttonVariants()}>สร้าง campaign แรก</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

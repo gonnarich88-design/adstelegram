@@ -86,7 +86,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Target Type</Label>
-          <Select value={form.targetType} onValueChange={v => set('targetType', v)}>
+          <Select value={form.targetType} onValueChange={v => set('targetType', v ?? '')}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="CHANNEL">CHANNEL</SelectItem>
@@ -126,7 +126,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       {isEdit && (
         <div className="space-y-2">
           <Label>Status</Label>
-          <Select value={form.status} onValueChange={v => set('status', v)}>
+          <Select value={form.status} onValueChange={v => set('status', v ?? '')}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ACTIVE">ACTIVE</SelectItem>
