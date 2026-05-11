@@ -1,8 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 global.fetch = vi.fn()
 
 describe('fetchRates', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.resetAllMocks()
+    process.env.EXCHANGE_RATE_API_KEY = 'test-key'
+  })
+
   it('returns tonUsd and usdThb from APIs', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce({
@@ -14,8 +20,6 @@ describe('fetchRates', () => {
         json: async () => ({ conversion_rate: 32.45 }),
       } as Response)
 
-    process.env.EXCHANGE_RATE_API_KEY = 'test-key'
-
     const { fetchRates } = await import('@/lib/rates')
     const rates = await fetchRates()
 
@@ -24,10 +28,10 @@ describe('fetchRates', () => {
     expect(rates.fetchedAt).toBeTruthy()
   })
 
-  it('throws when API fails', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: false } as Response)
-
-    process.env.EXCHANGE_RATE_API_KEY = 'test-key'
+  it('throws when first API returns ok:false', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({ ok: false } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ conversion_rate: 32.45 }) } as Response)
 
     const { fetchRates } = await import('@/lib/rates')
     await expect(fetchRates()).rejects.toThrow('Failed to fetch rates')
