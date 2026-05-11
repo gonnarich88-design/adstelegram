@@ -73,28 +73,33 @@ export function EntryForm({ campaignId }: { campaignId: string }) {
     setLoading(true)
     setError('')
 
-    const res = await fetch(`/api/campaigns/${campaignId}/entries`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date: form.date,
-        dailyBudgetTon: parseFloat(form.dailyBudgetTon),
-        spendTon: parseFloat(form.spendTon),
-        tonPriceUsd: parseFloat(form.tonPriceUsd),
-        usdThbRate: parseFloat(form.usdThbRate),
-        impressions: parseInt(form.impressions),
-        views: parseInt(form.views),
-        clicks: parseInt(form.clicks),
-        joins: parseInt(form.joins),
-        note: form.note || null,
-      }),
-    })
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/entries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: form.date,
+          dailyBudgetTon: parseFloat(form.dailyBudgetTon),
+          spendTon: parseFloat(form.spendTon),
+          tonPriceUsd: parseFloat(form.tonPriceUsd),
+          usdThbRate: parseFloat(form.usdThbRate),
+          impressions: parseInt(form.impressions),
+          views: parseInt(form.views),
+          clicks: parseInt(form.clicks),
+          joins: parseInt(form.joins),
+          note: form.note || null,
+        }),
+      })
 
-    if (res.ok) {
-      router.push(`/campaigns/${campaignId}`)
-      router.refresh()
-    } else {
+      if (res.ok) {
+        router.push(`/campaigns/${campaignId}`)
+        router.refresh()
+      } else {
+        setError('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง')
+      }
+    } catch {
       setError('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง')
+    } finally {
       setLoading(false)
     }
   }

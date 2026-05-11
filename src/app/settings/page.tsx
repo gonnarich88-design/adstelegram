@@ -6,17 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [exportError, setExportError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleExport() {
-    const res = await fetch('/api/export')
-    const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ads-backup-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    setExportError(false)
+    try {
+      const res = await fetch('/api/export')
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ads-backup-${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setExportError(true)
+    }
   }
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -56,6 +63,9 @@ export default function SettingsPage() {
             <Button onClick={handleExport} variant="outline">
               Export JSON
             </Button>
+            {exportError && (
+              <p className="text-sm text-destructive mt-2">Export ล้มเหลว ลองใหม่อีกครั้ง</p>
+            )}
           </div>
 
           <hr className="border-border" />

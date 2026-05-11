@@ -60,18 +60,23 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     const url = isEdit ? `/api/campaigns/${initialData!.id}` : '/api/campaigns'
     const method = isEdit ? 'PUT' : 'POST'
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
 
-    if (res.ok) {
-      const data = await res.json()
-      router.push(`/campaigns/${data.id}`)
-      router.refresh()
-    } else {
+      if (res.ok) {
+        const data = await res.json()
+        router.push(`/campaigns/${data.id}`)
+        router.refresh()
+      } else {
+        setError('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง')
+      }
+    } catch {
       setError('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง')
+    } finally {
       setLoading(false)
     }
   }

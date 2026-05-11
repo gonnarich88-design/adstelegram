@@ -8,6 +8,8 @@ export function Nav() {
   const pathname = usePathname()
   const router = useRouter()
 
+  if (pathname === '/login') return null
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
