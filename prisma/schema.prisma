@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Campaign {
+  id         String         @id @default(uuid())
+  name       String
+  targetType TargetType
+  targetName String
+  startDate  DateTime
+  endDate    DateTime?
+  budgetTon  Decimal        @db.Decimal(18, 8)
+  status     CampaignStatus @default(ACTIVE)
+  note       String?
+  entries    PerformanceEntry[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model PerformanceEntry {
+  id             String   @id @default(uuid())
+  campaignId     String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  date           DateTime
+  spendTon       Decimal  @db.Decimal(18, 8)
+  dailyBudgetTon Decimal  @db.Decimal(18, 8)
+  tonPriceUsd    Decimal  @db.Decimal(18, 8)
+  usdThbRate     Decimal  @db.Decimal(18, 8)
+  impressions    Int
+  views          Int
+  clicks         Int
+  joins          Int
+  note           String?
+  createdAt      DateTime @default(now())
+}
+
+enum TargetType {
+  CHANNEL
+  BOT
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  DONE
+}
