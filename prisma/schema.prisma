@@ -36,6 +36,9 @@ model PerformanceEntry {
   joins          Int
   note           String?
   createdAt      DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([campaignId, date])
 }
 
 enum TargetType {
