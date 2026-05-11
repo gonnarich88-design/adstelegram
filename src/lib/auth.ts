@@ -1,12 +1,18 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { timingSafeEqual } from 'crypto'
 
 function getSecret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET!)
+  const s = process.env.JWT_SECRET
+  if (!s || s.length < 32) throw new Error('JWT_SECRET must be at least 32 characters')
+  return new TextEncoder().encode(s)
 }
 
 export function verifyPassword(input: string): boolean {
-  return input === process.env.APP_PASSWORD
+  const enc = new TextEncoder()
+  const a = enc.encode(input)
+  const b = enc.encode(process.env.APP_PASSWORD ?? '')
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 export async function createSession(): Promise<void> {
