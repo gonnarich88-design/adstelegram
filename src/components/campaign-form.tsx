@@ -32,6 +32,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     name: initialData?.name ?? '',
     targetType: initialData?.targetType ?? 'CHANNEL',
     targetName: initialData?.targetName ?? '',
+    placementName: (initialData as any)?.placementName ?? '',
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
     budgetTon: initialData?.budgetTon ?? '',
@@ -53,6 +54,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     const payload = {
       ...form,
       endDate: form.endDate || null,
+      placementName: form.placementName || null,
       note: form.note || null,
       budgetTon: parseFloat(form.budgetTon),
     }
@@ -88,20 +90,25 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         <Input value={form.name} onChange={e => set('name', e.target.value)} required />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Target Type</Label>
+      <div className="space-y-2">
+        <Label>Target</Label>
+        <div className="flex rounded-md border border-input overflow-hidden focus-within:ring-1 focus-within:ring-ring">
           <Select value={form.targetType} onValueChange={v => set('targetType', v ?? '')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-32 rounded-none border-0 border-r border-input focus:ring-0 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="CHANNEL">CHANNEL</SelectItem>
               <SelectItem value="BOT">BOT</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Target Name</Label>
-          <Input value={form.targetName} onChange={e => set('targetName', e.target.value)} placeholder="@username" required />
+          <input
+            className="flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+            value={form.targetName}
+            onChange={e => set('targetName', e.target.value)}
+            placeholder="@username"
+            required
+          />
         </div>
       </div>
 
@@ -114,6 +121,15 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
           <Label>วันสิ้นสุด (optional)</Label>
           <Input type="date" value={form.endDate} onChange={e => set('endDate', e.target.value)} />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>ปลายทาง <span className="text-muted-foreground font-normal">(optional — channel/topic ที่ ads โผล่)</span></Label>
+        <Input
+          value={form.placementName}
+          onChange={e => set('placementName', e.target.value)}
+          placeholder="เช่น Gaming, @somechannel"
+        />
       </div>
 
       <div className="space-y-2">

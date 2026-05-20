@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         endDate: body.endDate ? new Date(body.endDate) : null,
         budgetTon: body.budgetTon,
         status: body.status ?? 'ACTIVE',
+        placementName: body.placementName ?? null,
         note: body.note ?? null,
       },
     })

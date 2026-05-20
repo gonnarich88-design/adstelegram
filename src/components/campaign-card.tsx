@@ -42,8 +42,11 @@ export function CampaignCard({ campaign }: { campaign: any }) {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            {campaign.targetType} · {campaign.targetName}
+            โปรโมต: {campaign.targetType} · {campaign.targetName}
           </p>
+          {campaign.placementName && (
+            <p className="text-xs text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           <div>

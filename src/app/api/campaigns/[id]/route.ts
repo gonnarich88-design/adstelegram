@@ -36,6 +36,7 @@ export async function PUT(
         endDate: body.endDate ? new Date(body.endDate) : null,
         budgetTon: body.budgetTon,
         status: body.status,
+        placementName: body.placementName ?? null,
         note: body.note ?? null,
       },
     })

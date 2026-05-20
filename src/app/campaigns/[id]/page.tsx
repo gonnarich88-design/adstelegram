@@ -44,10 +44,13 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            {campaign.targetType} · {campaign.targetName} ·{' '}
+            โปรโมต: {campaign.targetType} · {campaign.targetName} ·{' '}
             เริ่ม {new Date(campaign.startDate).toLocaleDateString('th-TH')}
             {campaign.endDate && ` — ${new Date(campaign.endDate).toLocaleDateString('th-TH')}`}
           </p>
+          {campaign.placementName && (
+            <p className="text-sm text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
+          )}
           <p className="text-sm text-muted-foreground">Budget: {Number(campaign.budgetTon).toFixed(2)} TON</p>
           {campaign.note && <p className="text-sm text-muted-foreground mt-1">{campaign.note}</p>}
         </div>
