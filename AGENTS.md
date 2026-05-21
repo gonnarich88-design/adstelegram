@@ -9,8 +9,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## ภาพรวมโปรเจกต์
 
 ระบบ **AdsGram** สำหรับบันทึกและวิเคราะห์ประสิทธิภาพแคมเปญโฆษณา Telegram ที่จ่ายด้วยเหรียญ TON
+
+**โมเดลธุรกิจ**: เราซื้อโฆษณาผ่าน Telegram Ads Platform เพื่อโปรโมต bot หรือ channel ของเราเอง
+โดยโฆษณาจะไปแสดงใน bot/channel ของคนอื่น (placement) — ผู้ใช้เห็นโฆษณาแล้วกด Join channel หรือ Start bot ของเรา
+- **target** = สิ่งที่เราโปรโมต (bot หรือ channel ของเรา)
+- **placement** = ที่ที่โฆษณาไปแสดง (bot/channel ของคนอื่นที่เราซื้อ slot)
+- **joins / startbot** = คนที่ตอบสนองต่อโฆษณา (join channel หรือ start bot ของเรา)
+
 - ติดตามยอด Spend, Impressions, Views, Clicks, Joins รายวัน
-- รองรับ 2 ประเภทเป้าหมาย: **CHANNEL** และ **BOT** (BOT แสดง Startbot แทน Joins)
+- รองรับ 2 ประเภทเป้าหมาย: **CHANNEL** (วัดผล Joins) และ **BOT** (วัดผล Startbot)
 - แปลงค่าใช้จ่าย TON → USD → THB อัตโนมัติ (ดึง rate จาก exchangerate-api.com)
 - Backup/Restore ข้อมูลทั้งหมดเป็น JSON ได้ (ผ่านหน้า Settings)
 - Import ข้อมูลประสิทธิภาพรายวันจาก Telegram Ads CSV ได้
@@ -57,6 +64,14 @@ npx prisma studio                     # GUI สำหรับดู database
 docker-compose up -d                  # start db + app
 docker-compose down                   # stop
 ```
+
+---
+
+## Workflow
+
+- **Commit message**: ใช้ conventional commits — `feat:` `fix:` `docs:` `chore:` `refactor:` เสมอ
+- **ก่อน commit**: run `npm test` ทุกครั้ง (17 tests, ~140ms)
+- **เมื่อแก้ `prisma/schema.prisma`**: ต้อง run `npx prisma migrate dev` แล้วตาม `npx prisma generate` เสมอ ห้ามแก้ schema แล้วข้ามขั้นตอนนี้
 
 ---
 
