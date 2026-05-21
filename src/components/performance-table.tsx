@@ -2,7 +2,8 @@ import { calcEntryMetrics } from '@/lib/metrics'
 
 function fmt(n: number, d = 2) { return n.toFixed(d) }
 
-export function PerformanceTable({ entries }: { entries: any[] }) {
+export function PerformanceTable({ entries, targetType }: { entries: any[]; targetType?: string }) {
+  const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground py-4">ยังไม่มี entry</p>
   }
@@ -18,7 +19,7 @@ export function PerformanceTable({ entries }: { entries: any[] }) {
             <th className="text-right py-2 px-3">Imp</th>
             <th className="text-right py-2 px-3">Views</th>
             <th className="text-right py-2 px-3">Clicks</th>
-            <th className="text-right py-2 px-3">Joins</th>
+            <th className="text-right py-2 px-3">{joinsLabel}</th>
             <th className="text-right py-2 px-3">CTR</th>
             <th className="text-right py-2 px-3">TON/USD</th>
             <th className="text-right py-2 px-3">มูลค่า (฿)</th>

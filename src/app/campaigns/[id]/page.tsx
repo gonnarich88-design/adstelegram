@@ -68,7 +68,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
       <div>
         <h2 className="text-lg font-semibold mb-3">Performance Log</h2>
-        <PerformanceTable entries={campaign.entries} />
+        <PerformanceTable entries={campaign.entries} targetType={campaign.targetType} />
       </div>
     </div>
   )

@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { calcEntryMetrics } from '@/lib/metrics'
 
-export function EntryForm({ campaignId }: { campaignId: string }) {
+export function EntryForm({ campaignId, targetType }: { campaignId: string; targetType: string }) {
+  const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   const router = useRouter()
   const today = new Date().toISOString().split('T')[0]
 
@@ -155,7 +156,7 @@ export function EntryForm({ campaignId }: { campaignId: string }) {
           <Input type="number" value={form.clicks} onChange={e => set('clicks', e.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label>Joins</Label>
+          <Label>{joinsLabel}</Label>
           <Input type="number" value={form.joins} onChange={e => set('joins', e.target.value)} required />
         </div>
       </div>
