@@ -95,16 +95,27 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
   }
 
   const handleFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      const text = ev.target?.result as string
-      const parsed = parseCSV(text)
-      setRows(parsed)
-      setError(parsed.length === 0 ? 'ไม่พบข้อมูลในไฟล์ หรือ format ไม่ถูกต้อง' : '')
-    }
-    reader.readAsText(file)
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+
+    const readFile = (file: File): Promise<ParsedRow[]> =>
+      new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = ev => resolve(parseCSV(ev.target?.result as string))
+        reader.readAsText(file)
+      })
+
+    Promise.all(files.map(readFile)).then(results => {
+      const seen = new Set<string>()
+      const merged = results.flat().filter(r => {
+        if (seen.has(r.date)) return false
+        seen.add(r.date)
+        return true
+      }).sort((a, b) => a.date.localeCompare(b.date))
+
+      setRows(merged)
+      setError(merged.length === 0 ? 'ไม่พบข้อมูลในไฟล์ หรือ format ไม่ถูกต้อง' : '')
+    })
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -145,7 +156,7 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       <div className="space-y-2">
         <Label>ไฟล์ CSV จาก Telegram Ads</Label>
         <p className="text-xs text-muted-foreground">คอลัมน์ที่รองรับ: date, Views, Clicks, Joins / Started bot, Impressions</p>
-        <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" id="csv-file" />
+        <input ref={fileRef} type="file" accept=".csv" multiple onChange={handleFile} className="hidden" id="csv-file" />
         <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
           เลือกไฟล์ CSV
         </Button>
