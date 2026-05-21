@@ -28,6 +28,30 @@ export async function POST(
     const { id } = await params
     const body = await req.json()
 
+    // bulk insert
+    if (Array.isArray(body)) {
+      const created = await prisma.$transaction(
+        body.map(row =>
+          prisma.performanceEntry.create({
+            data: {
+              campaignId: id,
+              date: new Date(row.date),
+              spendTon: row.spendTon,
+              dailyBudgetTon: row.dailyBudgetTon,
+              tonPriceUsd: row.tonPriceUsd,
+              usdThbRate: row.usdThbRate,
+              impressions: Number(row.impressions),
+              views: Number(row.views),
+              clicks: Number(row.clicks),
+              joins: Number(row.joins),
+              note: row.note ?? null,
+            },
+          })
+        )
+      )
+      return NextResponse.json(created, { status: 201 })
+    }
+
     if (!body.date || body.spendTon == null || body.dailyBudgetTon == null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
