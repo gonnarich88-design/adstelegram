@@ -185,6 +185,36 @@ NEXT_PUBLIC_APP_URL   # URL สาธารณะของแอป
 
 ---
 
+## กฎพฤติกรรม AI
+
+**1. NO MAGIC — ห้ามเดา**
+- ห้าม assume infra, env vars, หรือ service ที่ไม่มีใน codebase หรือ AGENTS.md
+- ถ้าข้อมูลขาด ให้บอก assumption ก่อนทำ อย่าเดาเงียบๆ
+
+**2. VERIFY BEFORE DONE — ห้ามบอกว่าเสร็จถ้ายังไม่เช็ค**
+- ห้ามพูดว่า "should work now" หรือ "น่าจะโอเค"
+- แก้ไฟล์แล้วต้องแสดง output การรัน/ทดสอบจริงเสมอ
+- "แก้ไฟล์แล้ว" ≠ เสร็จ — "แก้ไฟล์แล้ว และนี่คือผลลัพธ์" = เสร็จ
+
+**3. DISSENT — แสดงความกังวลก่อน major change**
+- ก่อนเปลี่ยนแปลงใหญ่ (schema, API, auth, data destructive) ให้ surface ก่อน:
+  - blast radius ถ้าผิดพลาดคืออะไร
+  - assumption ที่ทำอยู่คืออะไร
+  - reversibility path คืออะไร
+- ไม่ใช้กับงานเล็กทั่วไป (แก้ UI, เพิ่ม field optional)
+
+**4. SCOPE DRIFT — จับ scope creep**
+- track เป้าหมายที่ผู้ใช้บอกกับสิ่งที่กำลังทำจริง
+- flag เมื่อ: "just one more thing" สะสม, nice-to-have กลายเป็น must-have,
+  หรือโจทย์ "fix bug X" กำลังกลายเป็น "refactor ทั้ง module"
+
+**5. R0 / R1 / R2 — ระดับ reversibility**
+- **R0 (irreversible)** — STOP แล้วถามก่อน ตัวอย่าง: `importData` (ลบทุกอย่าง), drop table, force push main
+- **R1 (costly to reverse)** — ทำได้ แต่ต้องบอกเหตุผล ตัวอย่าง: schema migration, เปลี่ยน API response shape, upgrade dependency
+- **R2 (easily reversed)** — ทำเลย ตัวอย่าง: แก้ UI component, เพิ่ม optional field, แก้ copy text
+
+---
+
 ## เมื่อเริ่ม session ใหม่
 - ก่อนทำงานใดๆ ให้อ่าน docs/PROGRESS.md แล้วสรุปสั้นๆ ให้ผู้ใช้ฟังว่า
   ตอนนี้โปรเจกต์อยู่จุดไหน ค้างอะไร ขั้นตอนถัดไปคืออะไร
