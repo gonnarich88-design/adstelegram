@@ -36,6 +36,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
     budgetTon: initialData?.budgetTon ?? '',
+    dailyBudgetTon: (initialData as any)?.dailyBudgetTon ?? '',
     status: initialData?.status ?? 'ACTIVE',
     note: initialData?.note ?? '',
   })
@@ -57,6 +58,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       placementName: form.placementName || null,
       note: form.note || null,
       budgetTon: parseFloat(form.budgetTon),
+      dailyBudgetTon: form.dailyBudgetTon ? parseFloat(form.dailyBudgetTon) : null,
     }
 
     const url = isEdit ? `/api/campaigns/${initialData!.id}` : '/api/campaigns'
@@ -132,16 +134,28 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Budget รวม (TON)</Label>
-        <Input
-          type="number"
-          step="0.001"
-          value={form.budgetTon}
-          onChange={e => set('budgetTon', e.target.value)}
-          placeholder="100"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Budget รวม (TON)</Label>
+          <Input
+            type="number"
+            step="0.001"
+            value={form.budgetTon}
+            onChange={e => set('budgetTon', e.target.value)}
+            placeholder="100"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>งบต่อวัน (TON) <span className="text-muted-foreground font-normal">optional</span></Label>
+          <Input
+            type="number"
+            step="0.001"
+            value={form.dailyBudgetTon}
+            onChange={e => set('dailyBudgetTon', e.target.value)}
+            placeholder="10"
+          />
+        </div>
       </div>
 
       {isEdit && (

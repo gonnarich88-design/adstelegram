@@ -8,14 +8,18 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { calcEntryMetrics } from '@/lib/metrics'
 
-export function EntryForm({ campaignId, targetType }: { campaignId: string; targetType: string }) {
+export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
+  campaignId: string
+  targetType: string
+  defaultDailyBudget?: string
+}) {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   const router = useRouter()
   const today = new Date().toISOString().split('T')[0]
 
   const [form, setForm] = useState({
     date: today,
-    dailyBudgetTon: '',
+    dailyBudgetTon: defaultDailyBudget ?? '',
     spendTon: '',
     tonPriceUsd: '',
     usdThbRate: '',

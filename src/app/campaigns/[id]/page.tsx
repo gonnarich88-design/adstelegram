@@ -51,7 +51,10 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           {campaign.placementName && (
             <p className="text-sm text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
           )}
-          <p className="text-sm text-muted-foreground">Budget: {Number(campaign.budgetTon).toFixed(2)} TON</p>
+          <p className="text-sm text-muted-foreground">
+            Budget รวม: {Number(campaign.budgetTon).toFixed(2)} TON
+            {campaign.dailyBudgetTon && ` · งบต่อวัน: ${Number(campaign.dailyBudgetTon).toFixed(2)} TON`}
+          </p>
           {campaign.note && <p className="text-sm text-muted-foreground mt-1">{campaign.note}</p>}
         </div>
         <div className="flex gap-2">

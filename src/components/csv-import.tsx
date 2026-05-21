@@ -52,14 +52,17 @@ function parseCSV(text: string): ParsedRow[] {
   return rows
 }
 
-export function CsvImport({ campaignId, targetType }: { campaignId: string; targetType: string }) {
+export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
+  campaignId: string
+  targetType: string
+  defaultDailyBudget?: string
+}) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
 
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [globals, setGlobals] = useState({
-    dailyBudgetTon: '',
     spendTon: '',
     tonPriceUsd: '',
     usdThbRate: '',
@@ -113,7 +116,7 @@ export function CsvImport({ campaignId, targetType }: { campaignId: string; targ
     const payload = rows.map(r => ({
       ...r,
       spendTon: parseFloat(globals.spendTon),
-      dailyBudgetTon: parseFloat(globals.dailyBudgetTon),
+      dailyBudgetTon: parseFloat(defaultDailyBudget ?? '0'),
       tonPriceUsd: parseFloat(globals.tonPriceUsd),
       usdThbRate: parseFloat(globals.usdThbRate),
     }))
@@ -162,11 +165,13 @@ export function CsvImport({ campaignId, targetType }: { campaignId: string; targ
               </button>
             </div>
             {fetchedAt && <p className="text-xs text-green-500">อัปเดต {fetchedAt}</p>}
+            {!defaultDailyBudget && (
+              <p className="text-xs text-yellow-500">⚠ Campaign นี้ยังไม่ได้ตั้งงบต่อวัน BSP จะเป็น 0 — แก้ได้ที่หน้าแก้ไข Campaign</p>
+            )}
+            {defaultDailyBudget && (
+              <p className="text-xs text-muted-foreground">งบต่อวัน: <strong>{defaultDailyBudget} TON</strong> (จาก Campaign)</p>
+            )}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>งบต่อวัน (TON)</Label>
-                <Input type="number" step="0.001" value={globals.dailyBudgetTon} onChange={e => setG('dailyBudgetTon', e.target.value)} placeholder="10" required />
-              </div>
               <div className="space-y-2">
                 <Label>Spend จริงต่อวัน (TON)</Label>
                 <Input type="number" step="0.001" value={globals.spendTon} onChange={e => setG('spendTon', e.target.value)} placeholder="8.5" required />
