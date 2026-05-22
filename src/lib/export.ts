@@ -17,7 +17,8 @@ export async function exportData(): Promise<ExportData> {
     exportedAt: new Date().toISOString(),
     campaigns: campaigns.map(c => ({
       ...c,
-      budgetTon: c.budgetTon.toString(),
+      budgetTon: c.budgetTon?.toString() ?? null,
+      dailyBudgetTon: c.dailyBudgetTon.toString(),
       startDate: c.startDate.toISOString(),
       endDate: c.endDate?.toISOString() ?? null,
       createdAt: c.createdAt.toISOString(),
@@ -49,7 +50,8 @@ export async function importData(data: ExportData): Promise<void> {
           targetName: c.targetName,
           startDate: new Date(c.startDate),
           endDate: c.endDate ? new Date(c.endDate) : null,
-          budgetTon: c.budgetTon,
+          dailyBudgetTon: c.dailyBudgetTon ?? 0,
+          budgetTon: c.budgetTon ?? null,
           status: c.status,
           note: c.note,
           entries: {

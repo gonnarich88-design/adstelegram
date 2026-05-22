@@ -18,7 +18,8 @@ interface CampaignFormProps {
     targetName: string
     startDate: string
     endDate?: string | null
-    budgetTon: string
+    dailyBudgetTon: string
+    budgetTon?: string
     status: string
     note?: string | null
   }
@@ -36,7 +37,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
     budgetTon: initialData?.budgetTon ?? '',
-    dailyBudgetTon: (initialData as any)?.dailyBudgetTon ?? '',
+    dailyBudgetTon: initialData?.dailyBudgetTon ?? '',
     status: initialData?.status ?? 'ACTIVE',
     note: initialData?.note ?? '',
   })

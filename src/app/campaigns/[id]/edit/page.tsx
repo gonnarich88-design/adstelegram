@@ -20,7 +20,8 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
           targetName: campaign.targetName,
           startDate: campaign.startDate.toISOString(),
           endDate: campaign.endDate?.toISOString() ?? null,
-          budgetTon: campaign.budgetTon.toString(),
+          dailyBudgetTon: campaign.dailyBudgetTon.toString(),
+          budgetTon: campaign.budgetTon?.toString() ?? '',
           status: campaign.status,
           note: campaign.note,
         }}
