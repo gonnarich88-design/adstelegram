@@ -69,11 +69,11 @@ export function CampaignCard({ campaign }: { campaign: any }) {
                 <p className="font-medium">{fmt(metrics.ctr, 2)}%</p>
               </div>
               <div>
-                <p className="text-muted-foreground">CPS (USD)</p>
-                <p className="font-medium">${fmt(metrics.cps, 3)}</p>
+                <p className="text-muted-foreground">CPS</p>
+                <p className="font-medium">฿{metrics.totalJoins > 0 ? fmt(metrics.spendThb / metrics.totalJoins, 2) : '—'}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Joins</p>
+                <p className="text-muted-foreground">{campaign.targetType === 'BOT' ? 'Startbot' : 'Joins'}</p>
                 <p className="font-medium">{metrics.totalJoins.toLocaleString()}</p>
               </div>
             </div>
