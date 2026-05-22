@@ -14,10 +14,11 @@ function fmt(n: number, digits = 2) {
 }
 
 export function CampaignCard({ campaign }: { campaign: any }) {
+  const campaignDailyBudget = Number(campaign.dailyBudgetTon)
   const metrics = campaign.entries.length > 0
     ? calcAggregateMetrics(campaign.entries.map((e: any) => ({
         spendTon: Number(e.spendTon),
-        dailyBudgetTon: Number(e.dailyBudgetTon),
+        dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
         tonPriceUsd: Number(e.tonPriceUsd),
         usdThbRate: Number(e.usdThbRate),
         impressions: e.impressions,
@@ -27,7 +28,6 @@ export function CampaignCard({ campaign }: { campaign: any }) {
       })))
     : null
 
-  const dailyBudget = Number(campaign.dailyBudgetTon)
   const avgBsp = metrics?.bsp ?? 0
   const bspPct = Math.min(avgBsp, 100)
 
@@ -52,7 +52,7 @@ export function CampaignCard({ campaign }: { campaign: any }) {
           <div>
             <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span>Daily Budget</span>
-              <span>{fmt(dailyBudget, 2)} TON/วัน</span>
+              <span>{fmt(campaignDailyBudget, 2)} TON/วัน</span>
             </div>
             <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
