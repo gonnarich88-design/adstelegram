@@ -18,7 +18,8 @@ function parseCSV(text: string): ParsedRow[] {
   const lines = text.trim().split(/\r?\n/)
   if (lines.length < 2) return []
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''))
+  const delim = lines[0].includes('\t') ? '\t' : ','
+  const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/['"]/g, ''))
 
   const col = (names: string[]) => headers.findIndex(h => names.some(n => h.includes(n)))
 
@@ -30,7 +31,7 @@ function parseCSV(text: string): ParsedRow[] {
 
   const rows: ParsedRow[] = []
   for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(',').map(c => c.trim().replace(/['"]/g, ''))
+    const cells = lines[i].split(delim).map(c => c.trim().replace(/['"]/g, ''))
     if (!cells[dateIdx]) continue
 
     const raw = cells[dateIdx]
