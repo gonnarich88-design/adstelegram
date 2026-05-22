@@ -12,6 +12,7 @@ interface ParsedRow {
   views: number
   clicks: number
   joins: number
+  spendTon?: number
 }
 
 function parseCSV(text: string): ParsedRow[] {
@@ -23,11 +24,12 @@ function parseCSV(text: string): ParsedRow[] {
 
   const col = (names: string[]) => headers.findIndex(h => names.some(n => h.includes(n)))
 
-  const dateIdx = col(['date'])
+  const dateIdx = col(['date', 'day'])
   const impIdx = col(['impression'])
   const viewIdx = col(['view'])
   const clickIdx = col(['click'])
   const joinIdx = col(['join', 'started bot', 'startbot'])
+  const spendIdx = col(['amount'])
 
   const rows: ParsedRow[] = []
   for (let i = 1; i < lines.length; i++) {
@@ -35,20 +37,27 @@ function parseCSV(text: string): ParsedRow[] {
     if (!cells[dateIdx]) continue
 
     const raw = cells[dateIdx]
-    // parse "20 Feb 2026" or "2026-02-20" formats
+    if (/total|sum|average|avg/i.test(raw)) continue
     const date = new Date(raw)
     if (isNaN(date.getTime())) continue
 
-    const isoDate = date.toISOString().split('T')[0]
+    // ใช้ local date methods เพื่อหลีกเลี่ยง UTC timezone offset bug
+    const isoDate = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-')
+
     const views = viewIdx >= 0 ? parseInt(cells[viewIdx]) || 0 : 0
     const clicks = clickIdx >= 0 ? parseInt(cells[clickIdx]) || 0 : 0
     const joins = joinIdx >= 0 ? parseInt(cells[joinIdx]) || 0 : 0
     const impressions = impIdx >= 0 ? parseInt(cells[impIdx]) || 0 : 0
+    const spendRaw = spendIdx >= 0 ? parseFloat(cells[spendIdx].replace(',', '.')) : NaN
+    const spendTon = isNaN(spendRaw) ? undefined : spendRaw
 
-    // skip rows with no data
-    if (views === 0 && clicks === 0 && joins === 0) continue
+    if (views === 0 && clicks === 0 && joins === 0 && !spendTon) continue
 
-    rows.push({ date: isoDate, impressions, views, clicks, joins })
+    rows.push({ date: isoDate, impressions, views, clicks, joins, spendTon })
   }
   return rows
 }
@@ -72,6 +81,8 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fetchedAt, setFetchedAt] = useState('')
+
+  const hasSpendData = rows.some(r => r.spendTon !== undefined)
 
   function setG(key: string, value: string) {
     setGlobals(g => ({ ...g, [key]: value }))
@@ -107,13 +118,24 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       })
 
     Promise.all(files.map(readFile)).then(results => {
-      const seen = new Set<string>()
-      const merged = results.flat().filter(r => {
-        if (seen.has(r.date)) return false
-        seen.add(r.date)
-        return true
-      }).sort((a, b) => a.date.localeCompare(b.date))
+      const byDate = new Map<string, ParsedRow>()
+      for (const row of results.flat()) {
+        const existing = byDate.get(row.date)
+        if (!existing) {
+          byDate.set(row.date, { ...row })
+        } else {
+          byDate.set(row.date, {
+            date: row.date,
+            impressions: Math.max(existing.impressions, row.impressions),
+            views: Math.max(existing.views, row.views),
+            clicks: Math.max(existing.clicks, row.clicks),
+            joins: Math.max(existing.joins, row.joins),
+            spendTon: existing.spendTon ?? row.spendTon,
+          })
+        }
+      }
 
+      const merged = Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date))
       setRows(merged)
       setError(merged.length === 0 ? 'ไม่พบข้อมูลในไฟล์ หรือ format ไม่ถูกต้อง' : '')
     })
@@ -127,7 +149,7 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
 
     const payload = rows.map(r => ({
       ...r,
-      spendTon: parseFloat(globals.spendTon),
+      spendTon: r.spendTon ?? parseFloat(globals.spendTon),
       dailyBudgetTon: parseFloat(defaultDailyBudget ?? '0'),
       tonPriceUsd: parseFloat(globals.tonPriceUsd),
       usdThbRate: parseFloat(globals.usdThbRate),
@@ -156,7 +178,9 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
       <div className="space-y-2">
         <Label>ไฟล์ CSV จาก Telegram Ads</Label>
-        <p className="text-xs text-muted-foreground">คอลัมน์ที่รองรับ: date, Views, Clicks, Joins / Started bot, Impressions</p>
+        <p className="text-xs text-muted-foreground">
+          เลือกได้หลายไฟล์พร้อมกัน — performance file (Views/Clicks/Joins) และ billing file (Amount TON) จะถูก merge อัตโนมัติ
+        </p>
         <input ref={fileRef} type="file" accept=".csv" multiple onChange={handleFile} className="hidden" id="csv-file" />
         <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
           เลือกไฟล์ CSV
@@ -184,10 +208,18 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
               <p className="text-xs text-muted-foreground">งบต่อวัน: <strong>{defaultDailyBudget} TON</strong> (จาก Campaign)</p>
             )}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Spend จริงต่อวัน (TON)</Label>
-                <Input type="number" step="0.001" value={globals.spendTon} onChange={e => setG('spendTon', e.target.value)} placeholder="8.5" required />
-              </div>
+              {!hasSpendData && (
+                <div className="space-y-2">
+                  <Label>Spend จริงต่อวัน (TON)</Label>
+                  <Input type="number" step="0.001" value={globals.spendTon} onChange={e => setG('spendTon', e.target.value)} placeholder="8.5" required />
+                </div>
+              )}
+              {hasSpendData && (
+                <div className="space-y-2">
+                  <Label>Spend จริงต่อวัน (TON)</Label>
+                  <p className="text-xs text-green-500 pt-1">ดึงจาก billing file อัตโนมัติ</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>ราคา TON/USD</Label>
                 <Input type="number" step="0.0001" value={globals.tonPriceUsd} onChange={e => setG('tonPriceUsd', e.target.value)} placeholder="3.18" required />
@@ -210,6 +242,7 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                     <th className="text-right py-2 px-3">Views</th>
                     <th className="text-right py-2 px-3">Clicks</th>
                     <th className="text-right py-2 px-3">{joinsLabel}</th>
+                    {hasSpendData && <th className="text-right py-2 px-3">Spend (TON)</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -220,6 +253,9 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                       <td className="text-right py-1.5 px-3">{r.views.toLocaleString()}</td>
                       <td className="text-right py-1.5 px-3">{r.clicks.toLocaleString()}</td>
                       <td className="text-right py-1.5 px-3">{r.joins.toLocaleString()}</td>
+                      {hasSpendData && (
+                        <td className="text-right py-1.5 px-3">{r.spendTon?.toFixed(4) ?? '—'}</td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
