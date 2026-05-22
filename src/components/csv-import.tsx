@@ -255,7 +255,6 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                 <thead>
                   <tr className="border-b bg-muted/30 text-muted-foreground">
                     <th className="text-left py-2 px-3">วันที่</th>
-                    <th className="text-right py-2 px-3">Imp</th>
                     <th className="text-right py-2 px-3">Views</th>
                     <th className="text-right py-2 px-3">Clicks</th>
                     <th className="text-right py-2 px-3">{joinsLabel}</th>
@@ -266,7 +265,6 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                   {rows.map((r, i) => (
                     <tr key={i} className="border-b last:border-0">
                       <td className="py-1.5 px-3">{r.date}</td>
-                      <td className="text-right py-1.5 px-3">{r.impressions.toLocaleString()}</td>
                       <td className="text-right py-1.5 px-3">{r.views.toLocaleString()}</td>
                       <td className="text-right py-1.5 px-3">{r.clicks.toLocaleString()}</td>
                       <td className="text-right py-1.5 px-3">{r.joins.toLocaleString()}</td>

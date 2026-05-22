@@ -23,7 +23,6 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
     spendTon: '',
     tonPriceUsd: '',
     usdThbRate: '',
-    impressions: '',
     views: '',
     clicks: '',
     joins: '',
@@ -59,7 +58,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
   }
 
   const canPreview = form.spendTon && form.dailyBudgetTon && form.tonPriceUsd &&
-    form.usdThbRate && form.impressions && form.clicks && form.joins
+    form.usdThbRate && form.clicks && form.joins
 
   const preview = canPreview
     ? calcEntryMetrics({
@@ -67,7 +66,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
         dailyBudgetTon: parseFloat(form.dailyBudgetTon),
         tonPriceUsd: parseFloat(form.tonPriceUsd),
         usdThbRate: parseFloat(form.usdThbRate),
-        impressions: parseInt(form.impressions),
+        impressions: 0,
         clicks: parseInt(form.clicks),
         joins: parseInt(form.joins),
       })
@@ -88,7 +87,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
           spendTon: parseFloat(form.spendTon),
           tonPriceUsd: parseFloat(form.tonPriceUsd),
           usdThbRate: parseFloat(form.usdThbRate),
-          impressions: parseInt(form.impressions),
+          impressions: 0,
           views: parseInt(form.views),
           clicks: parseInt(form.clicks),
           joins: parseInt(form.joins),
@@ -147,10 +146,6 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Impressions</Label>
-          <Input type="number" value={form.impressions} onChange={e => set('impressions', e.target.value)} required />
-        </div>
         <div className="space-y-2">
           <Label>Views</Label>
           <Input type="number" value={form.views} onChange={e => set('views', e.target.value)} required />

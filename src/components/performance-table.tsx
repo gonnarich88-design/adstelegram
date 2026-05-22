@@ -16,7 +16,6 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
             <th className="text-left py-2 px-3">วันที่</th>
             <th className="text-right py-2 px-3">Spend (TON)</th>
             <th className="text-right py-2 px-3">BSP</th>
-            <th className="text-right py-2 px-3">Imp</th>
             <th className="text-right py-2 px-3">Views</th>
             <th className="text-right py-2 px-3">Clicks</th>
             <th className="text-right py-2 px-3">{joinsLabel}</th>
@@ -43,7 +42,6 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
                 </td>
                 <td className="text-right py-2 px-3">{fmt(Number(e.spendTon), 2)}</td>
                 <td className="text-right py-2 px-3">{fmt(m.bsp, 1)}%</td>
-                <td className="text-right py-2 px-3">{e.impressions.toLocaleString()}</td>
                 <td className="text-right py-2 px-3">{e.views.toLocaleString()}</td>
                 <td className="text-right py-2 px-3">{e.clicks.toLocaleString()}</td>
                 <td className="text-right py-2 px-3">{e.joins.toLocaleString()}</td>
