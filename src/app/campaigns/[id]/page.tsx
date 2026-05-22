@@ -20,9 +20,11 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   if (!campaign) notFound()
 
+  const campaignDailyBudget = Number(campaign.dailyBudgetTon)
+
   const entriesForCalc = campaign.entries.map(e => ({
     spendTon: Number(e.spendTon),
-    dailyBudgetTon: Number(e.dailyBudgetTon),
+    dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
     tonPriceUsd: Number(e.tonPriceUsd),
     usdThbRate: Number(e.usdThbRate),
     impressions: e.impressions,
@@ -71,7 +73,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
       <div>
         <h2 className="text-lg font-semibold mb-3">Performance Log</h2>
-        <PerformanceTable entries={campaign.entries} targetType={campaign.targetType} />
+        <PerformanceTable entries={campaign.entries} targetType={campaign.targetType} campaignDailyBudget={campaignDailyBudget} />
       </div>
     </div>
   )

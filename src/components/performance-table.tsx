@@ -24,7 +24,11 @@ function groupByMonth(entries: any[]) {
   return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
-export function PerformanceTable({ entries, targetType }: { entries: any[]; targetType?: string }) {
+export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 }: {
+  entries: any[]
+  targetType?: string
+  campaignDailyBudget?: number
+}) {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground py-4">ยังไม่มี entry</p>
@@ -60,7 +64,7 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
 
             const agg = calcAggregateMetrics(sorted.map(e => ({
               spendTon: Number(e.spendTon),
-              dailyBudgetTon: Number(e.dailyBudgetTon),
+              dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
               tonPriceUsd: Number(e.tonPriceUsd),
               usdThbRate: Number(e.usdThbRate),
               impressions: e.impressions,
@@ -90,7 +94,7 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
                   const thb = Number(e.usdThbRate)
                   const m = calcEntryMetrics({
                     spendTon: Number(e.spendTon),
-                    dailyBudgetTon: Number(e.dailyBudgetTon),
+                    dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
                     tonPriceUsd: Number(e.tonPriceUsd),
                     usdThbRate: thb,
                     impressions: e.impressions,
