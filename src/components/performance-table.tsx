@@ -1,7 +1,27 @@
-import { calcEntryMetrics } from '@/lib/metrics'
+import { calcEntryMetrics, calcAggregateMetrics } from '@/lib/metrics'
 
 function fmtThb(n: number) {
   return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function fmtThbInt(n: number) {
+  return '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+}
+
+function monthLabel(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+}
+
+function groupByMonth(entries: any[]) {
+  const map = new Map<string, any[]>()
+  for (const e of entries) {
+    const key = new Date(e.date).toISOString().slice(0, 7) // YYYY-MM
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(e)
+  }
+  // newest month first
+  return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
 export function PerformanceTable({ entries, targetType }: { entries: any[]; targetType?: string }) {
@@ -9,6 +29,8 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground py-4">ยังไม่มี entry</p>
   }
+
+  const months = groupByMonth(entries)
 
   return (
     <div className="overflow-x-auto">
@@ -30,37 +52,92 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
           </tr>
         </thead>
         <tbody>
-          {entries.map((e: any) => {
-            const thb = Number(e.usdThbRate)
-            const m = calcEntryMetrics({
+          {months.map(([monthKey, monthEntries]) => {
+            // newest day first within month
+            const sorted = [...monthEntries].sort((a, b) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+            )
+
+            const agg = calcAggregateMetrics(sorted.map(e => ({
               spendTon: Number(e.spendTon),
               dailyBudgetTon: Number(e.dailyBudgetTon),
               tonPriceUsd: Number(e.tonPriceUsd),
-              usdThbRate: thb,
+              usdThbRate: Number(e.usdThbRate),
               impressions: e.impressions,
               views: e.views,
               clicks: e.clicks,
               joins: e.joins,
-            })
+            })))
+
+            const cpcThb = agg.totalClicks > 0 ? agg.spendThb / agg.totalClicks : 0
+            const cpsThb = agg.totalJoins > 0 ? agg.spendThb / agg.totalJoins : 0
+            const cpmThb = agg.totalViews > 0 ? (agg.spendThb / agg.totalViews) * 1000 : 0
+
             return (
-              <tr key={e.id} className="border-b hover:bg-muted/30">
-                <td className="py-2 px-2 whitespace-nowrap">
-                  {new Date(e.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
-                </td>
-                <td className="text-right py-2 px-2">{e.views.toLocaleString()}</td>
-                <td className="text-right py-2 px-2">{e.clicks.toLocaleString()}</td>
-                <td className="text-right py-2 px-2">{e.joins.toLocaleString()}</td>
-                <td className="text-right py-2 px-2 text-muted-foreground">{Number(e.spendTon).toFixed(2)}</td>
-                <td className="text-right py-2 px-2 font-medium text-green-400">
-                  ฿{m.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 })}
-                </td>
-                <td className="text-right py-2 px-2">{m.ctr.toFixed(2)}%</td>
-                <td className="text-right py-2 px-2">{m.cr.toFixed(2)}%</td>
-                <td className="text-right py-2 px-2">{fmtThb(m.cpc * thb)}</td>
-                <td className="text-right py-2 px-2">{fmtThb(m.cps * thb)}</td>
-                <td className="text-right py-2 px-2">{fmtThb(m.cpm * thb)}</td>
-                <td className="text-right py-2 px-2">{m.bsp.toFixed(1)}%</td>
-              </tr>
+              <>
+                {/* Month header */}
+                <tr key={`header-${monthKey}`} className="bg-muted/50">
+                  <td colSpan={12} className="py-1.5 px-2 font-semibold text-foreground">
+                    {monthLabel(sorted[0].date)}
+                    <span className="text-muted-foreground font-normal ml-2">
+                      {sorted.length} วัน
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Daily rows */}
+                {sorted.map((e: any) => {
+                  const thb = Number(e.usdThbRate)
+                  const m = calcEntryMetrics({
+                    spendTon: Number(e.spendTon),
+                    dailyBudgetTon: Number(e.dailyBudgetTon),
+                    tonPriceUsd: Number(e.tonPriceUsd),
+                    usdThbRate: thb,
+                    impressions: e.impressions,
+                    views: e.views,
+                    clicks: e.clicks,
+                    joins: e.joins,
+                  })
+                  return (
+                    <tr key={e.id} className="border-b border-muted/40 hover:bg-muted/20">
+                      <td className="py-1.5 px-2 pl-4 whitespace-nowrap text-muted-foreground">
+                        {new Date(e.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                      </td>
+                      <td className="text-right py-1.5 px-2">{e.views.toLocaleString()}</td>
+                      <td className="text-right py-1.5 px-2">{e.clicks.toLocaleString()}</td>
+                      <td className="text-right py-1.5 px-2">{e.joins.toLocaleString()}</td>
+                      <td className="text-right py-1.5 px-2 text-muted-foreground">{Number(e.spendTon).toFixed(2)}</td>
+                      <td className="text-right py-1.5 px-2 text-green-400">
+                        {fmtThbInt(m.spendThb)}
+                      </td>
+                      <td className="text-right py-1.5 px-2">{m.ctr.toFixed(2)}%</td>
+                      <td className="text-right py-1.5 px-2">{m.cr.toFixed(2)}%</td>
+                      <td className="text-right py-1.5 px-2">{fmtThb(m.cpc * thb)}</td>
+                      <td className="text-right py-1.5 px-2">{fmtThb(m.cps * thb)}</td>
+                      <td className="text-right py-1.5 px-2">{fmtThb(m.cpm * thb)}</td>
+                      <td className="text-right py-1.5 px-2">{m.bsp.toFixed(1)}%</td>
+                    </tr>
+                  )
+                })}
+
+                {/* Monthly summary */}
+                <tr key={`summary-${monthKey}`} className="border-b-2 border-border bg-muted/30 font-semibold">
+                  <td className="py-2 px-2 text-muted-foreground text-xs">รวมเดือน</td>
+                  <td className="text-right py-2 px-2">{agg.totalViews.toLocaleString()}</td>
+                  <td className="text-right py-2 px-2">{agg.totalClicks.toLocaleString()}</td>
+                  <td className="text-right py-2 px-2">{agg.totalJoins.toLocaleString()}</td>
+                  <td className="text-right py-2 px-2 text-muted-foreground">{agg.totalSpendTon.toFixed(2)}</td>
+                  <td className="text-right py-2 px-2 text-green-400 font-bold">
+                    {fmtThbInt(agg.spendThb)}
+                  </td>
+                  <td className="text-right py-2 px-2">{agg.ctr.toFixed(2)}%</td>
+                  <td className="text-right py-2 px-2">{agg.cr.toFixed(2)}%</td>
+                  <td className="text-right py-2 px-2">{fmtThb(cpcThb)}</td>
+                  <td className="text-right py-2 px-2">{fmtThb(cpsThb)}</td>
+                  <td className="text-right py-2 px-2">{fmtThb(cpmThb)}</td>
+                  <td className="text-right py-2 px-2">{agg.bsp.toFixed(1)}%</td>
+                </tr>
+              </>
             )
           })}
         </tbody>
