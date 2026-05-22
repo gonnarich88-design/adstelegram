@@ -16,7 +16,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    if (!body.name || !body.targetType || !body.targetName || !body.startDate || !body.budgetTon) {
+    if (!body.name || !body.targetType || !body.targetName || !body.startDate || !body.dailyBudgetTon) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
     const campaign = await prisma.campaign.create({
@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
         targetName: body.targetName,
         startDate: new Date(body.startDate),
         endDate: body.endDate ? new Date(body.endDate) : null,
-        budgetTon: body.budgetTon,
-        dailyBudgetTon: body.dailyBudgetTon ?? null,
+        budgetTon: body.budgetTon ?? null,
+        dailyBudgetTon: body.dailyBudgetTon,
         status: body.status ?? 'ACTIVE',
         placementName: body.placementName ?? null,
         note: body.note ?? null,
