@@ -1,10 +1,11 @@
 import { AggregateMetrics } from '@/lib/metrics'
+import { bspColor } from '@/lib/bsp-color'
 
-function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function MetricCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
     <div className="rounded-lg border p-4 text-center">
       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
-      <p className="text-xl font-bold">{value}</p>
+      <p className="text-xl font-bold" style={color ? { color } : undefined}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
     </div>
   )
@@ -22,7 +23,7 @@ export function MetricCards({ metrics }: { metrics: AggregateMetrics }) {
       <MetricCard label="CPC" value={`฿${cpcThb.toFixed(2)}`} />
       <MetricCard label="CPS" value={`฿${cpsThb.toFixed(2)}`} />
       <MetricCard label="CPM" value={`฿${cpmThb.toFixed(2)}`} />
-      <MetricCard label="BSP" value={`${metrics.bsp.toFixed(1)}%`} />
+      <MetricCard label="BSP" value={`${metrics.bsp.toFixed(1)}%`} color={bspColor(metrics.bsp)} />
     </div>
   )
 }

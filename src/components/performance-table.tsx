@@ -1,4 +1,5 @@
 import { calcEntryMetrics, calcAggregateMetrics } from '@/lib/metrics'
+import { bspColor } from '@/lib/bsp-color'
 
 function fmtThb(n: number) {
   return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -119,7 +120,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                       <td className="text-right py-1.5 px-2">{fmtThb(m.cpc * thb)}</td>
                       <td className="text-right py-1.5 px-2">{fmtThb(m.cps * thb)}</td>
                       <td className="text-right py-1.5 px-2">{fmtThb(m.cpm * thb)}</td>
-                      <td className="text-right py-1.5 px-2">{m.bsp.toFixed(1)}%</td>
+                      <td className="text-right py-1.5 px-2 font-medium" style={{ color: bspColor(m.bsp) }}>{m.bsp.toFixed(1)}%</td>
                     </tr>
                   )
                 })}
@@ -139,7 +140,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                   <td className="text-right py-2 px-2">{fmtThb(cpcThb)}</td>
                   <td className="text-right py-2 px-2">{fmtThb(cpsThb)}</td>
                   <td className="text-right py-2 px-2">{fmtThb(cpmThb)}</td>
-                  <td className="text-right py-2 px-2">{agg.bsp.toFixed(1)}%</td>
+                  <td className="text-right py-2 px-2" style={{ color: bspColor(agg.bsp) }}>{agg.bsp.toFixed(1)}%</td>
                 </tr>
               </>
             )
