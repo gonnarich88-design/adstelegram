@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { DayRate } from '@/lib/rates'
 
 interface ParsedRow {
   date: string
@@ -41,7 +42,6 @@ function parseCSV(text: string): ParsedRow[] {
     const date = new Date(raw)
     if (isNaN(date.getTime())) continue
 
-    // ใช้ local date methods เพื่อหลีกเลี่ยง UTC timezone offset bug
     const isoDate = [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, '0'),
@@ -72,37 +72,34 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
 
   const [rows, setRows] = useState<ParsedRow[]>([])
-  const [globals, setGlobals] = useState({
-    spendTon: '',
-    tonPriceUsd: '',
-    usdThbRate: '',
-  })
-  const [fetching, setFetching] = useState(false)
+  const [historicalRates, setHistoricalRates] = useState<Record<string, DayRate>>({})
+  const [ratesFetching, setRatesFetching] = useState(false)
+  const [ratesError, setRatesError] = useState('')
+  const [fallback, setFallback] = useState({ tonPriceUsd: '', usdThbRate: '', spendTon: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [fetchedAt, setFetchedAt] = useState('')
 
   const hasSpendData = rows.some(r => r.spendTon !== undefined)
+  const hasHistoricalRates = Object.keys(historicalRates).length > 0
 
-  function setG(key: string, value: string) {
-    setGlobals(g => ({ ...g, [key]: value }))
+  function setF(key: string, value: string) {
+    setFallback(f => ({ ...f, [key]: value }))
   }
 
-  async function fetchRates() {
-    setFetching(true)
+  async function fetchHistorical(from: string, to: string) {
+    setRatesFetching(true)
+    setRatesError('')
     try {
-      const res = await fetch('/api/rates')
+      const res = await fetch(`/api/rates/historical?from=${from}&to=${to}`)
       if (res.ok) {
-        const data = await res.json()
-        setGlobals(g => ({
-          ...g,
-          tonPriceUsd: data.tonUsd.toFixed(4),
-          usdThbRate: data.usdThb.toFixed(4),
-        }))
-        setFetchedAt(new Date(data.fetchedAt).toLocaleTimeString('th-TH'))
+        setHistoricalRates(await res.json())
+      } else {
+        setRatesError('ดึง rate ย้อนหลังไม่สำเร็จ กรุณากรอกเองด้านล่าง')
       }
+    } catch {
+      setRatesError('ดึง rate ย้อนหลังไม่สำเร็จ กรุณากรอกเองด้านล่าง')
     } finally {
-      setFetching(false)
+      setRatesFetching(false)
     }
   }
 
@@ -137,7 +134,14 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
 
       const merged = Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date))
       setRows(merged)
+      setHistoricalRates({})
+      setRatesError('')
       setError(merged.length === 0 ? 'ไม่พบข้อมูลในไฟล์ หรือ format ไม่ถูกต้อง' : '')
+
+      if (merged.length > 0) {
+        const dates = merged.map(r => r.date)
+        fetchHistorical(dates[0], dates[dates.length - 1])
+      }
     })
   }, [])
 
@@ -149,10 +153,10 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
 
     const payload = rows.map(r => ({
       ...r,
-      spendTon: r.spendTon ?? parseFloat(globals.spendTon),
+      spendTon: r.spendTon ?? parseFloat(fallback.spendTon),
       dailyBudgetTon: parseFloat(defaultDailyBudget ?? '0'),
-      tonPriceUsd: parseFloat(globals.tonPriceUsd),
-      usdThbRate: parseFloat(globals.usdThbRate),
+      tonPriceUsd: historicalRates[r.date]?.tonUsd ?? parseFloat(fallback.tonPriceUsd),
+      usdThbRate: historicalRates[r.date]?.usdThb ?? parseFloat(fallback.usdThbRate),
     }))
 
     try {
@@ -194,24 +198,31 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       {rows.length > 0 && (
         <>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">ค่าที่ใช้กับทุกแถว</p>
-              <button type="button" onClick={fetchRates} disabled={fetching} className="text-xs text-blue-400 hover:underline disabled:opacity-50">
-                {fetching ? 'กำลังดึง...' : '↻ ดึง Rate อัตโนมัติ'}
-              </button>
-            </div>
-            {fetchedAt && <p className="text-xs text-green-500">อัปเดต {fetchedAt}</p>}
+            {/* Rate status */}
+            {ratesFetching && (
+              <p className="text-xs text-blue-400">กำลังดึง rate ย้อนหลังรายวัน...</p>
+            )}
+            {hasHistoricalRates && !ratesFetching && (
+              <p className="text-xs text-green-500">ดึง rate รายวันสำเร็จ ({Object.keys(historicalRates).length} วัน) — TON/USD และ USD/THB แต่ละวันจะถูกใช้อัตโนมัติ</p>
+            )}
+            {ratesError && (
+              <p className="text-xs text-yellow-500">{ratesError}</p>
+            )}
+
+            {/* Spend */}
             {!defaultDailyBudget && (
               <p className="text-xs text-yellow-500">⚠ Campaign นี้ยังไม่ได้ตั้งงบต่อวัน BSP จะเป็น 0 — แก้ได้ที่หน้าแก้ไข Campaign</p>
             )}
             {defaultDailyBudget && (
               <p className="text-xs text-muted-foreground">งบต่อวัน: <strong>{defaultDailyBudget} TON</strong> (จาก Campaign)</p>
             )}
+
             <div className="grid grid-cols-2 gap-4">
+              {/* Spend */}
               {!hasSpendData && (
                 <div className="space-y-2">
                   <Label>Spend จริงต่อวัน (TON)</Label>
-                  <Input type="number" step="0.001" value={globals.spendTon} onChange={e => setG('spendTon', e.target.value)} placeholder="8.5" required />
+                  <Input type="number" step="0.001" value={fallback.spendTon} onChange={e => setF('spendTon', e.target.value)} placeholder="8.5" required />
                 </div>
               )}
               {hasSpendData && (
@@ -220,14 +231,20 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                   <p className="text-xs text-green-500 pt-1">ดึงจาก billing file อัตโนมัติ</p>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label>ราคา TON/USD</Label>
-                <Input type="number" step="0.0001" value={globals.tonPriceUsd} onChange={e => setG('tonPriceUsd', e.target.value)} placeholder="3.18" required />
-              </div>
-              <div className="space-y-2">
-                <Label>อัตรา USD/THB</Label>
-                <Input type="number" step="0.0001" value={globals.usdThbRate} onChange={e => setG('usdThbRate', e.target.value)} placeholder="32.45" required />
-              </div>
+
+              {/* Rate fallbacks — shown only when historical fetch failed */}
+              {!hasHistoricalRates && !ratesFetching && (
+                <>
+                  <div className="space-y-2">
+                    <Label>ราคา TON/USD {ratesError ? '(ค่าสำรอง)' : ''}</Label>
+                    <Input type="number" step="0.0001" value={fallback.tonPriceUsd} onChange={e => setF('tonPriceUsd', e.target.value)} placeholder="3.18" required={!hasHistoricalRates} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>อัตรา USD/THB {ratesError ? '(ค่าสำรอง)' : ''}</Label>
+                    <Input type="number" step="0.0001" value={fallback.usdThbRate} onChange={e => setF('usdThbRate', e.target.value)} placeholder="32.45" required={!hasHistoricalRates} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -264,10 +281,15 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
           </div>
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || ratesFetching}>
               {loading ? 'กำลัง Import...' : `Import ${rows.length} แถว`}
             </Button>
-            <Button type="button" variant="outline" onClick={() => { setRows([]); if (fileRef.current) fileRef.current.value = '' }}>
+            <Button type="button" variant="outline" onClick={() => {
+              setRows([])
+              setHistoricalRates({})
+              setRatesError('')
+              if (fileRef.current) fileRef.current.value = ''
+            }}>
               ยกเลิก
             </Button>
           </div>
