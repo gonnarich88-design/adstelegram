@@ -172,9 +172,9 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
             <span>BSP: <strong>{preview.bsp.toFixed(1)}%</strong></span>
             <span>CTR: <strong>{preview.ctr.toFixed(2)}%</strong></span>
             <span>CR: <strong>{preview.cr.toFixed(2)}%</strong></span>
-            <span>CPC: <strong>${preview.cpc.toFixed(4)}</strong></span>
-            <span>CPS: <strong>${preview.cps.toFixed(4)}</strong></span>
-            <span>CPM: <strong>${preview.cpm.toFixed(3)}</strong></span>
+            <span>CPC: <strong>฿{(preview.cpc * parseFloat(form.usdThbRate || '0')).toFixed(2)}</strong></span>
+            <span>CPS: <strong>฿{(preview.cps * parseFloat(form.usdThbRate || '0')).toFixed(2)}</strong></span>
+            <span>CPM: <strong>฿{(preview.cpm * parseFloat(form.usdThbRate || '0')).toFixed(2)}</strong></span>
             <span className="col-span-3">มูลค่า: <strong>฿{preview.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</strong></span>
           </div>
         </div>
