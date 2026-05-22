@@ -23,9 +23,9 @@ describe('calcEntryMetrics', () => {
     expect(m.spendThb).toBeCloseTo(8.5 * 3.18 * 32.45, 2)
   })
 
-  it('calculates CTR', () => {
+  it('calculates CTR based on views', () => {
     const m = calcEntryMetrics(sampleEntry)
-    expect(m.ctr).toBeCloseTo((384 / 12400) * 100, 4)
+    expect(m.ctr).toBeCloseTo((384 / 9800) * 100, 4)
   })
 
   it('calculates CR', () => {
@@ -45,10 +45,10 @@ describe('calcEntryMetrics', () => {
     expect(m.cps).toBeCloseTo(spendUsd / 69, 4)
   })
 
-  it('calculates CPM', () => {
+  it('calculates CPM based on views', () => {
     const m = calcEntryMetrics(sampleEntry)
     const spendUsd = 8.5 * 3.18
-    expect(m.cpm).toBeCloseTo((spendUsd / 12400) * 1000, 4)
+    expect(m.cpm).toBeCloseTo((spendUsd / 9800) * 1000, 4)
   })
 
   it('calculates BSP', () => {
@@ -56,8 +56,8 @@ describe('calcEntryMetrics', () => {
     expect(m.bsp).toBeCloseTo((8.5 / 10) * 100, 4)
   })
 
-  it('returns 0 for CTR when impressions = 0', () => {
-    const m = calcEntryMetrics({ ...sampleEntry, impressions: 0 })
+  it('returns 0 for CTR and CPM when views = 0', () => {
+    const m = calcEntryMetrics({ ...sampleEntry, views: 0 })
     expect(m.ctr).toBe(0)
     expect(m.cpm).toBe(0)
   })
@@ -79,7 +79,7 @@ describe('calcAggregateMetrics', () => {
     const entries = [sampleEntry, sampleEntry]
     const agg = calcAggregateMetrics(entries)
     expect(agg.totalSpendTon).toBeCloseTo(17, 4)
-    expect(agg.totalImpressions).toBe(24800)
+    expect(agg.totalViews).toBe(19600)
     expect(agg.totalClicks).toBe(768)
     expect(agg.totalJoins).toBe(138)
   })

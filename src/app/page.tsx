@@ -48,7 +48,7 @@ export default async function DashboardPage() {
           <div className="rounded-lg border p-4">
             <p className="text-sm text-muted-foreground">Avg CTR</p>
             <p className="text-2xl font-bold text-blue-400">{summary.ctr.toFixed(2)}%</p>
-            <p className="text-sm text-muted-foreground">{summary.totalImpressions.toLocaleString()} impressions</p>
+            <p className="text-sm text-muted-foreground">{summary.totalViews.toLocaleString()} views</p>
           </div>
         </div>
       )}

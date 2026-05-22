@@ -20,6 +20,9 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
             <th className="text-right py-2 px-3">Clicks</th>
             <th className="text-right py-2 px-3">{joinsLabel}</th>
             <th className="text-right py-2 px-3">CTR</th>
+            <th className="text-right py-2 px-3">CR</th>
+            <th className="text-right py-2 px-3">CPC</th>
+            <th className="text-right py-2 px-3">CPS</th>
             <th className="text-right py-2 px-3">TON/USD</th>
             <th className="text-right py-2 px-3">มูลค่า (฿)</th>
           </tr>
@@ -32,6 +35,7 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
               tonPriceUsd: Number(e.tonPriceUsd),
               usdThbRate: Number(e.usdThbRate),
               impressions: e.impressions,
+              views: e.views,
               clicks: e.clicks,
               joins: e.joins,
             })
@@ -46,6 +50,9 @@ export function PerformanceTable({ entries, targetType }: { entries: any[]; targ
                 <td className="text-right py-2 px-3">{e.clicks.toLocaleString()}</td>
                 <td className="text-right py-2 px-3">{e.joins.toLocaleString()}</td>
                 <td className="text-right py-2 px-3">{fmt(m.ctr, 2)}%</td>
+                <td className="text-right py-2 px-3">{fmt(m.cr, 2)}%</td>
+                <td className="text-right py-2 px-3">${fmt(m.cpc, 4)}</td>
+                <td className="text-right py-2 px-3">${fmt(m.cps, 4)}</td>
                 <td className="text-right py-2 px-3">${fmt(Number(e.tonPriceUsd), 2)}</td>
                 <td className="text-right py-2 px-3">฿{m.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
               </tr>
