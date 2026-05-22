@@ -1,8 +1,8 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-22 17:34 | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-22 17:42 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Session นี้ทำ UX/data improvements หนักมาก — CSV import รองรับหลายไฟล์และ auto-merge, rate ย้อนหลังรายวัน, ตารางจัดกลุ่มรายเดือน, metrics เป็น ฿, BSP fix ครบ Deploy บน EasyPanel ได้ปกติ (commit ล่าสุด 1e11ceb)
+Session นี้ทำ UX/data improvements หนักมาก — CSV import รองรับหลายไฟล์และ auto-merge, rate ย้อนหลังรายวัน, ตารางจัดกลุ่มรายเดือน, metrics เป็น ฿, BSP fix ครบ, BSP color scale แดง→เหลือง→เขียว Deploy บน EasyPanel ได้ปกติ (commit ล่าสุด d653547)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -28,6 +28,7 @@ Session นี้ทำ UX/data improvements หนักมาก — CSV impor
 - [x] Campaign card: progress bar ใช้ avg BSP จาก entries จริง
 - [x] Performance table: จัดกลุ่มรายเดือน + summary row ท้ายแต่ละเดือน
 - [x] BSP fix: entries ที่ import โดยไม่มี dailyBudgetTon ใช้ campaign.dailyBudgetTon เป็น fallback
+- [x] BSP color scale: แดง (0%) → เหลือง (50%) → เขียว (100%) ทั้งในตารางรายวัน, summary รายเดือน, และ metric card
 
 ## กำลังทำ / ค้างอยู่
 - (ไม่มี)
@@ -45,6 +46,7 @@ Session นี้ทำ UX/data improvements หนักมาก — CSV impor
 - 2026-05-22: Historical rates ใช้ CryptoCompare + Frankfurter (ฟรี ไม่ต้อง API key ใหม่) — 2 calls ต่อ import
 - 2026-05-22: BSP fallback ใช้ campaign.dailyBudgetTon แทนการ migrate data เก่า — non-destructive fix
 - 2026-05-22: swap budgetTon/dailyBudgetTon nullability — dailyBudgetTon required, budgetTon optional
+- 2026-05-22: BSP color ใช้ HSL interpolation (hue 0°→120°) — ไม่ใช้ Tailwind class เพราะ dynamic value ไม่ work ใน production build
 
 ## ปัญหา / ข้อควรระวังที่เจอ
 - Prisma v6 ใน Docker: ต้อง copy `node_modules` ทั้งหมดไปยัง runner stage และใช้ `PRISMA_CLIENT_ENGINE_TYPE=library` ตอน build
