@@ -1,8 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-22 17:42 | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-23 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Session นี้ทำ UX/data improvements หนักมาก — CSV import รองรับหลายไฟล์และ auto-merge, rate ย้อนหลังรายวัน, ตารางจัดกลุ่มรายเดือน, metrics เป็น ฿, BSP fix ครบ, BSP color scale แดง→เหลือง→เขียว Deploy บน EasyPanel ได้ปกติ (commit ล่าสุด d653547)
+Session นี้แก้ bug BSP 0.0% บน campaign card + ออกแบบ feature monthly accordion สำหรับ performance table
+Plan เขียนเสร็จพร้อม execute ในรอบหน้า (commit `bb92be7`)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -29,13 +30,20 @@ Session นี้ทำ UX/data improvements หนักมาก — CSV impor
 - [x] Performance table: จัดกลุ่มรายเดือน + summary row ท้ายแต่ละเดือน
 - [x] BSP fix: entries ที่ import โดยไม่มี dailyBudgetTon ใช้ campaign.dailyBudgetTon เป็น fallback
 - [x] BSP color scale: แดง (0%) → เหลือง (50%) → เขียว (100%) ทั้งในตารางรายวัน, summary รายเดือน, และ metric card
+- [x] **fix: BSP 0.0% บน campaign card** — `campaign-card.tsx` ขาด fallback `|| campaignDailyBudget` (commit `99aa461`)
+- [x] fix: JWT_SECRET ใน .env local สั้น 31 ตัว (ต้องการ ≥32) ทำให้ login ไม่ได้ใน local dev
+- [x] fix: DATABASE_URL ใน .env local ชี้ไป postgres user ที่ไม่มี — เปลี่ยนเป็น `wolfy@localhost`
 
 ## กำลังทำ / ค้างอยู่
-- (ไม่มี)
+- [ ] **Monthly Accordion Performance Table** — plan พร้อมแล้ว รอ execute
+  - ไฟล์: `src/components/performance-table.tsx` (แก้ไฟล์เดียว)
+  - Plan: `docs/superpowers/plans/2026-05-23-monthly-accordion.md`
+  - พฤติกรรม: เดือนล่าสุดเปิดอัตโนมัติ เดือนเก่ายุบ กดสลับได้ header แสดง spend ฿ + BSP color
 
 ## ขั้นตอนถัดไป
-1. ทดสอบ re-import CSV หลัง set dailyBudgetTon ใน campaign — ตรวจว่า BSP โชว์ถูกต้อง
-2. (feature ใหม่ตามที่ user ต้องการ)
+1. **execute monthly accordion** — อ่าน plan ที่ `docs/superpowers/plans/2026-05-23-monthly-accordion.md`
+   แก้ `performance-table.tsx` ตาม Task 2 Step 1 → tsc → npm test → commit → push → verify ใน browser
+2. (feature ถัดไปตามที่ต้องการ — weekly view ไว้ทำหลัง)
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
@@ -47,6 +55,8 @@ Session นี้ทำ UX/data improvements หนักมาก — CSV impor
 - 2026-05-22: BSP fallback ใช้ campaign.dailyBudgetTon แทนการ migrate data เก่า — non-destructive fix
 - 2026-05-22: swap budgetTon/dailyBudgetTon nullability — dailyBudgetTon required, budgetTon optional
 - 2026-05-22: BSP color ใช้ HSL interpolation (hue 0°→120°) — ไม่ใช้ Tailwind class เพราะ dynamic value ไม่ work ใน production build
+- 2026-05-23: monthly accordion ใช้ Client Component + useState<Set<string>> — ไม่เก็บ state ใน URL เพราะไม่จำเป็น
+- 2026-05-23: weekly view เลื่อนไปทำ phase ถัดไป — monthly accordion ก่อน ลด complexity
 
 ## ปัญหา / ข้อควรระวังที่เจอ
 - Prisma v6 ใน Docker: ต้อง copy `node_modules` ทั้งหมดไปยัง runner stage และใช้ `PRISMA_CLIENT_ENGINE_TYPE=library` ตอน build
@@ -58,3 +68,4 @@ Session นี้ทำ UX/data improvements หนักมาก — CSV impor
 - UTC timezone bug: `new Date('1 May 2026').toISOString()` ให้วันผิดใน UTC+7 — ใช้ `getFullYear/getMonth/getDate` แทน
 - schema change ที่ทำ nullable field ต้องตรวจ TypeScript ทุกไฟล์ที่ใช้ field นั้น (budgetTon.toString() → budgetTon?.toString())
 - CoinGecko market_chart/range ใช้ไม่ได้บน free tier สำหรับ date range ที่ต้องการ — ใช้ CryptoCompare histoday แทน
+- local .env: JWT_SECRET ต้องมี ≥32 ตัวอักษร และ DATABASE_URL ต้องใช้ user ที่มีจริงใน local PostgreSQL
