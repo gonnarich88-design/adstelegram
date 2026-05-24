@@ -28,24 +28,26 @@ export async function POST(
     const { id } = await params
     const body = await req.json()
 
-    // bulk insert
+    const upsertFields = (row: typeof body) => ({
+      spendTon: row.spendTon,
+      dailyBudgetTon: row.dailyBudgetTon,
+      tonPriceUsd: row.tonPriceUsd,
+      usdThbRate: row.usdThbRate,
+      impressions: Number(row.impressions),
+      views: Number(row.views),
+      clicks: Number(row.clicks),
+      joins: Number(row.joins),
+      note: row.note ?? null,
+    })
+
+    // bulk upsert
     if (Array.isArray(body)) {
       const created = await prisma.$transaction(
         body.map(row =>
-          prisma.performanceEntry.create({
-            data: {
-              campaignId: id,
-              date: new Date(row.date),
-              spendTon: row.spendTon,
-              dailyBudgetTon: row.dailyBudgetTon,
-              tonPriceUsd: row.tonPriceUsd,
-              usdThbRate: row.usdThbRate,
-              impressions: Number(row.impressions),
-              views: Number(row.views),
-              clicks: Number(row.clicks),
-              joins: Number(row.joins),
-              note: row.note ?? null,
-            },
+          prisma.performanceEntry.upsert({
+            where: { campaignId_date: { campaignId: id, date: new Date(row.date) } },
+            create: { campaignId: id, date: new Date(row.date), ...upsertFields(row) },
+            update: upsertFields(row),
           })
         )
       )
@@ -56,20 +58,10 @@ export async function POST(
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const entry = await prisma.performanceEntry.create({
-      data: {
-        campaignId: id,
-        date: new Date(body.date),
-        spendTon: body.spendTon,
-        dailyBudgetTon: body.dailyBudgetTon,
-        tonPriceUsd: body.tonPriceUsd,
-        usdThbRate: body.usdThbRate,
-        impressions: Number(body.impressions),
-        views: Number(body.views),
-        clicks: Number(body.clicks),
-        joins: Number(body.joins),
-        note: body.note ?? null,
-      },
+    const entry = await prisma.performanceEntry.upsert({
+      where: { campaignId_date: { campaignId: id, date: new Date(body.date) } },
+      create: { campaignId: id, date: new Date(body.date), ...upsertFields(body) },
+      update: upsertFields(body),
     })
     return NextResponse.json(entry, { status: 201 })
   } catch {

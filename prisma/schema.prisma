@@ -41,7 +41,7 @@ model PerformanceEntry {
   createdAt      DateTime @default(now())
 
   @@index([campaignId])
-  @@index([campaignId, date])
+  @@unique([campaignId, date])
 }
 
 enum TargetType {
