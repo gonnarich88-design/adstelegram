@@ -58,6 +58,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
         method: 'DELETE',
       })
       if (res.ok) {
+        setDeleteError('')
         router.refresh()
       } else {
         setDeleteError('ลบไม่สำเร็จ ลองใหม่อีกครั้ง')
