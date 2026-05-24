@@ -38,7 +38,8 @@ commits: `f394e27` → `1245c17`
 - [x] feat: แสดง Views/Clicks/Joins รวมรายเดือนใน collapsed header ด้วย (commit `930d879`)
 - [x] Edit + Delete PerformanceEntry — edit page `/entries/[id]/edit`, PATCH + DELETE API, action buttons ใน PerformanceTable
 - [x] Fragment Wallet Balance — AppSettings model, `/api/settings` GET+PUT, Settings page input, Dashboard wallet card (balance/burn rate/วันคงเหลือ), Campaign card total budget progress bar, export/import backward compat
-- [x] fix: BSP คำนวณจาก campaign.dailyBudgetTon เป็นหลัก (ไม่ใช่ entry.dailyBudgetTon) — แก้กรณี import CSV ตอน budget เก่า แล้วเปลี่ยน budget ใหม่ BSP เพี้ยน (performance-table.tsx + campaign detail page)
+- [x] fix: BSP คำนวณจาก campaign.dailyBudgetTon เป็นหลัก (ไม่ใช่ entry.dailyBudgetTon)
+- [x] fix: CSV import validate NaN rate ก่อน submit — ป้องกัน "Import ล้มเหลว" เมื่อ historical rates ขาดหาย (csv-import.tsx) — แก้กรณี import CSV ตอน budget เก่า แล้วเปลี่ยน budget ใหม่ BSP เพี้ยน (performance-table.tsx + campaign detail page)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)

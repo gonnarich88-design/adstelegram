@@ -92,7 +92,11 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
     try {
       const res = await fetch(`/api/rates/historical?from=${from}&to=${to}`)
       if (res.ok) {
-        setHistoricalRates(await res.json())
+        const data = await res.json()
+        setHistoricalRates(data)
+        if (Object.keys(data).length === 0) {
+          setRatesError('ดึง rate ย้อนหลังไม่สำเร็จ กรุณากรอกเองด้านล่าง')
+        }
       } else {
         setRatesError('ดึง rate ย้อนหลังไม่สำเร็จ กรุณากรอกเองด้านล่าง')
       }
@@ -148,6 +152,19 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (rows.length === 0) return
+
+    const fbTon = parseFloat(fallback.tonPriceUsd)
+    const fbThb = parseFloat(fallback.usdThbRate)
+    const missingRateDates = rows.filter(r => {
+      const ton = historicalRates[r.date]?.tonUsd ?? fbTon
+      const thb = historicalRates[r.date]?.usdThb ?? fbThb
+      return isNaN(ton) || isNaN(thb)
+    })
+    if (missingRateDates.length > 0) {
+      setError(`กรุณากรอก TON/USD และ USD/THB ก่อน Import (${missingRateDates.length} วันไม่มี rate)`)
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -155,8 +172,8 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       ...r,
       spendTon: r.spendTon ?? parseFloat(fallback.spendTon),
       dailyBudgetTon: parseFloat(defaultDailyBudget ?? '0'),
-      tonPriceUsd: historicalRates[r.date]?.tonUsd ?? parseFloat(fallback.tonPriceUsd),
-      usdThbRate: historicalRates[r.date]?.usdThb ?? parseFloat(fallback.usdThbRate),
+      tonPriceUsd: historicalRates[r.date]?.tonUsd ?? fbTon,
+      usdThbRate: historicalRates[r.date]?.usdThb ?? fbThb,
     }))
 
     try {
