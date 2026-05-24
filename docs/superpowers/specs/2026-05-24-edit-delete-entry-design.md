@@ -80,6 +80,7 @@ entryId?: string
 
 พฤติกรรมเมื่อ `entry` + `entryId` ส่งมา (edit mode):
 - Initial state ของ `form` ใช้ค่าจาก `entry` ทุก field รวมถึง `dailyBudgetTon` (**ไม่ใช้ `defaultDailyBudget`** — ต้องใช้ค่าจาก entry ที่เก็บไว้จริง)
+- `date` field: แปลงจาก ISO string → `YYYY-MM-DD` ด้วย `new Date(entry.date).toLocaleDateString('en-CA')` หรือใช้ `getFullYear/getMonth/getDate` (หลีกเลี่ยง `.toISOString().slice(0,10)` เพราะมี UTC timezone bug ใน UTC+7 — ดู PROGRESS.md)
 - **ไม่ auto-fetch rates** ตอน mount (ใช้ rate เดิมจาก entry แต่ยังมีปุ่ม "↻ ดึงอัตโนมัติ")
 - `handleSubmit` → `PATCH /api/campaigns/[campaignId]/entries/[entryId]` แทน POST
 - หลัง save สำเร็จ → `router.push(`/campaigns/${campaignId}`)` + `router.refresh()` เหมือนเดิม
@@ -99,12 +100,14 @@ entryId?: string
 - icon: `Pencil` จาก lucide-react, ขนาดเล็ก
 
 **Delete button:**
-- `window.confirm(`ลบ entry วันที่ ${formattedDate}?`)` ก่อนลบ
+- `window.confirm(`ลบ entry วันที่ ${formattedDate}?`)` ก่อนลบ โดย `formattedDate` ใช้ `toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })` → เช่น "21 พ.ค. 2569"
 - fetch `DELETE /api/campaigns/[campaignId]/entries/[e.id]`
 - ปุ่ม disabled ระหว่าง fetch (state `deletingId: string | null`)
 - ถ้า API ล้มเหลว → แสดง error message ใต้ตาราง
 - ถ้าสำเร็จ → `router.refresh()`
 - icon: `Trash2` จาก lucide-react
+
+**Actions column:** ปุ่มทั้งสองอยู่ใน **คอลัมน์เดียว** (ไม่แยกสองคอลัมน์)
 
 **ไฟล์แก้ไข:** `src/app/campaigns/[id]/page.tsx`
 - ส่ง `campaignId={id}` ไปยัง `<PerformanceTable>`
