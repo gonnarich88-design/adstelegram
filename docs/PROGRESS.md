@@ -1,9 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-23 | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-24 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Session นี้แก้ bug BSP 0.0% บน campaign card + ออกแบบ feature monthly accordion สำหรับ performance table
-Plan เขียนเสร็จพร้อม execute ในรอบหน้า (commit `bb92be7`)
+Monthly accordion เสร็จสมบูรณ์ ทดสอบใน browser ผ่านครบทุก checklist
+Push แล้วที่ commit `95d5430`
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -33,17 +33,15 @@ Plan เขียนเสร็จพร้อม execute ในรอบหน
 - [x] **fix: BSP 0.0% บน campaign card** — `campaign-card.tsx` ขาด fallback `|| campaignDailyBudget` (commit `99aa461`)
 - [x] fix: JWT_SECRET ใน .env local สั้น 31 ตัว (ต้องการ ≥32) ทำให้ login ไม่ได้ใน local dev
 - [x] fix: DATABASE_URL ใน .env local ชี้ไป postgres user ที่ไม่มี — เปลี่ยนเป็น `wolfy@localhost`
+- [x] **Monthly Accordion Performance Table** — `performance-table.tsx` เป็น Client Component + useState accordion (commit `0bae611`)
+- [x] fix: serialize Prisma Decimal/Date ก่อนส่งไป Client Component ใน campaign detail page (commit `95d5430`)
+- [x] feat: แสดง Views/Clicks/Joins รวมรายเดือนใน collapsed header ด้วย (commit `930d879`)
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **Monthly Accordion Performance Table** — plan พร้อมแล้ว รอ execute
-  - ไฟล์: `src/components/performance-table.tsx` (แก้ไฟล์เดียว)
-  - Plan: `docs/superpowers/plans/2026-05-23-monthly-accordion.md`
-  - พฤติกรรม: เดือนล่าสุดเปิดอัตโนมัติ เดือนเก่ายุบ กดสลับได้ header แสดง spend ฿ + BSP color
+(ไม่มี)
 
 ## ขั้นตอนถัดไป
-1. **execute monthly accordion** — อ่าน plan ที่ `docs/superpowers/plans/2026-05-23-monthly-accordion.md`
-   แก้ `performance-table.tsx` ตาม Task 2 Step 1 → tsc → npm test → commit → push → verify ใน browser
-2. (feature ถัดไปตามที่ต้องการ — weekly view ไว้ทำหลัง)
+1. (feature ถัดไปตามที่ต้องการ — weekly view ไว้ทำ phase ถัดไป)
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
@@ -57,6 +55,7 @@ Plan เขียนเสร็จพร้อม execute ในรอบหน
 - 2026-05-22: BSP color ใช้ HSL interpolation (hue 0°→120°) — ไม่ใช้ Tailwind class เพราะ dynamic value ไม่ work ใน production build
 - 2026-05-23: monthly accordion ใช้ Client Component + useState<Set<string>> — ไม่เก็บ state ใน URL เพราะไม่จำเป็น
 - 2026-05-23: weekly view เลื่อนไปทำ phase ถัดไป — monthly accordion ก่อน ลด complexity
+- 2026-05-24: ต้อง serialize Decimal/Date จาก Prisma ก่อนส่งไป Client Component — Next.js 19 ไม่อนุญาต non-plain objects ข้าม Server/Client boundary
 
 ## ปัญหา / ข้อควรระวังที่เจอ
 - Prisma v6 ใน Docker: ต้อง copy `node_modules` ทั้งหมดไปยัง runner stage และใช้ `PRISMA_CLIENT_ENGINE_TYPE=library` ตอน build
