@@ -1,18 +1,22 @@
 import { prisma } from '@/lib/prisma'
 import { CampaignCard } from '@/components/campaign-card'
 import { calcAggregateMetrics } from '@/lib/metrics'
+import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const [campaigns, settings] = await Promise.all([
+  const [campaigns, deposits] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'desc' },
     }),
-    prisma.appSettings.findUnique({ where: { id: 1 } }),
+    prisma.walletDeposit.findMany({
+      include: { allocations: true },
+      orderBy: { depositedAt: 'asc' },
+    }),
   ])
 
   const allEntries = campaigns.flatMap(c => c.entries).map(e => ({
@@ -29,7 +33,10 @@ export default async function DashboardPage() {
   const summary = allEntries.length > 0 ? calcAggregateMetrics(allEntries) : null
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
 
-  const walletBalance = settings ? Number(settings.walletBalanceTon) : 0
+  const depositsNum = deposits.map(d => ({ ...d, amountTon: Number(d.amountTon), tonPriceUsd: Number(d.tonPriceUsd), usdThbRate: Number(d.usdThbRate) }))
+  const allocationsNum = deposits.flatMap(d => d.allocations).map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
+  const walletBalance = computeWalletBalance(depositsNum, allocationsNum)
+  const currentRate = findCurrentRate(depositsNum, allocationsNum)
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const recentSpend = campaigns
@@ -50,8 +57,15 @@ export default async function DashboardPage() {
         <div className="rounded-lg border p-4 bg-muted/20">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-0.5">Fragment Wallet</p>
+              <p className="text-sm text-muted-foreground mb-0.5">
+                TON Wallet · <Link href="/wallet" className="text-blue-400 hover:underline">ดูรายละเอียด</Link>
+              </p>
               <p className="text-2xl font-bold">{walletBalance.toFixed(2)} TON</p>
+              {currentRate && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  1 TON = ${currentRate.tonPriceUsd.toFixed(4)} / ฿{currentRate.usdThbRate.toFixed(2)}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Burn rate (7d avg)</p>
