@@ -8,20 +8,21 @@ datasource db {
 }
 
 model Campaign {
-  id         String         @id @default(uuid())
-  name       String
-  targetType TargetType
-  targetName String
-  startDate  DateTime
-  endDate    DateTime?
-  budgetTon        Decimal?        @db.Decimal(18, 8)
-  dailyBudgetTon   Decimal         @db.Decimal(18, 8)
-  status           CampaignStatus  @default(ACTIVE)
-  placementName    String?
-  note          String?
-  entries    PerformanceEntry[]
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id             String              @id @default(uuid())
+  name           String
+  targetType     TargetType
+  targetName     String
+  startDate      DateTime
+  endDate        DateTime?
+  budgetTon      Decimal?            @db.Decimal(18, 8)
+  dailyBudgetTon Decimal             @db.Decimal(18, 8)
+  status         CampaignStatus      @default(ACTIVE)
+  placementName  String?
+  note           String?
+  entries        PerformanceEntry[]
+  allocation     CampaignAllocation?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 }
 
 model PerformanceEntry {
@@ -44,10 +45,25 @@ model PerformanceEntry {
   @@unique([campaignId, date])
 }
 
-model AppSettings {
-  id               Int      @id @default(1)
-  walletBalanceTon Decimal  @db.Decimal(18, 8) @default(0)
-  updatedAt        DateTime @updatedAt
+model WalletDeposit {
+  id          String               @id @default(cuid())
+  amountTon   Decimal              @db.Decimal(18, 8)
+  tonPriceUsd Decimal              @db.Decimal(18, 8)
+  usdThbRate  Decimal              @db.Decimal(18, 8)
+  depositedAt DateTime
+  note        String?
+  createdAt   DateTime             @default(now())
+  allocations CampaignAllocation[]
+}
+
+model CampaignAllocation {
+  id         String        @id @default(cuid())
+  depositId  String
+  campaignId String        @unique
+  amountTon  Decimal       @db.Decimal(18, 8)
+  createdAt  DateTime      @default(now())
+  deposit    WalletDeposit @relation(fields: [depositId], references: [id])
+  campaign   Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 enum TargetType {
