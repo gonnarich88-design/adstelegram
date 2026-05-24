@@ -1,25 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 
 export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [exportError, setExportError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-
-  const [walletBalance, setWalletBalance] = useState('')
-  const [walletSaving, setWalletSaving] = useState(false)
-  const [walletStatus, setWalletStatus] = useState<'idle' | 'ok' | 'error'>('idle')
-
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then(d => setWalletBalance(String(d.walletBalanceTon ?? 0)))
-      .catch(() => {})
-  }, [])
 
   async function handleExport() {
     setExportError(false)
@@ -59,58 +47,9 @@ export default function SettingsPage() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  async function handleWalletSave() {
-    const val = parseFloat(walletBalance)
-    if (isNaN(val) || val < 0) {
-      setWalletStatus('error')
-      return
-    }
-    setWalletSaving(true)
-    setWalletStatus('idle')
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletBalanceTon: val }),
-      })
-      setWalletStatus(res.ok ? 'ok' : 'error')
-    } catch {
-      setWalletStatus('error')
-    } finally {
-      setWalletSaving(false)
-    }
-  }
-
   return (
     <div className="space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">Settings</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Fragment Wallet Balance</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            ยอดเงินคงเหลือใน Fragment wallet (TON) ใช้คำนวณ burn rate บน Dashboard
-          </p>
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={walletBalance}
-              onChange={e => { setWalletBalance(e.target.value); setWalletStatus('idle') }}
-              placeholder="0.00"
-              className="max-w-[160px]"
-            />
-            <Button onClick={handleWalletSave} disabled={walletSaving} size="sm">
-              {walletSaving ? 'กำลังบันทึก...' : 'บันทึก'}
-            </Button>
-          </div>
-          {walletStatus === 'ok' && <p className="text-sm text-green-500">บันทึกแล้ว</p>}
-          {walletStatus === 'error' && <p className="text-sm text-destructive">บันทึกไม่สำเร็จ</p>}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

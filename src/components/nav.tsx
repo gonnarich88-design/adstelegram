@@ -19,6 +19,7 @@ export function Nav() {
   const links = [
     { href: '/', label: 'Dashboard' },
     { href: '/campaigns/new', label: '+ Campaign' },
+    { href: '/wallet', label: 'Wallet' },
     { href: '/settings', label: 'Settings' },
   ]
 
