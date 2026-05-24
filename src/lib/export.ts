@@ -3,18 +3,23 @@ import { prisma } from './prisma'
 export interface ExportData {
   version: number
   exportedAt: string
+  walletBalanceTon?: string
   campaigns: any[]
 }
 
 export async function exportData(): Promise<ExportData> {
-  const campaigns = await prisma.campaign.findMany({
-    include: { entries: { orderBy: { date: 'asc' } } },
-    orderBy: { createdAt: 'asc' },
-  })
+  const [campaigns, settings] = await Promise.all([
+    prisma.campaign.findMany({
+      include: { entries: { orderBy: { date: 'asc' } } },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.appSettings.findUnique({ where: { id: 1 } }),
+  ])
 
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
+    walletBalanceTon: settings ? settings.walletBalanceTon.toString() : '0',
     campaigns: campaigns.map(c => ({
       ...c,
       budgetTon: c.budgetTon?.toString() ?? null,
@@ -70,6 +75,14 @@ export async function importData(data: ExportData): Promise<void> {
             })),
           },
         },
+      })
+    }
+
+    if (data.walletBalanceTon != null) {
+      await tx.appSettings.upsert({
+        where: { id: 1 },
+        create: { id: 1, walletBalanceTon: data.walletBalanceTon },
+        update: { walletBalanceTon: data.walletBalanceTon },
       })
     }
   })

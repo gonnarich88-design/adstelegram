@@ -44,6 +44,12 @@ model PerformanceEntry {
   @@unique([campaignId, date])
 }
 
+model AppSettings {
+  id               Int      @id @default(1)
+  walletBalanceTon Decimal  @db.Decimal(18, 8) @default(0)
+  updatedAt        DateTime @updatedAt
+}
+
 enum TargetType {
   CHANNEL
   BOT

@@ -7,10 +7,13 @@ import { buttonVariants } from '@/components/ui/button'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const campaigns = await prisma.campaign.findMany({
-    include: { entries: { orderBy: { date: 'asc' } } },
-    orderBy: { createdAt: 'desc' },
-  })
+  const [campaigns, settings] = await Promise.all([
+    prisma.campaign.findMany({
+      include: { entries: { orderBy: { date: 'asc' } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.appSettings.findUnique({ where: { id: 1 } }),
+  ])
 
   const allEntries = campaigns.flatMap(c => c.entries).map(e => ({
     spendTon: Number(e.spendTon),
@@ -26,12 +29,48 @@ export default async function DashboardPage() {
   const summary = allEntries.length > 0 ? calcAggregateMetrics(allEntries) : null
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
 
+  const walletBalance = settings ? Number(settings.walletBalanceTon) : 0
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const recentSpend = campaigns
+    .flatMap(c => c.entries)
+    .filter(e => new Date(e.date) >= sevenDaysAgo)
+    .reduce((sum, e) => sum + Number(e.spendTon), 0)
+  const burnRate7d = recentSpend / 7
+  const daysLeft = burnRate7d > 0 ? Math.floor(walletBalance / burnRate7d) : null
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <Link href="/campaigns/new" className={buttonVariants({ size: 'sm' })}>+ Campaign</Link>
       </div>
+
+      {walletBalance > 0 && (
+        <div className="rounded-lg border p-4 bg-muted/20">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-0.5">Fragment Wallet</p>
+              <p className="text-2xl font-bold">{walletBalance.toFixed(2)} TON</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Burn rate (7d avg)</p>
+              <p className="text-base font-semibold">{burnRate7d.toFixed(2)} TON/วัน</p>
+              {daysLeft !== null && (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  คงเหลือประมาณ{' '}
+                  <span className={`font-medium ${daysLeft <= 7 ? 'text-destructive' : daysLeft <= 14 ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {daysLeft} วัน
+                  </span>
+                </p>
+              )}
+              {daysLeft === null && (
+                <p className="text-sm text-muted-foreground mt-0.5">ไม่มีข้อมูล 7 วันล่าสุด</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {summary && (
         <div className="grid grid-cols-3 gap-4">

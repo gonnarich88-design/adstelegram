@@ -7,6 +7,10 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       deleteMany: vi.fn(),
     },
+    appSettings: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
     performanceEntry: {
       deleteMany: vi.fn(),
     },
@@ -14,6 +18,7 @@ vi.mock('@/lib/prisma', () => ({
       fn({
         campaign: { create: vi.fn(), deleteMany: vi.fn() },
         performanceEntry: { deleteMany: vi.fn() },
+        appSettings: { upsert: vi.fn() },
       })
     ),
   },
@@ -23,6 +28,7 @@ describe('exportData', () => {
   it('returns version 1 and exportedAt', async () => {
     const { prisma } = await import('@/lib/prisma')
     vi.mocked(prisma.campaign.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.appSettings.findUnique).mockResolvedValueOnce(null)
 
     const { exportData } = await import('@/lib/export')
     const result = await exportData()

@@ -31,6 +31,10 @@ export function CampaignCard({ campaign }: { campaign: any }) {
   const avgBsp = metrics?.bsp ?? 0
   const bspPct = Math.min(avgBsp, 100)
 
+  const budgetTon = campaign.budgetTon ? Number(campaign.budgetTon) : null
+  const totalSpentTon = metrics?.totalSpendTon ?? 0
+  const budgetUsedPct = budgetTon && budgetTon > 0 ? Math.min((totalSpentTon / budgetTon) * 100, 100) : null
+
   return (
     <Link href={`/campaigns/${campaign.id}`}>
       <Card className="hover:border-foreground/30 transition-colors cursor-pointer">
@@ -62,6 +66,23 @@ export function CampaignCard({ campaign }: { campaign: any }) {
             </div>
             <p className="text-xs text-muted-foreground mt-1">Avg BSP {fmt(avgBsp, 1)}%</p>
           </div>
+          {budgetTon !== null && (
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Total Budget</span>
+                <span>{totalSpentTon.toFixed(2)} / {budgetTon.toFixed(2)} TON</span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${budgetUsedPct ?? 0}%`,
+                    backgroundColor: (budgetUsedPct ?? 0) >= 90 ? 'hsl(0 72% 51%)' : (budgetUsedPct ?? 0) >= 70 ? 'hsl(45 93% 47%)' : 'hsl(142 71% 45%)',
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {metrics && (
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div>
