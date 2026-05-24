@@ -35,6 +35,21 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   const metrics = entriesForCalc.length > 0 ? calcAggregateMetrics(entriesForCalc) : null
 
+  const serializedEntries = campaign.entries.map(e => ({
+    id: e.id,
+    campaignId: e.campaignId,
+    date: e.date.toISOString(),
+    spendTon: Number(e.spendTon),
+    dailyBudgetTon: Number(e.dailyBudgetTon),
+    tonPriceUsd: Number(e.tonPriceUsd),
+    usdThbRate: Number(e.usdThbRate),
+    impressions: e.impressions,
+    views: e.views,
+    clicks: e.clicks,
+    joins: e.joins,
+    note: e.note,
+  }))
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -73,7 +88,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
       <div>
         <h2 className="text-lg font-semibold mb-3">Performance Log</h2>
-        <PerformanceTable entries={campaign.entries} targetType={campaign.targetType} campaignDailyBudget={campaignDailyBudget} />
+        <PerformanceTable entries={serializedEntries} targetType={campaign.targetType} campaignDailyBudget={campaignDailyBudget} />
       </div>
     </div>
   )
