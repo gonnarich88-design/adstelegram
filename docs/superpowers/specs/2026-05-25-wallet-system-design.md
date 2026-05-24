@@ -39,12 +39,13 @@ model CampaignAllocation {
   deposit     WalletDeposit @relation(fields: [depositId], references: [id])
   campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  @@unique([depositId, campaignId])
+  @@unique([campaignId])
 }
 ```
 
 **Notes:**
-- `Campaign` gets a new `allocations CampaignAllocation[]` relation
+- One campaign has at most one allocation (`@@unique([campaignId])`) — matches the single-deposit-at-a-time usage pattern
+- `Campaign` gets a new `allocation CampaignAllocation?` relation (singular, optional)
 - `AppSettings` model is **dropped entirely** — `walletBalanceTon` was its only meaningful field, now computed
 
 ### Computed wallet balance
@@ -145,17 +146,29 @@ Allocation is managed from the **Campaign detail page** (not wallet page) to red
 └─────────────────────────────────────────────────┘
 ```
 
-### Allocation modal/form:
+### Allocation form (create):
 - Campaign name (read-only)
-- Amount TON (required)
-- Rate shown (locked from oldest deposit with balance): `1 TON = $X.XX / ฿X.XX`
+- Amount TON (required) — validated: must be ≤ oldest deposit's remaining balance; API returns 400 if exceeded
+- Rate shown (read-only, locked from oldest deposit with balance): `1 TON = $X.XX / ฿X.XX`
 - [ยืนยันจัดสรร]
+
+### Allocation form (edit — [แก้ไขจัดสรร]):
+- Amount TON (pre-filled with current value) — re-validates against same deposit's remaining + current allocation amount
+  - i.e. new amount ≤ (deposit.remaining + currentAllocation.amountTon)
+- Rate locked to original deposit (cannot change by editing allocation)
+- [บันทึก]
 
 ### After allocation:
 ```
 งบจาก Wallet: 1,234.5 TON  ·  1 TON = $3.21 / ฿105.50
 [แก้ไขจัดสรร]  [ลบจัดสรร]
 ```
+
+### API POST/PUT validation rules:
+- `amountTon` must be > 0
+- For create: `amountTon` ≤ deposit's remaining balance (API: 400 `INSUFFICIENT_BALANCE`)
+- For update: `amountTon` ≤ (deposit's remaining + current allocation's amountTon) (same 400 code)
+- `depositId` auto-assigned from oldest deposit with sufficient remaining balance (server-side, not client-sent)
 
 ---
 
