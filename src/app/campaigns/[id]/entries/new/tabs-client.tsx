@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { EntryForm } from '@/components/entry-form'
 import { CsvImport } from '@/components/csv-import'
 
-export function TabsClient({ campaignId, targetType, defaultDailyBudget }: {
+export function TabsClient({ campaignId, targetType, defaultDailyBudget, allocationRate }: {
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
 }) {
   const [tab, setTab] = useState<'manual' | 'csv'>('manual')
 
@@ -33,9 +34,9 @@ export function TabsClient({ campaignId, targetType, defaultDailyBudget }: {
       </div>
 
       {tab === 'manual' ? (
-        <EntryForm campaignId={campaignId} targetType={targetType} defaultDailyBudget={defaultDailyBudget} />
+        <EntryForm campaignId={campaignId} targetType={targetType} defaultDailyBudget={defaultDailyBudget} allocationRate={allocationRate} />
       ) : (
-        <CsvImport campaignId={campaignId} targetType={targetType} defaultDailyBudget={defaultDailyBudget} />
+        <CsvImport campaignId={campaignId} targetType={targetType} defaultDailyBudget={defaultDailyBudget} allocationRate={allocationRate} />
       )}
     </div>
   )

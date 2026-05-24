@@ -2,10 +2,22 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { TabsClient } from './tabs-client'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NewEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const campaign = await prisma.campaign.findUnique({ where: { id } })
+  const campaign = await prisma.campaign.findUnique({
+    where: { id },
+    include: { allocation: { include: { deposit: true } } },
+  })
   if (!campaign) notFound()
+
+  const allocationRate = campaign.allocation
+    ? {
+        tonPriceUsd: Number(campaign.allocation.deposit.tonPriceUsd),
+        usdThbRate: Number(campaign.allocation.deposit.usdThbRate),
+      }
+    : undefined
 
   return (
     <div className="space-y-6">
@@ -17,6 +29,7 @@ export default async function NewEntryPage({ params }: { params: Promise<{ id: s
         campaignId={id}
         targetType={campaign.targetType}
         defaultDailyBudget={campaign.dailyBudgetTon ? campaign.dailyBudgetTon.toString() : undefined}
+        allocationRate={allocationRate}
       />
     </div>
   )
