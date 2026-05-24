@@ -2,8 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-25 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Wallet System Tasks 1–7 เสร็จ — Schema migration + API routes ครบ, 33 tests ผ่าน
-commits: `6bb9eac` (wallet schema) → `04b6a9b` (balance) → `9d312c0` (deposits GET+POST) → `da3cc38` (deposits DELETE) → `95c89e8` (allocation)
+**Wallet System ครบทุก Task (1–14) — 33 tests ผ่าน, TypeScript clean**
+commits สุดท้าย: `af40343` (EntryForm) → `96301be` (CsvImport) → `0b1ef83` (entries/new page) → `4ce5a5a` (dashboard) → `26be88f` (settings+nav+delete API)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -42,14 +42,16 @@ commits: `6bb9eac` (wallet schema) → `04b6a9b` (balance) → `9d312c0` (deposi
 - [x] fix: CSV import validate NaN rate ก่อน submit — ป้องกัน "Import ล้มเหลว" เมื่อ historical rates ขาดหาย (csv-import.tsx) — แก้กรณี import CSV ตอน budget เก่า แล้วเปลี่ยน budget ใหม่ BSP เพี้ยน (performance-table.tsx + campaign detail page)
 - [x] **Wallet System Task 1: Prisma Schema Migration** — ลบ `AppSettings`, เพิ่ม `WalletDeposit` + `CampaignAllocation`, `Campaign` ได้ optional `allocation` relation — migration `20260525000000_wallet_system` applied, 24 tests ผ่าน (commit `6bb9eac`)
 - [x] **Wallet System Tasks 4–7: API Routes** — `GET /api/wallet/balance`, `GET+POST /api/wallet/deposits`, `DELETE /api/wallet/deposits/[id]`, `GET+POST+DELETE /api/campaigns/[id]/allocation` — FIFO deposit assignment, 33 tests ผ่าน (commits `04b6a9b`–`95c89e8`)
+- [x] **Wallet System Tasks 8–9: UI** — Wallet page (`/wallet`), DepositForm, AllocationCard บน Campaign detail (commits `4ce503d`, `a8fa955`)
+- [x] **Wallet System Tasks 10–11: Rate Locking** — EntryForm + CsvImport รับ `allocationRate` prop ล็อค rate จาก deposit (commits `af40343`, `96301be`)
+- [x] **Wallet System Tasks 12–14: Integration + Cleanup** — entries/new page ส่ง allocationRate, Dashboard ใช้ computed balance, Settings ลบ wallet card, Nav เพิ่ม Wallet link, ลบ `/api/settings` (commits `0b1ef83`, `4ce5a5a`, `26be88f`)
 
 ## กำลังทำ / ค้างอยู่
-(ไม่มี — API routes ครบแล้ว)
+(ไม่มี — Wallet System ครบทุก task)
 
 ## ขั้นตอนถัดไป
-1. Fix pre-existing TS errors: `appSettings` ไม่มีใน PrismaClient (`src/app/api/settings/route.ts`, `src/app/page.tsx`) — เหลือจาก wallet schema migration
-2. Wallet System UI: Deposit form, Allocation UI บน Campaign detail, Wallet dashboard card อัปเดตจาก `/api/wallet/balance`
-3. Export/Import: อัปเดต export/import JSON backup ให้รองรับ `WalletDeposit` + `CampaignAllocation`
+- ระบบพร้อม deploy — ผู้ใช้ควรสร้าง WalletDeposit แรกผ่านหน้า /wallet หลัง deploy (walletBalanceTon เดิมจาก AppSettings ถูก drop ไปแล้ว)
+- Feature ถัดไปตามความต้องการ
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
