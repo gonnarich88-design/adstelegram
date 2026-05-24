@@ -2,8 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-25 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-BSP fix + CSV import NaN validation เสร็จสมบูรณ์ — 24 tests ผ่าน
-commits: `fafd20e` (BSP) → `a4b499b` (CSV import)
+Wallet System Task 1 เสร็จ — Prisma schema migration `wallet_system` applied, 24 tests ผ่าน
+commits: `a4b499b` (CSV NaN) → `6bb9eac` (wallet_system migration)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -40,12 +40,15 @@ commits: `fafd20e` (BSP) → `a4b499b` (CSV import)
 - [x] Fragment Wallet Balance — AppSettings model, `/api/settings` GET+PUT, Settings page input, Dashboard wallet card (balance/burn rate/วันคงเหลือ), Campaign card total budget progress bar, export/import backward compat
 - [x] fix: BSP คำนวณจาก campaign.dailyBudgetTon เป็นหลัก (ไม่ใช่ entry.dailyBudgetTon)
 - [x] fix: CSV import validate NaN rate ก่อน submit — ป้องกัน "Import ล้มเหลว" เมื่อ historical rates ขาดหาย (csv-import.tsx) — แก้กรณี import CSV ตอน budget เก่า แล้วเปลี่ยน budget ใหม่ BSP เพี้ยน (performance-table.tsx + campaign detail page)
+- [x] **Wallet System Task 1: Prisma Schema Migration** — ลบ `AppSettings`, เพิ่ม `WalletDeposit` + `CampaignAllocation`, `Campaign` ได้ optional `allocation` relation — migration `20260525000000_wallet_system` applied, 24 tests ผ่าน (commit `6bb9eac`)
 
 ## กำลังทำ / ค้างอยู่
-(ไม่มี)
+(ไม่มี — Wallet System Task 2 ถัดไป: API routes + lib functions)
 
 ## ขั้นตอนถัดไป
-1. (feature ถัดไปตามที่ต้องการ — weekly view ไว้ทำ phase ถัดไป)
+1. Wallet System Task 2: สร้าง API routes `/api/deposits` (GET/POST) และ lib functions (`createDeposit`, `allocateBudget`)
+2. Wallet System Task 3: อัปเดต export/import logic + test fixes
+3. Wallet System Task 4: Dashboard + Campaign UI
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
