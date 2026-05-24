@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { calcAggregateMetrics } from '@/lib/metrics'
+import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
 import { MetricCards } from '@/components/metric-cards'
 import { PerformanceTable } from '@/components/performance-table'
+import { AllocationCard } from '@/components/allocation-card'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -13,14 +15,47 @@ const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', DONE: 'outline' 
 
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const campaign = await prisma.campaign.findUnique({
-    where: { id },
-    include: { entries: { orderBy: { date: 'desc' } } },
-  })
+
+  const [campaign, walletDeposits] = await Promise.all([
+    prisma.campaign.findUnique({
+      where: { id },
+      include: {
+        entries: { orderBy: { date: 'desc' } },
+        allocation: { include: { deposit: true } },
+      },
+    }),
+    prisma.walletDeposit.findMany({
+      include: { allocations: true },
+      orderBy: { depositedAt: 'asc' },
+    }),
+  ])
 
   if (!campaign) notFound()
 
   const campaignDailyBudget = Number(campaign.dailyBudgetTon)
+
+  const allAllocations = walletDeposits.flatMap(d =>
+    d.allocations.map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
+  )
+  const depositsNormalized = walletDeposits.map(d => ({
+    id: d.id,
+    amountTon: Number(d.amountTon),
+    depositedAt: d.depositedAt,
+    tonPriceUsd: Number(d.tonPriceUsd),
+    usdThbRate: Number(d.usdThbRate),
+  }))
+
+  const walletBalance = computeWalletBalance(depositsNormalized, allAllocations)
+  const currentRate = findCurrentRate(depositsNormalized, allAllocations)
+
+  const allocationForCard = campaign.allocation
+    ? {
+        id: campaign.allocation.id,
+        amountTon: Number(campaign.allocation.amountTon),
+        tonPriceUsd: Number(campaign.allocation.deposit.tonPriceUsd),
+        usdThbRate: Number(campaign.allocation.deposit.usdThbRate),
+      }
+    : null
 
   const entriesForCalc = campaign.entries.map(e => ({
     spendTon: Number(e.spendTon),
@@ -79,6 +114,13 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกวันนี้</Link>
         </div>
       </div>
+
+      <AllocationCard
+        campaignId={id}
+        allocation={allocationForCard}
+        walletBalance={walletBalance}
+        currentRate={currentRate}
+      />
 
       {metrics ? (
         <MetricCards metrics={metrics} />
