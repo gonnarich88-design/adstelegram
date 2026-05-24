@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-24 | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-24 (session 2) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 Fragment Wallet Balance + Per-Campaign Budget Display เสร็จสมบูรณ์ — 24 tests ผ่าน, TypeScript clean
@@ -38,6 +38,7 @@ commits: `f394e27` → `1245c17`
 - [x] feat: แสดง Views/Clicks/Joins รวมรายเดือนใน collapsed header ด้วย (commit `930d879`)
 - [x] Edit + Delete PerformanceEntry — edit page `/entries/[id]/edit`, PATCH + DELETE API, action buttons ใน PerformanceTable
 - [x] Fragment Wallet Balance — AppSettings model, `/api/settings` GET+PUT, Settings page input, Dashboard wallet card (balance/burn rate/วันคงเหลือ), Campaign card total budget progress bar, export/import backward compat
+- [x] fix: BSP คำนวณจาก campaign.dailyBudgetTon เป็นหลัก (ไม่ใช่ entry.dailyBudgetTon) — แก้กรณี import CSV ตอน budget เก่า แล้วเปลี่ยน budget ใหม่ BSP เพี้ยน (performance-table.tsx + campaign detail page)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
@@ -61,6 +62,7 @@ commits: `f394e27` → `1245c17`
 - 2026-05-24: AppSettings ใช้ id=1 fixed row (singleton pattern) — ไม่มี multi-row settings
 - 2026-05-24: walletBalanceTon = 0 → ซ่อน wallet card บน Dashboard, แสดงเมื่อ > 0 เท่านั้น
 - 2026-05-24: burn rate 7d = avg daily spend จาก entries ที่มีวันที่อยู่ใน 7 วันล่าสุด ÷ 7
+- 2026-05-24: BSP ใช้ campaign.dailyBudgetTon เป็น primary — เหตุผล: single-user, campaign budget คือ "target" ที่ถูกต้องเสมอ, เปลี่ยน budget = เปลี่ยน target ทั้ง campaign
 
 ## ปัญหา / ข้อควรระวังที่เจอ
 - Prisma v6 ใน Docker: ต้อง copy `node_modules` ทั้งหมดไปยัง runner stage และใช้ `PRISMA_CLIENT_ENGINE_TYPE=library` ตอน build

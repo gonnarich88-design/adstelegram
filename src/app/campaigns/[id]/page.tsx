@@ -24,7 +24,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   const entriesForCalc = campaign.entries.map(e => ({
     spendTon: Number(e.spendTon),
-    dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
+    dailyBudgetTon: campaignDailyBudget || Number(e.dailyBudgetTon),
     tonPriceUsd: Number(e.tonPriceUsd),
     usdThbRate: Number(e.usdThbRate),
     impressions: e.impressions,
