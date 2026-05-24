@@ -94,6 +94,10 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                 <span className="text-xs text-muted-foreground">{sorted.length} วัน</span>
               </div>
               <div className="flex items-center gap-4 text-xs">
+                <span className="text-muted-foreground hidden sm:inline">Views <span className="text-foreground font-medium">{agg.totalViews.toLocaleString()}</span></span>
+                <span className="text-muted-foreground hidden sm:inline">Clicks <span className="text-foreground font-medium">{agg.totalClicks.toLocaleString()}</span></span>
+                <span className="text-muted-foreground hidden sm:inline">{joinsLabel} <span className="text-foreground font-medium">{agg.totalJoins.toLocaleString()}</span></span>
+                <span className="text-border hidden sm:inline">|</span>
                 <span className="text-green-400 font-medium">{fmtThbInt(agg.spendThb)}</span>
                 <span className="font-semibold" style={{ color: bspColor(agg.bsp) }}>
                   BSP {agg.bsp.toFixed(1)}%
