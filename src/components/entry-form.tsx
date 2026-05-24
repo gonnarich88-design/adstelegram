@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { calcEntryMetrics } from '@/lib/metrics'
 
-export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, entryId }: {
+export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, entryId, allocationRate }: {
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
   entry?: {
     date: string
     spendTon: number
@@ -35,8 +36,16 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
     date: entry ? entry.date.slice(0, 10) : today,
     dailyBudgetTon: entry ? String(entry.dailyBudgetTon) : (defaultDailyBudget ?? ''),
     spendTon: entry ? String(entry.spendTon) : '',
-    tonPriceUsd: entry ? String(entry.tonPriceUsd) : '',
-    usdThbRate: entry ? String(entry.usdThbRate) : '',
+    tonPriceUsd: entry
+      ? String(entry.tonPriceUsd)
+      : allocationRate
+        ? allocationRate.tonPriceUsd.toFixed(4)
+        : '',
+    usdThbRate: entry
+      ? String(entry.usdThbRate)
+      : allocationRate
+        ? allocationRate.usdThbRate.toFixed(4)
+        : '',
     views: entry ? String(entry.views) : '',
     clicks: entry ? String(entry.clicks) : '',
     joins: entry ? String(entry.joins) : '',
@@ -65,7 +74,10 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
     }
   }, [])
 
-  useEffect(() => { if (!entry) fetchRates() }, [fetchRates, entry])
+  useEffect(() => {
+    if (entry || allocationRate) return
+    fetchRates()
+  }, [fetchRates])
 
   function set(key: string, value: string) {
     setForm(f => ({ ...f, [key]: value }))
@@ -147,18 +159,39 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label>ราคา TON/USD</Label>
-            <button type="button" onClick={fetchRates} disabled={fetching} className="text-xs text-blue-400 hover:underline disabled:opacity-50">
-              {fetching ? 'กำลังดึง...' : '↻ ดึงอัตโนมัติ'}
-            </button>
+            {!allocationRate && !entry && (
+              <button type="button" onClick={fetchRates} disabled={fetching} className="text-xs text-blue-400 hover:underline disabled:opacity-50">
+                {fetching ? 'กำลังดึง...' : '↻ ดึงอัตโนมัติ'}
+              </button>
+            )}
           </div>
-          <div className="relative">
-            <Input type="number" step="0.0001" value={form.tonPriceUsd} onChange={e => set('tonPriceUsd', e.target.value)} placeholder="3.18" required />
-          </div>
-          {fetchedAt && <p className="text-xs text-green-500">อัปเดต {fetchedAt}</p>}
+          <Input
+            type="number"
+            step="0.0001"
+            value={form.tonPriceUsd}
+            onChange={e => set('tonPriceUsd', e.target.value)}
+            placeholder="3.18"
+            required
+            readOnly={!!allocationRate && !entry}
+            className={allocationRate && !entry ? 'opacity-70 cursor-not-allowed' : ''}
+          />
+          {allocationRate && !entry && (
+            <p className="text-xs text-blue-400">อัตราจาก Wallet Deposit (locked)</p>
+          )}
+          {fetchedAt && !allocationRate && <p className="text-xs text-green-500">อัปเดต {fetchedAt}</p>}
         </div>
         <div className="space-y-2">
           <Label>อัตรา USD/THB</Label>
-          <Input type="number" step="0.0001" value={form.usdThbRate} onChange={e => set('usdThbRate', e.target.value)} placeholder="32.45" required />
+          <Input
+            type="number"
+            step="0.0001"
+            value={form.usdThbRate}
+            onChange={e => set('usdThbRate', e.target.value)}
+            placeholder="32.45"
+            required
+            readOnly={!!allocationRate && !entry}
+            className={allocationRate && !entry ? 'opacity-70 cursor-not-allowed' : ''}
+          />
         </div>
       </div>
 
