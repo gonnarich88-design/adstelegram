@@ -62,10 +62,11 @@ function parseCSV(text: string): ParsedRow[] {
   return rows
 }
 
-export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
+export function CsvImport({ campaignId, targetType, defaultDailyBudget, allocationRate }: {
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -142,7 +143,7 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       setRatesError('')
       setError(merged.length === 0 ? 'ไม่พบข้อมูลในไฟล์ หรือ format ไม่ถูกต้อง' : '')
 
-      if (merged.length > 0) {
+      if (merged.length > 0 && !allocationRate) {
         const dates = merged.map(r => r.date)
         fetchHistorical(dates[0], dates[dates.length - 1])
       }
@@ -153,16 +154,18 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
     e.preventDefault()
     if (rows.length === 0) return
 
-    const fbTon = parseFloat(fallback.tonPriceUsd)
-    const fbThb = parseFloat(fallback.usdThbRate)
-    const missingRateDates = rows.filter(r => {
-      const ton = historicalRates[r.date]?.tonUsd ?? fbTon
-      const thb = historicalRates[r.date]?.usdThb ?? fbThb
-      return isNaN(ton) || isNaN(thb)
-    })
-    if (missingRateDates.length > 0) {
-      setError(`กรุณากรอก TON/USD และ USD/THB ก่อน Import (${missingRateDates.length} วันไม่มี rate)`)
-      return
+    const fbTon = allocationRate ? allocationRate.tonPriceUsd : parseFloat(fallback.tonPriceUsd)
+    const fbThb = allocationRate ? allocationRate.usdThbRate : parseFloat(fallback.usdThbRate)
+    if (!allocationRate) {
+      const missingRateDates = rows.filter(r => {
+        const ton = historicalRates[r.date]?.tonUsd ?? fbTon
+        const thb = historicalRates[r.date]?.usdThb ?? fbThb
+        return isNaN(ton) || isNaN(thb)
+      })
+      if (missingRateDates.length > 0) {
+        setError(`กรุณากรอก TON/USD และ USD/THB ก่อน Import (${missingRateDates.length} วันไม่มี rate)`)
+        return
+      }
     }
 
     setLoading(true)
@@ -172,8 +175,8 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
       ...r,
       spendTon: r.spendTon ?? parseFloat(fallback.spendTon),
       dailyBudgetTon: parseFloat(defaultDailyBudget ?? '0'),
-      tonPriceUsd: historicalRates[r.date]?.tonUsd ?? fbTon,
-      usdThbRate: historicalRates[r.date]?.usdThb ?? fbThb,
+      tonPriceUsd: allocationRate ? allocationRate.tonPriceUsd : (historicalRates[r.date]?.tonUsd ?? fbTon),
+      usdThbRate: allocationRate ? allocationRate.usdThbRate : (historicalRates[r.date]?.usdThb ?? fbThb),
     }))
 
     try {
@@ -216,13 +219,16 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
         <>
           <div className="space-y-3">
             {/* Rate status */}
-            {ratesFetching && (
+            {allocationRate && (
+              <p className="text-xs text-blue-400">ใช้อัตราจาก Wallet Deposit: 1 TON = ${allocationRate.tonPriceUsd.toFixed(4)} / ฿{allocationRate.usdThbRate.toFixed(4)} (locked)</p>
+            )}
+            {!allocationRate && ratesFetching && (
               <p className="text-xs text-blue-400">กำลังดึง rate ย้อนหลังรายวัน...</p>
             )}
-            {hasHistoricalRates && !ratesFetching && (
+            {!allocationRate && hasHistoricalRates && !ratesFetching && (
               <p className="text-xs text-green-500">ดึง rate รายวันสำเร็จ ({Object.keys(historicalRates).length} วัน) — TON/USD และ USD/THB แต่ละวันจะถูกใช้อัตโนมัติ</p>
             )}
-            {ratesError && (
+            {!allocationRate && ratesError && (
               <p className="text-xs text-yellow-500">{ratesError}</p>
             )}
 
@@ -249,8 +255,8 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget }: {
                 </div>
               )}
 
-              {/* Rate fallbacks — shown only when historical fetch failed */}
-              {!hasHistoricalRates && !ratesFetching && (
+              {/* Rate fallbacks — shown only when no allocationRate and historical fetch failed */}
+              {!allocationRate && !hasHistoricalRates && !ratesFetching && (
                 <>
                   <div className="space-y-2">
                     <Label>ราคา TON/USD {ratesError ? '(ค่าสำรอง)' : ''}</Label>
