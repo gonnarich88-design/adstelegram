@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Pencil, Trash2 } from 'lucide-react'
 import { calcEntryMetrics, calcAggregateMetrics } from '@/lib/metrics'
 import { bspColor } from '@/lib/bsp-color'
 
@@ -28,12 +31,43 @@ function groupByMonth(entries: any[]) {
   return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
-export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 }: {
+export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0, campaignId }: {
   entries: any[]
   targetType?: string
   campaignDailyBudget?: number
+  campaignId: string
 }) {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
+
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+
+  async function handleDelete(entryId: string, dateStr: string) {
+    const label = new Date(dateStr).toLocaleDateString('th-TH', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+    if (!window.confirm(`ลบ entry วันที่ ${label}?`)) return
+
+    setDeletingId(entryId)
+    setDeleteError('')
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/entries/${entryId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        router.refresh()
+      } else {
+        setDeleteError('ลบไม่สำเร็จ ลองใหม่อีกครั้ง')
+      }
+    } catch {
+      setDeleteError('ลบไม่สำเร็จ ลองใหม่อีกครั้ง')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground py-4">ยังไม่มี entry</p>
@@ -126,6 +160,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                       <th className="text-right py-2 px-2">CPS</th>
                       <th className="text-right py-2 px-2">CPM</th>
                       <th className="text-right py-2 px-2">BSP</th>
+                      <th className="py-2 px-2 pr-4 w-16"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -157,6 +192,24 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                           <td className="text-right py-1.5 px-2">{fmtThb(m.cps * thb)}</td>
                           <td className="text-right py-1.5 px-2">{fmtThb(m.cpm * thb)}</td>
                           <td className="text-right py-1.5 px-2 font-medium" style={{ color: bspColor(m.bsp) }}>{m.bsp.toFixed(1)}%</td>
+                          <td className="py-1.5 px-2 pr-4">
+                            <div className="flex items-center gap-1 justify-end">
+                              <Link
+                                href={`/campaigns/${campaignId}/entries/${e.id}/edit`}
+                                className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <Pencil size={13} />
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(e.id, e.date)}
+                                disabled={deletingId === e.id}
+                                className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       )
                     })}
@@ -175,6 +228,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
                       <td className="text-right py-2 px-2">{fmtThb(cpsThb)}</td>
                       <td className="text-right py-2 px-2">{fmtThb(cpmThb)}</td>
                       <td className="text-right py-2 px-2" style={{ color: bspColor(agg.bsp) }}>{agg.bsp.toFixed(1)}%</td>
+                      <td />
                     </tr>
                   </tbody>
                 </table>
@@ -183,6 +237,9 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0 
           </div>
         )
       })}
+      {deleteError && (
+        <p className="text-sm text-destructive mt-2">{deleteError}</p>
+      )}
     </div>
   )
 }
