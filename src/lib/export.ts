@@ -3,38 +3,68 @@ import { prisma } from './prisma'
 export interface ExportData {
   version: number
   exportedAt: string
+  walletDeposits?: any[]
+  campaignAllocations?: any[]
   walletBalanceTon?: string
   campaigns: any[]
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, settings] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
     }),
-    prisma.appSettings.findUnique({ where: { id: 1 } }),
+    prisma.walletDeposit.findMany({ orderBy: { depositedAt: 'asc' } }),
+    prisma.campaignAllocation.findMany(),
   ])
 
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    walletBalanceTon: settings ? settings.walletBalanceTon.toString() : '0',
+    walletDeposits: walletDeposits.map(d => ({
+      id: d.id,
+      amountTon: d.amountTon.toString(),
+      tonPriceUsd: d.tonPriceUsd.toString(),
+      usdThbRate: d.usdThbRate.toString(),
+      depositedAt: d.depositedAt.toISOString(),
+      note: d.note,
+      createdAt: d.createdAt.toISOString(),
+    })),
+    campaignAllocations: campaignAllocations.map(a => ({
+      id: a.id,
+      depositId: a.depositId,
+      campaignId: a.campaignId,
+      amountTon: a.amountTon.toString(),
+      createdAt: a.createdAt.toISOString(),
+    })),
     campaigns: campaigns.map(c => ({
-      ...c,
+      id: c.id,
+      name: c.name,
+      targetType: c.targetType,
+      targetName: c.targetName,
       budgetTon: c.budgetTon?.toString() ?? null,
       dailyBudgetTon: c.dailyBudgetTon.toString(),
       startDate: c.startDate.toISOString(),
       endDate: c.endDate?.toISOString() ?? null,
+      status: c.status,
+      placementName: c.placementName,
+      note: c.note,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
       entries: (c.entries as any[]).map((e: any) => ({
-        ...e,
+        id: e.id,
+        campaignId: e.campaignId,
+        date: e.date.toISOString(),
         spendTon: e.spendTon.toString(),
         dailyBudgetTon: e.dailyBudgetTon.toString(),
         tonPriceUsd: e.tonPriceUsd.toString(),
         usdThbRate: e.usdThbRate.toString(),
-        date: e.date.toISOString(),
+        impressions: e.impressions,
+        views: e.views,
+        clicks: e.clicks,
+        joins: e.joins,
+        note: e.note,
         createdAt: e.createdAt.toISOString(),
       })),
     })),
@@ -43,8 +73,10 @@ export async function exportData(): Promise<ExportData> {
 
 export async function importData(data: ExportData): Promise<void> {
   await prisma.$transaction(async tx => {
+    await tx.campaignAllocation.deleteMany()
     await tx.performanceEntry.deleteMany()
     await tx.campaign.deleteMany()
+    await tx.walletDeposit.deleteMany()
 
     for (const c of data.campaigns) {
       await tx.campaign.create({
@@ -58,6 +90,7 @@ export async function importData(data: ExportData): Promise<void> {
           dailyBudgetTon: c.dailyBudgetTon ?? 0,
           budgetTon: c.budgetTon ?? null,
           status: c.status,
+          placementName: c.placementName ?? null,
           note: c.note,
           entries: {
             create: c.entries.map((e: any) => ({
@@ -78,11 +111,27 @@ export async function importData(data: ExportData): Promise<void> {
       })
     }
 
-    if (data.walletBalanceTon != null) {
-      await tx.appSettings.upsert({
-        where: { id: 1 },
-        create: { id: 1, walletBalanceTon: data.walletBalanceTon },
-        update: { walletBalanceTon: data.walletBalanceTon },
+    for (const d of data.walletDeposits ?? []) {
+      await tx.walletDeposit.create({
+        data: {
+          id: d.id,
+          amountTon: d.amountTon,
+          tonPriceUsd: d.tonPriceUsd,
+          usdThbRate: d.usdThbRate,
+          depositedAt: new Date(d.depositedAt),
+          note: d.note ?? null,
+        },
+      })
+    }
+
+    for (const a of data.campaignAllocations ?? []) {
+      await tx.campaignAllocation.create({
+        data: {
+          id: a.id,
+          depositId: a.depositId,
+          campaignId: a.campaignId,
+          amountTon: a.amountTon,
+        },
       })
     }
   })

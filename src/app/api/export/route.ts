@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json()
-    if (data.version !== 1) {
+    if (data.version !== 1 && data.version !== 2) {
       return NextResponse.json({ error: 'Unsupported version' }, { status: 400 })
     }
     if (!Array.isArray(data.campaigns)) {
