@@ -2,8 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-24 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Monthly accordion เสร็จสมบูรณ์ ทดสอบใน browser ผ่านครบทุก checklist
-Push แล้วที่ commit `95d5430`
+Edit + Delete PerformanceEntry เสร็จสมบูรณ์ — 24 tests ผ่าน, TypeScript clean
+commits: `f394e27` → `a538cf6`
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
