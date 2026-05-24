@@ -1,9 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-24 (session 2) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-25 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-Fragment Wallet Balance + Per-Campaign Budget Display เสร็จสมบูรณ์ — 24 tests ผ่าน, TypeScript clean
-commits: `f394e27` → `1245c17`
+BSP fix + CSV import NaN validation เสร็จสมบูรณ์ — 24 tests ผ่าน
+commits: `fafd20e` (BSP) → `a4b499b` (CSV import)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
