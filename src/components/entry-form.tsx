@@ -8,25 +8,39 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { calcEntryMetrics } from '@/lib/metrics'
 
-export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
+export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, entryId }: {
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
+  entry?: {
+    date: string
+    spendTon: number
+    dailyBudgetTon: number
+    tonPriceUsd: number
+    usdThbRate: number
+    views: number
+    clicks: number
+    joins: number
+    note?: string | null
+  }
+  entryId?: string
 }) {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   const router = useRouter()
   const today = new Date().toISOString().split('T')[0]
 
+  // entry.date คือ ISO string จาก server (.toISOString())
+  // ใช้ .slice(0, 10) ได้ปลอดภัยเพราะเป็น UTC midnight — ไม่มี timezone shift
   const [form, setForm] = useState({
-    date: today,
-    dailyBudgetTon: defaultDailyBudget ?? '',
-    spendTon: '',
-    tonPriceUsd: '',
-    usdThbRate: '',
-    views: '',
-    clicks: '',
-    joins: '',
-    note: '',
+    date: entry ? entry.date.slice(0, 10) : today,
+    dailyBudgetTon: entry ? String(entry.dailyBudgetTon) : (defaultDailyBudget ?? ''),
+    spendTon: entry ? String(entry.spendTon) : '',
+    tonPriceUsd: entry ? String(entry.tonPriceUsd) : '',
+    usdThbRate: entry ? String(entry.usdThbRate) : '',
+    views: entry ? String(entry.views) : '',
+    clicks: entry ? String(entry.clicks) : '',
+    joins: entry ? String(entry.joins) : '',
+    note: entry?.note ?? '',
   })
   const [fetchedAt, setFetchedAt] = useState('')
   const [loading, setLoading] = useState(false)
@@ -51,7 +65,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
     }
   }, [])
 
-  useEffect(() => { fetchRates() }, [fetchRates])
+  useEffect(() => { if (!entry) fetchRates() }, [fetchRates, entry])
 
   function set(key: string, value: string) {
     setForm(f => ({ ...f, [key]: value }))
@@ -78,8 +92,11 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
     setError('')
 
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/entries`, {
-        method: 'POST',
+      const url = entryId
+        ? `/api/campaigns/${campaignId}/entries/${entryId}`
+        : `/api/campaigns/${campaignId}/entries`
+      const res = await fetch(url, {
+        method: entryId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: form.date,
@@ -184,7 +201,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget }: {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={loading}>
-          {loading ? 'กำลังบันทึก...' : 'บันทึก Entry'}
+          {loading ? 'กำลังบันทึก...' : entryId ? 'บันทึกการแก้ไข' : 'บันทึก Entry'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           ยกเลิก
