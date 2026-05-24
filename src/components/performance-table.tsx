@@ -149,7 +149,8 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b text-muted-foreground">
-                      <th className="text-left py-2 px-2 pl-4">วันที่</th>
+                      <th className="py-2 px-2 pl-4 w-12"></th>
+                      <th className="text-left py-2 px-2">วันที่</th>
                       <th className="text-right py-2 px-2">Views</th>
                       <th className="text-right py-2 px-2">Clicks</th>
                       <th className="text-right py-2 px-2">{joinsLabel}</th>
@@ -160,8 +161,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                       <th className="text-right py-2 px-2">CPC</th>
                       <th className="text-right py-2 px-2">CPS</th>
                       <th className="text-right py-2 px-2">CPM</th>
-                      <th className="text-right py-2 px-2">BSP</th>
-                      <th className="py-2 px-2 pr-4 w-16"></th>
+                      <th className="text-right py-2 px-2 pr-4">BSP</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -179,22 +179,8 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                       })
                       return (
                         <tr key={e.id} className="border-b border-muted/40 hover:bg-muted/20">
-                          <td className="py-1.5 px-2 pl-4 whitespace-nowrap text-muted-foreground">
-                            {new Date(e.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                          </td>
-                          <td className="text-right py-1.5 px-2">{e.views.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2">{e.clicks.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2">{e.joins.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2 text-muted-foreground">{Number(e.spendTon).toFixed(2)}</td>
-                          <td className="text-right py-1.5 px-2 text-green-400">{fmtThbInt(m.spendThb)}</td>
-                          <td className="text-right py-1.5 px-2">{m.ctr.toFixed(2)}%</td>
-                          <td className="text-right py-1.5 px-2">{m.cr.toFixed(2)}%</td>
-                          <td className="text-right py-1.5 px-2">{fmtThb(m.cpc * thb)}</td>
-                          <td className="text-right py-1.5 px-2">{fmtThb(m.cps * thb)}</td>
-                          <td className="text-right py-1.5 px-2">{fmtThb(m.cpm * thb)}</td>
-                          <td className="text-right py-1.5 px-2 font-medium" style={{ color: bspColor(m.bsp) }}>{m.bsp.toFixed(1)}%</td>
-                          <td className="py-1.5 px-2 pr-4">
-                            <div className="flex items-center gap-1 justify-end">
+                          <td className="py-1.5 px-2 pl-4">
+                            <div className="flex items-center gap-1">
                               <Link
                                 href={`/campaigns/${campaignId}/entries/${e.id}/edit`}
                                 className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
@@ -211,13 +197,28 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                               </button>
                             </div>
                           </td>
+                          <td className="py-1.5 px-2 whitespace-nowrap text-muted-foreground">
+                            {new Date(e.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                          </td>
+                          <td className="text-right py-1.5 px-2">{e.views.toLocaleString()}</td>
+                          <td className="text-right py-1.5 px-2">{e.clicks.toLocaleString()}</td>
+                          <td className="text-right py-1.5 px-2">{e.joins.toLocaleString()}</td>
+                          <td className="text-right py-1.5 px-2 text-muted-foreground">{Number(e.spendTon).toFixed(2)}</td>
+                          <td className="text-right py-1.5 px-2 text-green-400">{fmtThbInt(m.spendThb)}</td>
+                          <td className="text-right py-1.5 px-2">{m.ctr.toFixed(2)}%</td>
+                          <td className="text-right py-1.5 px-2">{m.cr.toFixed(2)}%</td>
+                          <td className="text-right py-1.5 px-2">{fmtThb(m.cpc * thb)}</td>
+                          <td className="text-right py-1.5 px-2">{fmtThb(m.cps * thb)}</td>
+                          <td className="text-right py-1.5 px-2">{fmtThb(m.cpm * thb)}</td>
+                          <td className="text-right py-1.5 px-2 pr-4 font-medium" style={{ color: bspColor(m.bsp) }}>{m.bsp.toFixed(1)}%</td>
                         </tr>
                       )
                     })}
 
                     {/* Monthly summary */}
                     <tr className="border-t-2 border-border bg-muted/30 font-semibold">
-                      <td className="py-2 px-2 pl-4 text-muted-foreground">รวมเดือน</td>
+                      <td className="py-2 px-2 pl-4" />
+                      <td className="py-2 px-2 text-muted-foreground">รวมเดือน</td>
                       <td className="text-right py-2 px-2">{agg.totalViews.toLocaleString()}</td>
                       <td className="text-right py-2 px-2">{agg.totalClicks.toLocaleString()}</td>
                       <td className="text-right py-2 px-2">{agg.totalJoins.toLocaleString()}</td>
@@ -228,8 +229,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                       <td className="text-right py-2 px-2">{fmtThb(cpcThb)}</td>
                       <td className="text-right py-2 px-2">{fmtThb(cpsThb)}</td>
                       <td className="text-right py-2 px-2">{fmtThb(cpmThb)}</td>
-                      <td className="text-right py-2 px-2" style={{ color: bspColor(agg.bsp) }}>{agg.bsp.toFixed(1)}%</td>
-                      <td />
+                      <td className="text-right py-2 px-2 pr-4" style={{ color: bspColor(agg.bsp) }}>{agg.bsp.toFixed(1)}%</td>
                     </tr>
                   </tbody>
                 </table>
