@@ -105,7 +105,7 @@ export function WalletClient({
                     + จัดสรร
                   </Button>
                 )}
-                {d.allocations.length === 0 && (
+                {d.allocations.length === 0 && allocatingDepositId !== d.id && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -120,8 +120,10 @@ export function WalletClient({
             </div>
 
             {d.allocations.length > 0 ? (
-              <div className="text-sm text-muted-foreground pl-2 border-l-2 border-muted">
-                <p>จัดสรรให้: <span className="text-foreground font-medium">{d.allocations[0].campaignName}</span> · {d.allocations[0].amountTon.toFixed(4)} TON</p>
+              <div className="text-sm text-muted-foreground pl-2 border-l-2 border-muted space-y-0.5">
+                {d.allocations.map(a => (
+                  <p key={a.id}>จัดสรรให้: <span className="text-foreground font-medium">{a.campaignName}</span> · {a.amountTon.toFixed(4)} TON</p>
+                ))}
                 <p>คงเหลือ: <span className={d.remaining > 0 ? 'text-green-400' : 'text-muted-foreground'}>{d.remaining.toFixed(4)} TON</span></p>
               </div>
             ) : (
