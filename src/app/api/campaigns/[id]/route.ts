@@ -26,6 +26,10 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await req.json()
+    const bidCpmTon = body.bidCpmTon != null ? Number(body.bidCpmTon) : null
+    if (bidCpmTon !== null && (isNaN(bidCpmTon) || bidCpmTon <= 0)) {
+      return NextResponse.json({ error: 'bidCpmTon must be > 0' }, { status: 400 })
+    }
     const campaign = await prisma.campaign.update({
       where: { id },
       data: {
@@ -36,6 +40,7 @@ export async function PUT(
         endDate: body.endDate ? new Date(body.endDate) : null,
         budgetTon: body.budgetTon ?? null,
         dailyBudgetTon: body.dailyBudgetTon,
+        bidCpmTon: bidCpmTon,
         status: body.status,
         placementName: body.placementName ?? null,
         note: body.note ?? null,

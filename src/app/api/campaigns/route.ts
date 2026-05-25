@@ -19,6 +19,10 @@ export async function POST(req: NextRequest) {
     if (!body.name || !body.targetType || !body.targetName || !body.startDate || !body.dailyBudgetTon) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+    const bidCpmTon = body.bidCpmTon != null ? Number(body.bidCpmTon) : null
+    if (bidCpmTon !== null && (isNaN(bidCpmTon) || bidCpmTon <= 0)) {
+      return NextResponse.json({ error: 'bidCpmTon must be > 0' }, { status: 400 })
+    }
     const campaign = await prisma.campaign.create({
       data: {
         name: body.name,
@@ -28,6 +32,7 @@ export async function POST(req: NextRequest) {
         endDate: body.endDate ? new Date(body.endDate) : null,
         budgetTon: body.budgetTon ?? null,
         dailyBudgetTon: body.dailyBudgetTon,
+        bidCpmTon: bidCpmTon,
         status: body.status ?? 'ACTIVE',
         placementName: body.placementName ?? null,
         note: body.note ?? null,
