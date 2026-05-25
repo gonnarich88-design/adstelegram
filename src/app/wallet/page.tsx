@@ -51,6 +51,7 @@ export default async function WalletPage() {
         campaignId: a.campaignId,
         campaignName: a.campaign.name,
         amountTon: Number(a.amountTon),
+        allocatedAt: a.allocatedAt.toISOString(),
       })),
     }
   })
