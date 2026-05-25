@@ -2,8 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-25 | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Allocate-from-Wallet feature ครบ — 33 tests ผ่าน, TypeScript clean**
-commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (AllocateForm) → `b53dc9e` (WalletClient) → `c7bbe3e` (WalletPage) → `701ecc4` (Dashboard+CampaignCard)
+**Allocate-from-Wallet feature ครบ + deploy แล้ว — 33 tests ผ่าน, TypeScript clean**
+commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (AllocateForm) → `b53dc9e` (WalletClient) → `c7bbe3e` (WalletPage) → `701ecc4` (Dashboard+CampaignCard) → `aea8cad` (docs)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
