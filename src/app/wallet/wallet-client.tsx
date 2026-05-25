@@ -12,6 +12,14 @@ interface Campaign {
   status: string
 }
 
+interface Allocation {
+  id: string
+  campaignId: string
+  campaignName: string
+  amountTon: number
+  allocatedAt: string
+}
+
 interface Deposit {
   id: string
   amountTon: number
@@ -20,7 +28,15 @@ interface Deposit {
   depositedAt: string
   note: string | null
   remaining: number
-  allocations: Array<{ id: string; campaignId: string; campaignName: string; amountTon: number }>
+  allocations: Allocation[]
+}
+
+type TxRow =
+  | { kind: 'deposit'; id: string; amountTon: number; date: string; note: string | null; remaining: number; hasAllocations: boolean }
+  | { kind: 'allocation'; id: string; campaignName: string; amountTon: number; date: string }
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
 export function WalletClient({
@@ -36,7 +52,7 @@ export function WalletClient({
 }) {
   const router = useRouter()
   const [showDepositForm, setShowDepositForm] = useState(false)
-  const [allocatingDepositId, setAllocatingDepositId] = useState<string | null>(null)
+  const [showAllocateForm, setShowAllocateForm] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleDeleteDeposit(id: string) {
@@ -54,6 +70,29 @@ export function WalletClient({
     }
   }
 
+  const transactions: TxRow[] = deposits
+    .flatMap(d => [
+      {
+        kind: 'deposit' as const,
+        id: d.id,
+        amountTon: d.amountTon,
+        date: d.depositedAt,
+        note: d.note,
+        remaining: d.remaining,
+        hasAllocations: d.allocations.length > 0,
+      },
+      ...d.allocations.map(a => ({
+        kind: 'allocation' as const,
+        id: a.id,
+        campaignName: a.campaignName,
+        amountTon: a.amountTon,
+        date: a.allocatedAt,
+      })),
+    ])
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const canAllocate = balance > 0 && availableCampaigns.length > 0
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-start justify-between gap-4">
@@ -69,77 +108,90 @@ export function WalletClient({
             <p className="text-sm text-muted-foreground mt-1">ไม่มี deposit ที่มีเงินเหลือ</p>
           )}
         </div>
-        <Button onClick={() => { setShowDepositForm(true); setAllocatingDepositId(null) }} disabled={showDepositForm}>
+        <Button
+          onClick={() => { setShowDepositForm(true); setShowAllocateForm(false) }}
+          disabled={showDepositForm}
+        >
           + ฝากเงิน
         </Button>
       </div>
 
       {showDepositForm && <DepositForm onCancel={() => setShowDepositForm(false)} />}
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold">ประวัติ Deposit</h2>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">ประวัติ</h2>
+          {canAllocate && !showAllocateForm && (
+            <Button size="sm" variant="outline" onClick={() => setShowAllocateForm(true)}>
+              + จัดสรร
+            </Button>
+          )}
+        </div>
 
-        {deposits.length === 0 && (
-          <p className="text-sm text-muted-foreground">ยังไม่มี deposit</p>
+        {showAllocateForm && (
+          <AllocateForm
+            balance={balance}
+            campaigns={availableCampaigns}
+            onCancel={() => setShowAllocateForm(false)}
+          />
         )}
 
-        {deposits.map(d => (
-          <div key={d.id} className="rounded-lg border p-4 space-y-2">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-medium">
-                  {new Date(d.depositedAt).toLocaleDateString('th-TH')} · {d.amountTon.toFixed(4)} TON
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  1 TON = ${d.tonPriceUsd.toFixed(4)} / ฿{d.usdThbRate.toFixed(4)}
-                </p>
-                {d.note && <p className="text-sm text-muted-foreground">{d.note}</p>}
+        {transactions.length === 0 && (
+          <p className="text-sm text-muted-foreground py-8 text-center">ยังไม่มี transaction</p>
+        )}
+
+        {transactions.map(tx =>
+          tx.kind === 'deposit' ? (
+            <div
+              key={`dep-${tx.id}`}
+              className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0"
+            >
+              <div className="w-8 h-8 rounded-full bg-green-950 text-green-400 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                ↑
               </div>
-              <div className="flex gap-2">
-                {d.remaining > 0 && availableCampaigns.length > 0 && allocatingDepositId === null && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setAllocatingDepositId(d.id)}
-                  >
-                    + จัดสรร
-                  </Button>
-                )}
-                {d.allocations.length === 0 && allocatingDepositId !== d.id && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive"
-                    disabled={deletingId === d.id}
-                    onClick={() => handleDeleteDeposit(d.id)}
-                  >
-                    ลบ
-                  </Button>
-                )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">
+                  ฝากเงิน{tx.note ? ` · ${tx.note}` : ''}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  คงเหลือ {tx.remaining.toFixed(4)} TON
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-semibold text-green-400">+{tx.amountTon.toFixed(4)}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
+              </div>
+              {!tx.hasAllocations && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive h-7 px-2 text-xs flex-shrink-0"
+                  disabled={deletingId === tx.id}
+                  onClick={() => handleDeleteDeposit(tx.id)}
+                >
+                  ลบ
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div
+              key={`alloc-${tx.id}`}
+              className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0"
+            >
+              <div className="w-8 h-8 rounded-full bg-red-950 text-red-400 flex items-center justify-center text-sm flex-shrink-0">
+                →
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{tx.campaignName}</p>
+                <p className="text-xs text-muted-foreground">จัดสรรให้ Campaign</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-semibold text-red-400">−{tx.amountTon.toFixed(4)}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
               </div>
             </div>
-
-            {d.allocations.length > 0 ? (
-              <div className="text-sm text-muted-foreground pl-2 border-l-2 border-muted space-y-0.5">
-                {d.allocations.map(a => (
-                  <p key={a.id}>จัดสรรให้: <span className="text-foreground font-medium">{a.campaignName}</span> · {a.amountTon.toFixed(4)} TON</p>
-                ))}
-                <p>คงเหลือ: <span className={d.remaining > 0 ? 'text-green-400' : 'text-muted-foreground'}>{d.remaining.toFixed(4)} TON</span></p>
-              </div>
-            ) : (
-              <p className="text-sm text-green-400 pl-2">ยังไม่ได้จัดสรร · คงเหลือ {d.remaining.toFixed(4)} TON</p>
-            )}
-
-            {allocatingDepositId === d.id && (
-              <AllocateForm
-                depositId={d.id}
-                maxTon={d.remaining}
-                campaigns={availableCampaigns}
-                onCancel={() => setAllocatingDepositId(null)}
-              />
-            )}
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   )
