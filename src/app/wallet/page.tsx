@@ -5,14 +5,21 @@ import { WalletClient } from './wallet-client'
 export const dynamic = 'force-dynamic'
 
 export default async function WalletPage() {
-  const deposits = await prisma.walletDeposit.findMany({
-    include: {
-      allocations: {
-        include: { campaign: { select: { id: true, name: true } } },
+  const [deposits, unallocatedCampaigns] = await Promise.all([
+    prisma.walletDeposit.findMany({
+      include: {
+        allocations: {
+          include: { campaign: { select: { id: true, name: true } } },
+        },
       },
-    },
-    orderBy: { depositedAt: 'desc' },
-  })
+      orderBy: { depositedAt: 'desc' },
+    }),
+    prisma.campaign.findMany({
+      where: { allocation: null },
+      select: { id: true, name: true, status: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
 
   const allAllocations = deposits.flatMap(d =>
     d.allocations.map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
@@ -53,6 +60,7 @@ export default async function WalletPage() {
       balance={balance}
       currentRate={currentRate}
       deposits={depositsForClient}
+      availableCampaigns={unallocatedCampaigns}
     />
   )
 }
