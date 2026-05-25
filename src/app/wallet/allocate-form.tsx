@@ -32,8 +32,8 @@ export function AllocateForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const amount = parseFloat(amountTon)
-    if (isNaN(amount) || amount <= 0 || amount > maxTon) {
-      setError(`จำนวนต้องอยู่ระหว่าง 0.0001–${maxTon.toFixed(4)}`)
+    if (isNaN(amount) || amount < 0.00000001 || amount > maxTon) {
+      setError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${maxTon.toFixed(4)}`)
       return
     }
     setLoading(true)
@@ -86,8 +86,8 @@ export function AllocateForm({
         <Label>จำนวน TON (สูงสุด {maxTon.toFixed(4)})</Label>
         <Input
           type="number"
-          step="0.0001"
-          min="0.0001"
+          step="0.00000001"
+          min="0.00000001"
           max={maxTon}
           value={amountTon}
           onChange={e => setAmountTon(e.target.value)}
