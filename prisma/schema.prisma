@@ -57,13 +57,14 @@ model WalletDeposit {
 }
 
 model CampaignAllocation {
-  id         String        @id @default(cuid())
-  depositId  String
-  campaignId String        @unique
-  amountTon  Decimal       @db.Decimal(18, 8)
-  createdAt  DateTime      @default(now())
-  deposit    WalletDeposit @relation(fields: [depositId], references: [id])
-  campaign   Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  depositId   String
+  campaignId  String        @unique
+  amountTon   Decimal       @db.Decimal(18, 8)
+  allocatedAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  deposit     WalletDeposit @relation(fields: [depositId], references: [id])
+  campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 enum TargetType {

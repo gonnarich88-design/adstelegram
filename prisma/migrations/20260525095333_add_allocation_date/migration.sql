@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "CampaignAllocation" ADD COLUMN     "allocatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
