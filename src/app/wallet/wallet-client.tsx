@@ -69,7 +69,7 @@ export function WalletClient({
             <p className="text-sm text-muted-foreground mt-1">ไม่มี deposit ที่มีเงินเหลือ</p>
           )}
         </div>
-        <Button onClick={() => setShowDepositForm(true)} disabled={showDepositForm}>
+        <Button onClick={() => { setShowDepositForm(true); setAllocatingDepositId(null) }} disabled={showDepositForm}>
           + ฝากเงิน
         </Button>
       </div>
@@ -96,7 +96,7 @@ export function WalletClient({
                 {d.note && <p className="text-sm text-muted-foreground">{d.note}</p>}
               </div>
               <div className="flex gap-2">
-                {d.remaining > 0 && availableCampaigns.length > 0 && allocatingDepositId !== d.id && (
+                {d.remaining > 0 && availableCampaigns.length > 0 && allocatingDepositId === null && (
                   <Button
                     size="sm"
                     variant="outline"
