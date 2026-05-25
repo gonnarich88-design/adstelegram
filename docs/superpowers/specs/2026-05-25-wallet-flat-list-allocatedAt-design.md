@@ -99,6 +99,7 @@ POST body: `{ campaignId, amountTon, allocatedAt }` — ไม่ต้องส
 | `src/app/wallet/page.tsx` | serialize `allocatedAt` ใน depositsForClient |
 | `src/app/wallet/wallet-client.tsx` | redesign ทั้งหมด — flat list, merge deposits+allocations |
 | `src/app/wallet/allocate-form.tsx` | เปลี่ยน props (ตัด depositId/maxTon, เพิ่ม balance/allocatedAt) |
+| `src/lib/export.ts` | เพิ่ม `allocatedAt` ใน exportData + importData — ป้องกัน backup/restore ทำให้วันที่หาย |
 
 ---
 
