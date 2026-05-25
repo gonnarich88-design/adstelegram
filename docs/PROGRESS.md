@@ -1,19 +1,12 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 8) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 9) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Campaign CPM Bid — design + plan เสร็จ รอ implement ใน chat ใหม่**
-commit ล่าสุด: `fc66589` (plan: campaign CPM bid 7 tasks)
+**Campaign CPM Bid — implement เสร็จครบ push แล้ว**
+commit ล่าสุด: `06fe07c` (feat: pass bidCpmTon to edit form)
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **Campaign CPM Bid — implement** (7 tasks, plan: `docs/superpowers/plans/2026-05-26-campaign-cpm-bid.md`)
-  - Task 1: Schema migration — เพิ่ม `bidCpmTon Decimal?` + `prisma migrate dev`
-  - Task 2: API POST/PUT รับ + validate bidCpmTon
-  - Task 3: Campaign form — field CPM Bid (TON) required ระหว่าง dailyBudget กับ budgetTon
-  - Task 4: Campaign card — CPM Bid box คู่ Daily Budget + estimated imp/วัน
-  - Task 5: Campaign detail — บรรทัด CPM Bid ใน header
-  - Task 6: Export/Import + test backward compat
-  - Task 7: Edit page — pass bidCpmTon ไปให้ form
+(ไม่มี)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -84,14 +77,20 @@ commit ล่าสุด: `fc66589` (plan: campaign CPM bid 7 tasks)
   - Dashboard card badge CANCELLED ✅, Active Campaigns → 0 ✅
   - DONE/CANCELLED ไม่แสดงปุ่ม (code verified: `refund-button.tsx:92`) ✅
 - [x] **fix: API guard — double-cancel + delete REFUND** (commit `48aec8b`, session 7)
+- [x] **Campaign CPM Bid — Tasks 1–7 เสร็จ push แล้ว** (session 9)
+  - Schema: `bidCpmTon Decimal?` migration `20260525175704_add_bid_cpm_ton` (commit `670d169`)
+  - API: POST/PUT validate + store bidCpmTon (commit `7a43fd5`)
+  - Form: field CPM Bid (TON) required ใน grid คู่ Daily Budget (commit `acb5689`)
+  - Card: CPM Bid box + ~imp/วัน (commit `1888cd3`)
+  - Detail: CPM Bid line + ~imp/วัน ใน header (commit `66278ae`)
+  - Export/Import: include bidCpmTon, backward compat `?? null`, test เพิ่มเป็น 36 (commit `e4f35a1`)
+  - Edit page: pass bidCpmTon ใน initialData (commit `06fe07c`)
   - `POST /refund` reject 409 ถ้า campaign ถูก CANCELLED แล้ว
   - `DELETE /deposits/[id]` reject 409 ถ้า deposit type = REFUND
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — Campaign Refund feature ครบ พร้อม deploy production
-2. **(Optional) API hardening** — เพิ่ม guard 2 จุดถ้าต้องการ:
-   - `POST /refund`: reject ถ้า `campaign.status === 'CANCELLED'`
-   - `DELETE /deposits/[id]`: reject ถ้า `deposit.type === 'REFUND'`
+1. **Deploy** — Campaign CPM Bid + Campaign Refund ครบ พร้อม deploy production
+2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
