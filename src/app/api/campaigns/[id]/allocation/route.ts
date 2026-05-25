@@ -39,7 +39,14 @@ export async function POST(
     const body = await req.json()
     const amountTon = Number(body.amountTon)
     const depositId: string | undefined = body.depositId
-    const allocatedAt: Date | undefined = body.allocatedAt ? new Date(body.allocatedAt) : undefined
+    let allocatedAt: Date | undefined
+    if (body.allocatedAt) {
+      const d = new Date(body.allocatedAt)
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: 'allocatedAt must be a valid ISO date' }, { status: 400 })
+      }
+      allocatedAt = d
+    }
 
     if (isNaN(amountTon) || amountTon <= 0) {
       return NextResponse.json({ error: 'amountTon must be > 0' }, { status: 400 })
