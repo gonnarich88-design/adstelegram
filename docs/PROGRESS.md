@@ -2,12 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-25 (session 7) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Campaign Refund feature เสร็จสมบูรณ์ 10/10 tasks — smoke test PASS ✅ พร้อม deploy**
-commits ล่าสุด: `8da8c0d` (schema) → `5b7654b` (API) → `143fd75` (RefundButton) → `723a84d` (detail+card) → `2a913b8` (wallet) → `42558bc` (export) → `6241403` (fix delete btn)
-
-⚠️ **2 API-level findings (UI ป้องกันแล้ว, low risk single-user):**
-1. `POST /api/campaigns/[id]/refund` ไม่ตรวจสถานะ — refund ซ้ำบน CANCELLED campaign ได้ผ่าน API ตรง
-2. `DELETE /api/wallet/deposits/[id]` ไม่ตรวจ type — ลบ REFUND deposit ได้ผ่าน API ตรง
+**Campaign Refund feature เสร็จสมบูรณ์ + smoke test PASS + API guard fix — พร้อม deploy ✅**
+commit ล่าสุด: `48aec8b` (API guard fix: double-cancel + delete REFUND)
 
 ## กำลังทำ / ค้างอยู่
 _(ไม่มีงานค้าง)_
@@ -80,6 +76,9 @@ _(ไม่มีงานค้าง)_
   - Wallet balance อัปเดตถูกต้อง (100 + 5.5 = 105.5 TON) ✅
   - Dashboard card badge CANCELLED ✅, Active Campaigns → 0 ✅
   - DONE/CANCELLED ไม่แสดงปุ่ม (code verified: `refund-button.tsx:92`) ✅
+- [x] **fix: API guard — double-cancel + delete REFUND** (commit `48aec8b`, session 7)
+  - `POST /refund` reject 409 ถ้า campaign ถูก CANCELLED แล้ว
+  - `DELETE /deposits/[id]` reject 409 ถ้า deposit type = REFUND
 
 ## ขั้นตอนถัดไป (chat ใหม่)
 1. **Deploy** — Campaign Refund feature ครบ พร้อม deploy production
