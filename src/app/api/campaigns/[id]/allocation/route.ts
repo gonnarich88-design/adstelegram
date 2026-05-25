@@ -37,6 +37,7 @@ export async function POST(
     const { id: campaignId } = await params
     const body = await req.json()
     const amountTon = Number(body.amountTon)
+    const depositId: string | undefined = body.depositId
 
     if (isNaN(amountTon) || amountTon <= 0) {
       return NextResponse.json({ error: 'amountTon must be > 0' }, { status: 400 })
@@ -48,7 +49,7 @@ export async function POST(
     })
 
     if (existing) {
-      // Update: validate against same deposit's available balance (remaining + current)
+      // UPDATE: validate against same deposit remaining + current amount
       const depositTotal = Number(existing.deposit.amountTon)
       const depositAllocated = existing.deposit.allocations.reduce(
         (s, a) => s + Number(a.amountTon),
@@ -69,7 +70,27 @@ export async function POST(
       return NextResponse.json({ ok: true })
     }
 
-    // Create: find oldest deposit with sufficient remaining balance (FIFO)
+    // CREATE: use specific deposit if provided
+    if (depositId) {
+      const deposit = await prisma.walletDeposit.findUnique({
+        where: { id: depositId },
+        include: { allocations: true },
+      })
+      if (!deposit) {
+        return NextResponse.json({ error: 'Deposit not found' }, { status: 404 })
+      }
+      const allocated = deposit.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+      const remaining = Number(deposit.amountTon) - allocated
+      if (remaining < amountTon) {
+        return NextResponse.json({ error: 'INSUFFICIENT_BALANCE' }, { status: 400 })
+      }
+      await prisma.campaignAllocation.create({
+        data: { depositId, campaignId, amountTon },
+      })
+      return NextResponse.json({ ok: true }, { status: 201 })
+    }
+
+    // CREATE: FIFO fallback (used by AllocationCard on campaign detail page)
     const deposits = await prisma.walletDeposit.findMany({
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
