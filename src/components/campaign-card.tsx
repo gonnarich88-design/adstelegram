@@ -7,6 +7,7 @@ const STATUS_COLORS = {
   ACTIVE: 'default',
   PAUSED: 'secondary',
   DONE: 'outline',
+  CANCELLED: 'destructive',
 } as const
 
 function fmt(n: number, digits = 2) {

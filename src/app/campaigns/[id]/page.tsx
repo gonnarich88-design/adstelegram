@@ -8,10 +8,11 @@ import { PerformanceTable } from '@/components/performance-table'
 import { AllocationCard } from '@/components/allocation-card'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { RefundButton } from './refund-button'
 
 export const dynamic = 'force-dynamic'
 
-const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', DONE: 'outline' } as const
+const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', DONE: 'outline', CANCELLED: 'destructive' } as const
 
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -49,6 +50,8 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const currentRate = findCurrentRate(depositsNormalized, allAllocations)
 
   const totalSpendTon = campaign.entries.reduce((sum, e) => sum + Number(e.spendTon), 0)
+  const totalAllocatedTon = campaign.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+  const estimatedRefundTon = Math.max(0, totalAllocatedTon - totalSpendTon)
 
   const lastAllocation = campaign.allocations.at(-1)
   const allocationForCard = campaign.allocations.length > 0
@@ -113,9 +116,16 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           </p>
           {campaign.note && <p className="text-sm text-muted-foreground mt-1">{campaign.note}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <RefundButton
+            campaignId={id}
+            status={campaign.status}
+            estimatedRefundTon={estimatedRefundTon}
+          />
           <Link href={`/campaigns/${id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>แก้ไข</Link>
-          <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกวันนี้</Link>
+          {campaign.status !== 'CANCELLED' && (
+            <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกวันนี้</Link>
+          )}
         </div>
       </div>
 
