@@ -17,6 +17,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    if (deposit.type === 'REFUND') {
+      return NextResponse.json({ error: 'Cannot delete refund deposit' }, { status: 409 })
+    }
+
     if (deposit.allocations.length > 0) {
       return NextResponse.json(
         { error: 'Cannot delete deposit with existing allocations' },

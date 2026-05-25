@@ -1,18 +1,16 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-25 (session 6) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-25 (session 7) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Campaign Refund feature implement เสร็จ 9/10 tasks — รอ smoke test ใน browser**
+**Campaign Refund feature เสร็จสมบูรณ์ 10/10 tasks — smoke test PASS ✅ พร้อม deploy**
 commits ล่าสุด: `8da8c0d` (schema) → `5b7654b` (API) → `143fd75` (RefundButton) → `723a84d` (detail+card) → `2a913b8` (wallet) → `42558bc` (export) → `6241403` (fix delete btn)
 
+⚠️ **2 API-level findings (UI ป้องกันแล้ว, low risk single-user):**
+1. `POST /api/campaigns/[id]/refund` ไม่ตรวจสถานะ — refund ซ้ำบน CANCELLED campaign ได้ผ่าน API ตรง
+2. `DELETE /api/wallet/deposits/[id]` ไม่ตรวจ type — ลบ REFUND deposit ได้ผ่าน API ตรง
+
 ## กำลังทำ / ค้างอยู่
-- [ ] **Task 10: Smoke Test** — ทดสอบ happy path ใน browser (localhost:3000, password: `change_me_app_password`)
-  - ยืนยัน: ปุ่ม "ยกเลิกแคมเปญ" แสดงสำหรับ ACTIVE/PAUSED campaign
-  - ยืนยัน: form submit → campaign badge เป็น CANCELLED (แดง)
-  - ยืนยัน: "+ บันทึกวันนี้" หายไป, "แก้ไข" ยังอยู่
-  - ยืนยัน: Wallet page แสดง refund row ↩ พร้อมชื่อ campaign
-  - ยืนยัน: ไม่มีปุ่ม "ลบ" บน REFUND row
-  - ยืนยัน: DONE campaign ไม่มีปุ่ม "ยกเลิกแคมเปญ"
+_(ไม่มีงานค้าง)_
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -74,14 +72,20 @@ commits ล่าสุด: `8da8c0d` (schema) → `5b7654b` (API) → `143fd75`
   - Tests: 35 tests pass, TypeScript clean
   - Spec: `docs/superpowers/specs/2026-05-25-campaign-refund-design.md`
   - Plan: `docs/superpowers/plans/2026-05-25-campaign-refund.md`
+- [x] **Task 10: Smoke Test ผ่าน** — browser verified ✅ (session 7)
+  - ปุ่ม "ยกเลิกแคมเปญ" แสดงสำหรับ ACTIVE ✅
+  - form submit → CANCELLED badge (destructive) ✅, form + "ยกเลิก" หายไป ✅
+  - "+ บันทึกวันนี้" หายไป, "แก้ไข" ยังอยู่ ✅
+  - Wallet: ↩ row + "คืนจากแคมเปญ: [ชื่อ]" ✅, ไม่มีปุ่มลบ ✅, ไม่แสดง "คงเหลือ" ✅
+  - Wallet balance อัปเดตถูกต้อง (100 + 5.5 = 105.5 TON) ✅
+  - Dashboard card badge CANCELLED ✅, Active Campaigns → 0 ✅
+  - DONE/CANCELLED ไม่แสดงปุ่ม (code verified: `refund-button.tsx:92`) ✅
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Smoke Test** — เปิด localhost:3000 (password: `change_me_app_password`) ทดสอบ:
-   - ACTIVE campaign → ปุ่ม "ยกเลิกแคมเปญ" → form → submit → CANCELLED badge (แดง)
-   - "+ บันทึกวันนี้" หายไป, "แก้ไข" ยังอยู่
-   - Wallet page → ↩ row + "คืนจากแคมเปญ: [ชื่อ]" + ไม่มีปุ่มลบ
-   - DONE campaign → ไม่มีปุ่ม "ยกเลิกแคมเปญ"
-2. หลัง smoke test ผ่าน → อัปเดต PROGRESS.md → พร้อม deploy
+1. **Deploy** — Campaign Refund feature ครบ พร้อม deploy production
+2. **(Optional) API hardening** — เพิ่ม guard 2 จุดถ้าต้องการ:
+   - `POST /refund`: reject ถ้า `campaign.status === 'CANCELLED'`
+   - `DELETE /deposits/[id]`: reject ถ้า `deposit.type === 'REFUND'`
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user

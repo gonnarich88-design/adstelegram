@@ -26,6 +26,8 @@ export async function POST(
 
     const campaign = await prisma.campaign.findUnique({ where: { id } })
     if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+    if (campaign.status === 'CANCELLED')
+      return NextResponse.json({ error: 'Campaign already cancelled' }, { status: 409 })
 
     const [deposit, updatedCampaign] = await prisma.$transaction([
       prisma.walletDeposit.create({
