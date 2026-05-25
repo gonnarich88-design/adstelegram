@@ -114,6 +114,12 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
             Daily Budget: {Number(campaign.dailyBudgetTon).toFixed(2)} TON/วัน
             {campaign.budgetTon && ` · งบรวม: ${Number(campaign.budgetTon).toFixed(2)} TON`}
           </p>
+          {campaign.bidCpmTon && Number(campaign.bidCpmTon) > 0 && (
+            <p className="text-sm text-muted-foreground">
+              CPM Bid: {Number(campaign.bidCpmTon).toFixed(4)} TON{' '}
+              · ~{Math.round((Number(campaign.dailyBudgetTon) / Number(campaign.bidCpmTon)) * 1000).toLocaleString('th-TH')} imp/วัน
+            </p>
+          )}
           {campaign.note && <p className="text-sm text-muted-foreground mt-1">{campaign.note}</p>}
         </div>
         <div className="flex gap-2 flex-wrap">
