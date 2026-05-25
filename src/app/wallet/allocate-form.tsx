@@ -40,14 +40,13 @@ export function AllocateForm({
       setError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${balance.toFixed(4)}`)
       return
     }
-    const newTotal = existingAllocation + additional
     setLoading(true)
     setError('')
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/allocation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountTon: newTotal, allocatedAt }),
+        body: JSON.stringify({ amountTon: additional, allocatedAt }),
       })
       if (res.ok) {
         router.refresh()
