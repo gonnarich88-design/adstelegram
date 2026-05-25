@@ -20,6 +20,7 @@ export async function GET(
       id: allocation.id,
       amountTon: Number(allocation.amountTon),
       depositId: allocation.depositId,
+      allocatedAt: allocation.allocatedAt.toISOString(),
       tonPriceUsd: Number(allocation.deposit.tonPriceUsd),
       usdThbRate: Number(allocation.deposit.usdThbRate),
       depositedAt: allocation.deposit.depositedAt.toISOString(),
@@ -38,6 +39,7 @@ export async function POST(
     const body = await req.json()
     const amountTon = Number(body.amountTon)
     const depositId: string | undefined = body.depositId
+    const allocatedAt: Date | undefined = body.allocatedAt ? new Date(body.allocatedAt) : undefined
 
     if (isNaN(amountTon) || amountTon <= 0) {
       return NextResponse.json({ error: 'amountTon must be > 0' }, { status: 400 })
@@ -49,7 +51,6 @@ export async function POST(
     })
 
     if (existing) {
-      // UPDATE: validate against same deposit remaining + current amount
       const depositTotal = Number(existing.deposit.amountTon)
       const depositAllocated = existing.deposit.allocations.reduce(
         (s, a) => s + Number(a.amountTon),
@@ -65,12 +66,11 @@ export async function POST(
 
       await prisma.campaignAllocation.update({
         where: { campaignId },
-        data: { amountTon },
+        data: { amountTon, ...(allocatedAt ? { allocatedAt } : {}) },
       })
       return NextResponse.json({ ok: true })
     }
 
-    // CREATE: use specific deposit if provided
     if (depositId) {
       const deposit = await prisma.walletDeposit.findUnique({
         where: { id: depositId },
@@ -85,12 +85,12 @@ export async function POST(
         return NextResponse.json({ error: 'INSUFFICIENT_BALANCE' }, { status: 400 })
       }
       await prisma.campaignAllocation.create({
-        data: { depositId, campaignId, amountTon },
+        data: { depositId, campaignId, amountTon, ...(allocatedAt ? { allocatedAt } : {}) },
       })
       return NextResponse.json({ ok: true }, { status: 201 })
     }
 
-    // CREATE: FIFO fallback (used by AllocationCard on campaign detail page)
+    // FIFO fallback
     const deposits = await prisma.walletDeposit.findMany({
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
@@ -106,7 +106,12 @@ export async function POST(
     }
 
     await prisma.campaignAllocation.create({
-      data: { depositId: targetDeposit.id, campaignId, amountTon },
+      data: {
+        depositId: targetDeposit.id,
+        campaignId,
+        amountTon,
+        ...(allocatedAt ? { allocatedAt } : {}),
+      },
     })
 
     return NextResponse.json({ ok: true }, { status: 201 })
