@@ -11,6 +11,7 @@ export default async function WalletPage() {
         allocations: {
           include: { campaign: { select: { id: true, name: true } } },
         },
+        refundCampaign: { select: { name: true } },
       },
       orderBy: { depositedAt: 'desc' },
     }),
@@ -52,6 +53,8 @@ export default async function WalletPage() {
       usdThbRate: Number(d.usdThbRate),
       depositedAt: d.depositedAt.toISOString(),
       note: d.note,
+      type: d.type,
+      refundCampaignName: d.refundCampaign?.name ?? null,
       remaining: Number(d.amountTon) - allocated,
       allocations: d.allocations.map(a => ({
         id: a.id,
