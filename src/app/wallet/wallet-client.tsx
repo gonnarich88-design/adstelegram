@@ -4,6 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { DepositForm } from './deposit-form'
+import { AllocateForm } from './allocate-form'
+
+interface Campaign {
+  id: string
+  name: string
+  status: string
+}
 
 interface Deposit {
   id: string
@@ -20,13 +27,16 @@ export function WalletClient({
   balance,
   currentRate,
   deposits,
+  availableCampaigns,
 }: {
   balance: number
   currentRate: { tonPriceUsd: number; usdThbRate: number } | null
   deposits: Deposit[]
+  availableCampaigns: Campaign[]
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
+  const [showDepositForm, setShowDepositForm] = useState(false)
+  const [allocatingDepositId, setAllocatingDepositId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleDeleteDeposit(id: string) {
@@ -59,12 +69,12 @@ export function WalletClient({
             <p className="text-sm text-muted-foreground mt-1">ไม่มี deposit ที่มีเงินเหลือ</p>
           )}
         </div>
-        <Button onClick={() => setShowForm(true)} disabled={showForm}>
+        <Button onClick={() => setShowDepositForm(true)} disabled={showDepositForm}>
           + ฝากเงิน
         </Button>
       </div>
 
-      {showForm && <DepositForm onCancel={() => setShowForm(false)} />}
+      {showDepositForm && <DepositForm onCancel={() => setShowDepositForm(false)} />}
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">ประวัติ Deposit</h2>
@@ -85,17 +95,28 @@ export function WalletClient({
                 </p>
                 {d.note && <p className="text-sm text-muted-foreground">{d.note}</p>}
               </div>
-              {d.allocations.length === 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-destructive"
-                  disabled={deletingId === d.id}
-                  onClick={() => handleDeleteDeposit(d.id)}
-                >
-                  ลบ
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {d.remaining > 0 && availableCampaigns.length > 0 && allocatingDepositId !== d.id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAllocatingDepositId(d.id)}
+                  >
+                    + จัดสรร
+                  </Button>
+                )}
+                {d.allocations.length === 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive"
+                    disabled={deletingId === d.id}
+                    onClick={() => handleDeleteDeposit(d.id)}
+                  >
+                    ลบ
+                  </Button>
+                )}
+              </div>
             </div>
 
             {d.allocations.length > 0 ? (
@@ -105,6 +126,15 @@ export function WalletClient({
               </div>
             ) : (
               <p className="text-sm text-green-400 pl-2">ยังไม่ได้จัดสรร · คงเหลือ {d.remaining.toFixed(4)} TON</p>
+            )}
+
+            {allocatingDepositId === d.id && (
+              <AllocateForm
+                depositId={d.id}
+                maxTon={d.remaining}
+                campaigns={availableCampaigns}
+                onCancel={() => setAllocatingDepositId(null)}
+              />
             )}
           </div>
         ))}
