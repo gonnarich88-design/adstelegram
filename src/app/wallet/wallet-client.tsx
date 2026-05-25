@@ -10,6 +10,7 @@ interface Campaign {
   id: string
   name: string
   status: string
+  currentAllocationTon?: number
 }
 
 interface Allocation {

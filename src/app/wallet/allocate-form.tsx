@@ -10,6 +10,7 @@ interface Campaign {
   id: string
   name: string
   status: string
+  currentAllocationTon?: number
 }
 
 export function AllocateForm({
@@ -29,20 +30,24 @@ export function AllocateForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const selectedCampaign = campaigns.find(c => c.id === campaignId)
+  const existingAllocation = selectedCampaign?.currentAllocationTon ?? 0
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const amount = parseFloat(amountTon)
-    if (isNaN(amount) || amount < 0.00000001 || amount > balance) {
+    const additional = parseFloat(amountTon)
+    if (isNaN(additional) || additional < 0.00000001 || additional > balance) {
       setError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${balance.toFixed(4)}`)
       return
     }
+    const newTotal = existingAllocation + additional
     setLoading(true)
     setError('')
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/allocation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountTon: amount, allocatedAt }),
+        body: JSON.stringify({ amountTon: newTotal, allocatedAt }),
       })
       if (res.ok) {
         router.refresh()
@@ -76,10 +81,20 @@ export function AllocateForm({
         >
           {campaigns.map(c => (
             <option key={c.id} value={c.id}>
-              {c.name}{c.status !== 'ACTIVE' ? ` (${c.status})` : ''}
+              {c.name}
+              {c.currentAllocationTon ? ` (มีแล้ว ${c.currentAllocationTon.toFixed(4)} TON)` : ''}
+              {c.status !== 'ACTIVE' ? ` · ${c.status}` : ''}
             </option>
           ))}
         </select>
+        {existingAllocation > 0 && (
+          <p className="text-xs text-muted-foreground">
+            จัดสรรแล้ว {existingAllocation.toFixed(4)} TON · ยอดรวมใหม่จะเป็น{' '}
+            <span className="text-foreground font-medium">
+              {(existingAllocation + (parseFloat(amountTon) || 0)).toFixed(4)} TON
+            </span>
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -93,7 +108,7 @@ export function AllocateForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>จำนวน TON (สูงสุด {balance.toFixed(4)})</Label>
+          <Label>{existingAllocation > 0 ? `เพิ่มเติม TON (สูงสุด ${balance.toFixed(4)})` : `จำนวน TON (สูงสุด ${balance.toFixed(4)})`}</Label>
           <Input
             type="number"
             step="0.00000001"
