@@ -19,6 +19,27 @@ describe('computeWalletBalance', () => {
   it('returns 0 when fully allocated', () => {
     expect(computeWalletBalance([{ amountTon: 500 }], [{ amountTon: 500 }])).toBe(0)
   })
+
+  it('includes REFUND deposits in total (same as DEPOSIT)', () => {
+    // REFUND deposit เพิ่ม balance เหมือน DEPOSIT ปกติ — สูตรไม่เปลี่ยน
+    expect(
+      computeWalletBalance(
+        [{ amountTon: 1000 }, { amountTon: 4.041 }],
+        [{ amountTon: 5 }]
+      )
+    ).toBeCloseTo(999.041)
+  })
+
+  it('net balance after refund equals original deposit minus actual spend', () => {
+    // deposit 1000, allocate 5, refund 4.041, spend tracked = 0.959
+    // balance = 1000 + 4.041 - 5 = 999.041
+    expect(
+      computeWalletBalance(
+        [{ amountTon: 1000 }, { amountTon: 4.041 }],
+        [{ amountTon: 5 }]
+      )
+    ).toBeCloseTo(999.041, 3)
+  })
 })
 
 describe('findCurrentRate', () => {
