@@ -1,9 +1,18 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-25 (session 5) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-25 (session 6) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Multi-allocation + remaining budget ครบ — 33 tests ผ่าน, TypeScript clean**
-commits สุดท้าย: `38e2c0f` (remaining budget) → `aab2cd1` (all campaigns in dropdown) → `d2a6f2c` (multi-allocation schema) → `fef19fa` (fix allocate amount) → `0e6c76e` (fix weekend rates)
+**Campaign Refund feature implement เสร็จ 9/10 tasks — รอ smoke test ใน browser**
+commits ล่าสุด: `8da8c0d` (schema) → `5b7654b` (API) → `143fd75` (RefundButton) → `723a84d` (detail+card) → `2a913b8` (wallet) → `42558bc` (export) → `6241403` (fix delete btn)
+
+## กำลังทำ / ค้างอยู่
+- [ ] **Task 10: Smoke Test** — ทดสอบ happy path ใน browser (localhost:3000, password: `change_me_app_password`)
+  - ยืนยัน: ปุ่ม "ยกเลิกแคมเปญ" แสดงสำหรับ ACTIVE/PAUSED campaign
+  - ยืนยัน: form submit → campaign badge เป็น CANCELLED (แดง)
+  - ยืนยัน: "+ บันทึกวันนี้" หายไป, "แก้ไข" ยังอยู่
+  - ยืนยัน: Wallet page แสดง refund row ↩ พร้อมชื่อ campaign
+  - ยืนยัน: ไม่มีปุ่ม "ลบ" บน REFUND row
+  - ยืนยัน: DONE campaign ไม่มีปุ่ม "ยกเลิกแคมเปญ"
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -53,13 +62,26 @@ commits สุดท้าย: `38e2c0f` (remaining budget) → `aab2cd1` (all c
 - [x] **Multi-allocation per campaign** — schema migration ลบ `@unique` จาก CampaignAllocation.campaignId, Campaign.allocation → Campaign.allocations[], POST สร้าง record ใหม่เสมอ, edit/delete ใช้ allocation ID ผ่าน `/api/wallet/allocations/[id]`, AllocationCard แสดงยอดรวม + "จัดการใน Wallet →" (commit `d2a6f2c`)
 - [x] **fix: AllocateForm ส่ง additional ไม่ใช่ total** — หลัง API เปลี่ยนเป็น CREATE เสมอ ฟอร์มต้องส่งแค่ยอดเพิ่มเติม ไม่ใช่ existingAllocation + additional (commit `fef19fa`)
 - [x] **fix: historical rates ขาดเมื่อ range เริ่มวันหยุด** — Frankfurter ไม่มีอัตรา weekend ทำให้ lastThb = 0 สองวันแรก แก้โดย fetch 7 วันก่อน from เพื่อ seed ค่าก่อนเข้า loop (commit `0e6c76e`)
+- [x] **Campaign Refund feature — Tasks 1–9 เสร็จ, รอ smoke test** (session 6)
+  - Schema: `DepositType` enum (DEPOSIT/REFUND), `CANCELLED` CampaignStatus, `refundCampaignId` + relation ใน WalletDeposit (migration `20260525130329`, commit `8da8c0d`)
+  - API: `POST /api/campaigns/[id]/refund` — atomic: สร้าง REFUND deposit + เปลี่ยน status CANCELLED (commit `5b7654b`)
+  - UI: `RefundButton` component inline form พร้อม rate auto-fetch (commit `143fd75`)
+  - Campaign Detail: CANCELLED badge (destructive), RefundButton ใน header, ซ่อน "+ บันทึกวันนี้" (commit `723a84d`)
+  - CampaignCard: CANCELLED badge destructive (commit `723a84d`)
+  - Wallet page: include `refundCampaign` relation, ส่ง `type`+`refundCampaignName` (commit `2a913b8`)
+  - WalletClient: REFUND rows แสดง ↩ icon + "คืนจากแคมเปญ: [ชื่อ]", ซ่อน "คงเหลือ", ซ่อนปุ่มลบ (commits `2a913b8`, `6241403`)
+  - Export/Import: include type+refundCampaignId, backward compat `?? 'DEPOSIT'` (commit `42558bc`)
+  - Tests: 35 tests pass, TypeScript clean
+  - Spec: `docs/superpowers/specs/2026-05-25-campaign-refund-design.md`
+  - Plan: `docs/superpowers/plans/2026-05-25-campaign-refund.md`
 
-## กำลังทำ / ค้างอยู่
-(ไม่มี — Wallet System ครบทุก task)
-
-## ขั้นตอนถัดไป
-- ระบบพร้อม deploy
-- Feature ถัดไปตามความต้องการ
+## ขั้นตอนถัดไป (chat ใหม่)
+1. **Smoke Test** — เปิด localhost:3000 (password: `change_me_app_password`) ทดสอบ:
+   - ACTIVE campaign → ปุ่ม "ยกเลิกแคมเปญ" → form → submit → CANCELLED badge (แดง)
+   - "+ บันทึกวันนี้" หายไป, "แก้ไข" ยังอยู่
+   - Wallet page → ↩ row + "คืนจากแคมเปญ: [ชื่อ]" + ไม่มีปุ่มลบ
+   - DONE campaign → ไม่มีปุ่ม "ยกเลิกแคมเปญ"
+2. หลัง smoke test ผ่าน → อัปเดต PROGRESS.md → พร้อม deploy
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
