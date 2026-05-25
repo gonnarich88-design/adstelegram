@@ -16,6 +16,7 @@ model Campaign {
   endDate        DateTime?
   budgetTon      Decimal?             @db.Decimal(18, 8)
   dailyBudgetTon Decimal              @db.Decimal(18, 8)
+  bidCpmTon      Decimal?             @db.Decimal(18, 8)
   status         CampaignStatus       @default(ACTIVE)
   placementName  String?
   note           String?
