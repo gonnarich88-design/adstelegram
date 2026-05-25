@@ -19,6 +19,7 @@ interface CampaignFormProps {
     startDate: string
     endDate?: string | null
     dailyBudgetTon: string
+    bidCpmTon?: string | null
     budgetTon?: string
     status: string
     note?: string | null
@@ -36,8 +37,9 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     placementName: (initialData as any)?.placementName ?? '',
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
-    budgetTon: initialData?.budgetTon ?? '',
     dailyBudgetTon: initialData?.dailyBudgetTon ?? '',
+    bidCpmTon: initialData?.bidCpmTon ?? '',
+    budgetTon: initialData?.budgetTon ?? '',
     status: initialData?.status ?? 'ACTIVE',
     note: initialData?.note ?? '',
   })
@@ -59,6 +61,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       placementName: form.placementName || null,
       note: form.note || null,
       dailyBudgetTon: parseFloat(form.dailyBudgetTon),
+      bidCpmTon: form.bidCpmTon ? parseFloat(form.bidCpmTon) : null,
       budgetTon: form.budgetTon ? parseFloat(form.budgetTon) : null,
     }
 
@@ -148,15 +151,28 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label>งบรวมทั้ง campaign (TON) <span className="text-muted-foreground font-normal">optional</span></Label>
+          <Label>CPM Bid (TON)</Label>
           <Input
             type="number"
-            step="0.001"
-            value={form.budgetTon}
-            onChange={e => set('budgetTon', e.target.value)}
-            placeholder="300"
+            step="0.0001"
+            min="0.0001"
+            value={form.bidCpmTon}
+            onChange={e => set('bidCpmTon', e.target.value)}
+            placeholder="0.50"
+            required
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>งบรวมทั้ง campaign (TON) <span className="text-muted-foreground font-normal">optional</span></Label>
+        <Input
+          type="number"
+          step="0.001"
+          value={form.budgetTon}
+          onChange={e => set('budgetTon', e.target.value)}
+          placeholder="300"
+        />
       </div>
 
       {isEdit && (
