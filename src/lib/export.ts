@@ -36,6 +36,7 @@ export async function exportData(): Promise<ExportData> {
       depositId: a.depositId,
       campaignId: a.campaignId,
       amountTon: a.amountTon.toString(),
+      allocatedAt: a.allocatedAt.toISOString(),
       createdAt: a.createdAt.toISOString(),
     })),
     campaigns: campaigns.map(c => ({
@@ -131,6 +132,7 @@ export async function importData(data: ExportData): Promise<void> {
           depositId: a.depositId,
           campaignId: a.campaignId,
           amountTon: a.amountTon,
+          ...(a.allocatedAt ? { allocatedAt: new Date(a.allocatedAt) } : {}),
         },
       })
     }
