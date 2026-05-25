@@ -1,9 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-25 (session 4) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-25 (session 5) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Allocate-from-Wallet feature ครบ + deploy แล้ว — 33 tests ผ่าน, TypeScript clean**
-commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (AllocateForm) → `b53dc9e` (WalletClient) → `c7bbe3e` (WalletPage) → `701ecc4` (Dashboard+CampaignCard) → `aea8cad` (docs)
+**Multi-allocation + remaining budget ครบ — 33 tests ผ่าน, TypeScript clean**
+commits สุดท้าย: `38e2c0f` (remaining budget) → `aab2cd1` (all campaigns in dropdown) → `d2a6f2c` (multi-allocation schema) → `fef19fa` (fix allocate amount) → `0e6c76e` (fix weekend rates)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -48,13 +48,17 @@ commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (Allocate
 - [x] **Allocate from Wallet Page** — จัดสรรงบจากหน้า Wallet ได้เลยโดยไม่ต้องไปหน้า Campaign: API POST allocation รับ `depositId` โดยตรง, `AllocateForm` component inline ใน deposit card, WalletClient toggle state, WalletPage fetch unallocated campaigns, Dashboard+CampaignCard แสดงยอดที่จัดสรร (commits `685b286`–`701ecc4`)
 - [x] **Wallet Flat-List + allocatedAt** — เพิ่ม `allocatedAt` field ใน CampaignAllocation (schema migration), API expose/accept field, export/import preserve, WalletClient redesign เป็น flat transaction list เรียง desc by date (deposit ↑ เขียว, allocation → แดง), AllocateForm ใหม่มี date picker + ใช้ wallet balance แทน per-deposit max (commits `e57fcc1`–`730ac92`) — browser verified ✅
 - [x] **Edit + Delete Allocation** — แก้ไขและลบ allocation ได้จาก wallet page: ปุ่ม "แก้ไข"/"ลบ" ในทุก allocation row, inline edit form พร้อม date picker + amount field (pre-filled, max = balance + allocation เดิม), ไม่มีการเปลี่ยนแปลง API (commit `38e94fa`) — browser verified ✅
-- [x] **Campaign Remaining Budget** — แสดง "ใช้ไปแล้ว / คงเหลือ" ใน AllocationCard (campaign detail) และ allocation row (wallet page): คำนวณ SUM(spendTon) ทุก entry, แดงถ้าติดลบ — wallet page ใช้ Prisma groupBy + Map, TypeScript clean, 33 tests ผ่าน
+- [x] **Campaign Remaining Budget** — แสดง "ใช้ไปแล้ว / คงเหลือ" ใน AllocationCard (campaign detail) และ allocation row (wallet page): คำนวณ SUM(spendTon) ทุก entry, แดงถ้าติดลบ — wallet page ใช้ Prisma groupBy + Map (commit `38e2c0f`)
+- [x] **AllocateForm แสดงทุก campaign** — เปลี่ยน query จาก `allocation: null` เป็นทุก campaign พร้อม currentAllocationTon, form แสดง "มีแล้ว X TON" + "ยอดรวมใหม่" (commit `aab2cd1`)
+- [x] **Multi-allocation per campaign** — schema migration ลบ `@unique` จาก CampaignAllocation.campaignId, Campaign.allocation → Campaign.allocations[], POST สร้าง record ใหม่เสมอ, edit/delete ใช้ allocation ID ผ่าน `/api/wallet/allocations/[id]`, AllocationCard แสดงยอดรวม + "จัดการใน Wallet →" (commit `d2a6f2c`)
+- [x] **fix: AllocateForm ส่ง additional ไม่ใช่ total** — หลัง API เปลี่ยนเป็น CREATE เสมอ ฟอร์มต้องส่งแค่ยอดเพิ่มเติม ไม่ใช่ existingAllocation + additional (commit `fef19fa`)
+- [x] **fix: historical rates ขาดเมื่อ range เริ่มวันหยุด** — Frankfurter ไม่มีอัตรา weekend ทำให้ lastThb = 0 สองวันแรก แก้โดย fetch 7 วันก่อน from เพื่อ seed ค่าก่อนเข้า loop (commit `0e6c76e`)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี — Wallet System ครบทุก task)
 
 ## ขั้นตอนถัดไป
-- ระบบพร้อม deploy — ผู้ใช้ควรสร้าง WalletDeposit แรกผ่านหน้า /wallet หลัง deploy (walletBalanceTon เดิมจาก AppSettings ถูก drop ไปแล้ว)
+- ระบบพร้อม deploy
 - Feature ถัดไปตามความต้องการ
 
 ## Decision log
@@ -86,3 +90,5 @@ commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (Allocate
 - schema change ที่ทำ nullable field ต้องตรวจ TypeScript ทุกไฟล์ที่ใช้ field นั้น (budgetTon.toString() → budgetTon?.toString())
 - CoinGecko market_chart/range ใช้ไม่ได้บน free tier สำหรับ date range ที่ต้องการ — ใช้ CryptoCompare histoday แทน
 - local .env: JWT_SECRET ต้องมี ≥32 ตัวอักษร และ DATABASE_URL ต้องใช้ user ที่มีจริงใน local PostgreSQL
+- CampaignAllocation เคยเป็น @unique campaignId — เปลี่ยนเป็น @index แล้ว (multi-allocation) ระวัง code เก่าที่ใช้ `campaign.allocation` (singular) ต้องเปลี่ยนเป็น `campaign.allocations[]`
+- Frankfurter API ไม่มีอัตราวันหยุดสุดสัปดาห์/นักขัตฤกษ์ — ต้อง seed lastThb จากวันก่อน from เสมอ ไม่งั้น weekend range start ขาด rate 2 วัน
