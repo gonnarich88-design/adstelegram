@@ -13,27 +13,27 @@ interface Campaign {
 }
 
 export function AllocateForm({
-  depositId,
-  maxTon,
+  balance,
   campaigns,
   onCancel,
 }: {
-  depositId: string
-  maxTon: number
+  balance: number
   campaigns: Campaign[]
   onCancel: () => void
 }) {
   const router = useRouter()
+  const today = new Date().toISOString().split('T')[0]
   const [campaignId, setCampaignId] = useState(campaigns[0]?.id ?? '')
   const [amountTon, setAmountTon] = useState('')
+  const [allocatedAt, setAllocatedAt] = useState(today)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const amount = parseFloat(amountTon)
-    if (isNaN(amount) || amount < 0.00000001 || amount > maxTon) {
-      setError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${maxTon.toFixed(4)}`)
+    if (isNaN(amount) || amount < 0.00000001 || amount > balance) {
+      setError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${balance.toFixed(4)}`)
       return
     }
     setLoading(true)
@@ -42,7 +42,7 @@ export function AllocateForm({
       const res = await fetch(`/api/campaigns/${campaignId}/allocation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountTon: amount, depositId }),
+        body: JSON.stringify({ amountTon: amount, allocatedAt }),
       })
       if (res.ok) {
         router.refresh()
@@ -51,7 +51,7 @@ export function AllocateForm({
         const data = await res.json()
         setError(
           data.error === 'INSUFFICIENT_BALANCE'
-            ? 'ยอดคงเหลือใน deposit ไม่พอ'
+            ? 'ยอดคงเหลือใน wallet ไม่พอ'
             : (data.error ?? 'จัดสรรไม่สำเร็จ ลองใหม่อีกครั้ง')
         )
       }
@@ -63,7 +63,7 @@ export function AllocateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-3 space-y-3 rounded-md border p-3 bg-muted/10">
+    <form onSubmit={handleSubmit} className="mt-1 mb-2 space-y-3 rounded-md border p-3 bg-muted/10">
       <p className="text-sm font-medium">จัดสรรงบให้ Campaign</p>
 
       <div className="space-y-1.5">
@@ -82,18 +82,29 @@ export function AllocateForm({
         </select>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>จำนวน TON (สูงสุด {maxTon.toFixed(4)})</Label>
-        <Input
-          type="number"
-          step="0.00000001"
-          min="0.00000001"
-          max={maxTon}
-          value={amountTon}
-          onChange={e => setAmountTon(e.target.value)}
-          placeholder={maxTon.toFixed(4)}
-          required
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>วันที่จัดสรร</Label>
+          <Input
+            type="date"
+            value={allocatedAt}
+            onChange={e => setAllocatedAt(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>จำนวน TON (สูงสุด {balance.toFixed(4)})</Label>
+          <Input
+            type="number"
+            step="0.00000001"
+            min="0.00000001"
+            max={balance}
+            value={amountTon}
+            onChange={e => setAmountTon(e.target.value)}
+            placeholder={balance.toFixed(4)}
+            required
+          />
+        </div>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
