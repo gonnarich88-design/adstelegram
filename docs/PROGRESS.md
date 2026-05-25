@@ -1,12 +1,19 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-25 (session 7) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 8) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Campaign Refund feature เสร็จสมบูรณ์ + smoke test PASS + API guard fix — พร้อม deploy ✅**
-commit ล่าสุด: `48aec8b` (API guard fix: double-cancel + delete REFUND)
+**Campaign CPM Bid — design + plan เสร็จ รอ implement ใน chat ใหม่**
+commit ล่าสุด: `fc66589` (plan: campaign CPM bid 7 tasks)
 
 ## กำลังทำ / ค้างอยู่
-_(ไม่มีงานค้าง)_
+- [ ] **Campaign CPM Bid — implement** (7 tasks, plan: `docs/superpowers/plans/2026-05-26-campaign-cpm-bid.md`)
+  - Task 1: Schema migration — เพิ่ม `bidCpmTon Decimal?` + `prisma migrate dev`
+  - Task 2: API POST/PUT รับ + validate bidCpmTon
+  - Task 3: Campaign form — field CPM Bid (TON) required ระหว่าง dailyBudget กับ budgetTon
+  - Task 4: Campaign card — CPM Bid box คู่ Daily Budget + estimated imp/วัน
+  - Task 5: Campaign detail — บรรทัด CPM Bid ใน header
+  - Task 6: Export/Import + test backward compat
+  - Task 7: Edit page — pass bidCpmTon ไปให้ form
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
