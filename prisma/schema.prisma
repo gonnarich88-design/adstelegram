@@ -8,21 +8,22 @@ datasource db {
 }
 
 model Campaign {
-  id             String              @id @default(uuid())
+  id             String               @id @default(uuid())
   name           String
   targetType     TargetType
   targetName     String
   startDate      DateTime
   endDate        DateTime?
-  budgetTon      Decimal?            @db.Decimal(18, 8)
-  dailyBudgetTon Decimal             @db.Decimal(18, 8)
-  status         CampaignStatus      @default(ACTIVE)
+  budgetTon      Decimal?             @db.Decimal(18, 8)
+  dailyBudgetTon Decimal              @db.Decimal(18, 8)
+  status         CampaignStatus       @default(ACTIVE)
   placementName  String?
   note           String?
   entries        PerformanceEntry[]
   allocations    CampaignAllocation[]
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  refunds        WalletDeposit[]      @relation("CampaignRefunds")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model PerformanceEntry {
@@ -46,14 +47,17 @@ model PerformanceEntry {
 }
 
 model WalletDeposit {
-  id          String               @id @default(cuid())
-  amountTon   Decimal              @db.Decimal(18, 8)
-  tonPriceUsd Decimal              @db.Decimal(18, 8)
-  usdThbRate  Decimal              @db.Decimal(18, 8)
-  depositedAt DateTime
-  note        String?
-  createdAt   DateTime             @default(now())
-  allocations CampaignAllocation[]
+  id                String               @id @default(cuid())
+  amountTon         Decimal              @db.Decimal(18, 8)
+  tonPriceUsd       Decimal              @db.Decimal(18, 8)
+  usdThbRate        Decimal              @db.Decimal(18, 8)
+  depositedAt       DateTime
+  note              String?
+  type              DepositType          @default(DEPOSIT)
+  refundCampaignId  String?
+  refundCampaign    Campaign?            @relation("CampaignRefunds", fields: [refundCampaignId], references: [id])
+  createdAt         DateTime             @default(now())
+  allocations       CampaignAllocation[]
 }
 
 model CampaignAllocation {
@@ -78,4 +82,10 @@ enum CampaignStatus {
   ACTIVE
   PAUSED
   DONE
+  CANCELLED
+}
+
+enum DepositType {
+  DEPOSIT
+  REFUND
 }
