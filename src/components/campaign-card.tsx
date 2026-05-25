@@ -16,6 +16,11 @@ function fmt(n: number, digits = 2) {
 
 export function CampaignCard({ campaign }: { campaign: any }) {
   const campaignDailyBudget = Number(campaign.dailyBudgetTon)
+  const bidCpmTon = campaign.bidCpmTon ? Number(campaign.bidCpmTon) : null
+  const estimatedImpressions = bidCpmTon && bidCpmTon > 0
+    ? Math.round((campaignDailyBudget / bidCpmTon) * 1000)
+    : null
+
   const metrics = campaign.entries.length > 0
     ? calcAggregateMetrics(campaign.entries.map((e: any) => ({
         spendTon: Number(e.spendTon),
@@ -54,18 +59,34 @@ export function CampaignCard({ campaign }: { campaign: any }) {
           )}
         </CardHeader>
         <CardContent className="space-y-3">
-          <div>
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Daily Budget</span>
-              <span>{fmt(campaignDailyBudget, 2)} TON/วัน</span>
+          <div className={bidCpmTon !== null ? 'grid grid-cols-2 gap-3' : undefined}>
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Daily Budget</span>
+                <span>{fmt(campaignDailyBudget, 2)} TON/วัน</span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${bspPct}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Avg BSP {fmt(avgBsp, 1)}%</p>
             </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${bspPct}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Avg BSP {fmt(avgBsp, 1)}%</p>
+            {bidCpmTon !== null && (
+              <div>
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                  <span>CPM Bid</span>
+                  <span>{bidCpmTon.toFixed(4)} TON</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden" />
+                {estimatedImpressions !== null && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ~{estimatedImpressions.toLocaleString('th-TH')} imp/วัน
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           {budgetTon !== null && (
             <div>
