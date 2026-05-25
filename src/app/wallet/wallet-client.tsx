@@ -56,22 +56,22 @@ export function WalletClient({
   const [showDepositForm, setShowDepositForm] = useState(false)
   const [showAllocateForm, setShowAllocateForm] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
+  const [editingAllocationId, setEditingAllocationId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
   const [editDate, setEditDate] = useState('')
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
   const [deletingAllocationId, setDeletingAllocationId] = useState<string | null>(null)
 
-  function startEdit(campaignId: string, amountTon: number, date: string) {
-    setEditingCampaignId(campaignId)
+  function startEdit(allocationId: string, amountTon: number, date: string) {
+    setEditingAllocationId(allocationId)
     setEditAmount(amountTon.toFixed(8).replace(/\.?0+$/, ''))
     setEditDate(date.split('T')[0])
     setEditError('')
     setShowAllocateForm(false)
   }
 
-  async function handleSaveEdit(campaignId: string, maxAmount: number) {
+  async function handleSaveEdit(allocationId: string, maxAmount: number) {
     const amount = parseFloat(editAmount)
     if (isNaN(amount) || amount < 0.00000001 || amount > maxAmount) {
       setEditError(`จำนวนต้องอยู่ระหว่าง 0.00000001–${maxAmount.toFixed(4)}`)
@@ -80,13 +80,13 @@ export function WalletClient({
     setEditLoading(true)
     setEditError('')
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/allocation`, {
-        method: 'POST',
+      const res = await fetch(`/api/wallet/allocations/${allocationId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amountTon: amount, allocatedAt: editDate }),
       })
       if (res.ok) {
-        setEditingCampaignId(null)
+        setEditingAllocationId(null)
         router.refresh()
       } else {
         const data = await res.json()
@@ -99,10 +99,10 @@ export function WalletClient({
     }
   }
 
-  async function handleDeleteAllocation(campaignId: string) {
-    setDeletingAllocationId(campaignId)
+  async function handleDeleteAllocation(allocationId: string) {
+    setDeletingAllocationId(allocationId)
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/allocation`, { method: 'DELETE' })
+      const res = await fetch(`/api/wallet/allocations/${allocationId}`, { method: 'DELETE' })
       if (res.ok) {
         router.refresh()
       } else {
@@ -259,22 +259,22 @@ export function WalletClient({
                     size="sm"
                     variant="ghost"
                     className="h-7 px-2 text-xs"
-                    onClick={() => editingCampaignId === tx.campaignId ? setEditingCampaignId(null) : startEdit(tx.campaignId, tx.amountTon, tx.date)}
+                    onClick={() => editingAllocationId === tx.id ? setEditingAllocationId(null) : startEdit(tx.id, tx.amountTon, tx.date)}
                   >
-                    {editingCampaignId === tx.campaignId ? 'ยกเลิก' : 'แก้ไข'}
+                    {editingAllocationId === tx.id ? 'ยกเลิก' : 'แก้ไข'}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-destructive h-7 px-2 text-xs"
-                    disabled={deletingAllocationId === tx.campaignId}
-                    onClick={() => handleDeleteAllocation(tx.campaignId)}
+                    disabled={deletingAllocationId === tx.id}
+                    onClick={() => handleDeleteAllocation(tx.id)}
                   >
                     ลบ
                   </Button>
                 </div>
               </div>
-              {editingCampaignId === tx.campaignId && (
+              {editingAllocationId === tx.id && (
                 <div className="mb-2 ml-11 space-y-3 rounded-md border p-3 bg-muted/10">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
@@ -303,7 +303,7 @@ export function WalletClient({
                   <Button
                     size="sm"
                     disabled={editLoading}
-                    onClick={() => handleSaveEdit(tx.campaignId, balance + tx.amountTon)}
+                    onClick={() => handleSaveEdit(tx.id, balance + tx.amountTon)}
                   >
                     {editLoading ? 'กำลังบันทึก...' : 'บันทึก'}
                   </Button>

@@ -102,9 +102,9 @@ export function CampaignCard({ campaign }: { campaign: any }) {
           {!metrics && (
             <p className="text-xs text-muted-foreground">ยังไม่มีข้อมูล</p>
           )}
-          {campaign.allocation && (
+          {campaign.allocations && campaign.allocations.length > 0 && (
             <p className="text-xs text-blue-400">
-              จัดสรร {Number(campaign.allocation.amountTon).toFixed(2)} TON จาก Wallet
+              จัดสรร {campaign.allocations.reduce((s: number, a: { amountTon: unknown }) => s + Number(a.amountTon), 0).toFixed(2)} TON จาก Wallet
             </p>
           )}
         </CardContent>

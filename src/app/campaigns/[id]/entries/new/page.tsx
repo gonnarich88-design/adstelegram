@@ -8,14 +8,15 @@ export default async function NewEntryPage({ params }: { params: Promise<{ id: s
   const { id } = await params
   const campaign = await prisma.campaign.findUnique({
     where: { id },
-    include: { allocation: { include: { deposit: true } } },
+    include: { allocations: { include: { deposit: true }, orderBy: { allocatedAt: 'desc' }, take: 1 } },
   })
   if (!campaign) notFound()
 
-  const allocationRate = campaign.allocation
+  const latestAllocation = campaign.allocations[0]
+  const allocationRate = latestAllocation
     ? {
-        tonPriceUsd: Number(campaign.allocation.deposit.tonPriceUsd),
-        usdThbRate: Number(campaign.allocation.deposit.usdThbRate),
+        tonPriceUsd: Number(latestAllocation.deposit.tonPriceUsd),
+        usdThbRate: Number(latestAllocation.deposit.usdThbRate),
       }
     : undefined
 

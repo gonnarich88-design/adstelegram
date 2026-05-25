@@ -21,7 +21,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
       where: { id },
       include: {
         entries: { orderBy: { date: 'desc' } },
-        allocation: { include: { deposit: true } },
+        allocations: { include: { deposit: true }, orderBy: { allocatedAt: 'asc' } },
       },
     }),
     prisma.walletDeposit.findMany({
@@ -50,12 +50,13 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   const totalSpendTon = campaign.entries.reduce((sum, e) => sum + Number(e.spendTon), 0)
 
-  const allocationForCard = campaign.allocation
+  const lastAllocation = campaign.allocations.at(-1)
+  const allocationForCard = campaign.allocations.length > 0
     ? {
-        id: campaign.allocation.id,
-        amountTon: Number(campaign.allocation.amountTon),
-        tonPriceUsd: Number(campaign.allocation.deposit.tonPriceUsd),
-        usdThbRate: Number(campaign.allocation.deposit.usdThbRate),
+        totalAmountTon: campaign.allocations.reduce((s, a) => s + Number(a.amountTon), 0),
+        count: campaign.allocations.length,
+        tonPriceUsd: Number(lastAllocation!.deposit.tonPriceUsd),
+        usdThbRate: Number(lastAllocation!.deposit.usdThbRate),
         totalSpendTon,
       }
     : null

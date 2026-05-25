@@ -20,7 +20,7 @@ model Campaign {
   placementName  String?
   note           String?
   entries        PerformanceEntry[]
-  allocation     CampaignAllocation?
+  allocations    CampaignAllocation[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 }
@@ -59,12 +59,14 @@ model WalletDeposit {
 model CampaignAllocation {
   id          String        @id @default(cuid())
   depositId   String
-  campaignId  String        @unique
+  campaignId  String
   amountTon   Decimal       @db.Decimal(18, 8)
   allocatedAt DateTime      @default(now())
   createdAt   DateTime      @default(now())
   deposit     WalletDeposit @relation(fields: [depositId], references: [id])
   campaign    Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
 }
 
 enum TargetType {

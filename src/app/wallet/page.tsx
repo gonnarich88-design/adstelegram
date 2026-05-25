@@ -15,7 +15,7 @@ export default async function WalletPage() {
       orderBy: { depositedAt: 'desc' },
     }),
     prisma.campaign.findMany({
-      select: { id: true, name: true, status: true, allocation: { select: { amountTon: true } } },
+      select: { id: true, name: true, status: true, allocations: { select: { amountTon: true } } },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.performanceEntry.groupBy({
@@ -73,7 +73,9 @@ export default async function WalletPage() {
         id: c.id,
         name: c.name,
         status: c.status,
-        currentAllocationTon: c.allocation ? Number(c.allocation.amountTon) : undefined,
+        currentAllocationTon: c.allocations.length > 0
+        ? c.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+        : undefined,
       }))}
     />
   )

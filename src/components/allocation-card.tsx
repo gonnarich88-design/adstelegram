@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-interface AllocationInfo {
-  id: string
-  amountTon: number
+interface AllocationSummary {
+  totalAmountTon: number
+  count: number
   tonPriceUsd: number
   usdThbRate: number
   totalSpendTon: number
@@ -21,12 +22,12 @@ export function AllocationCard({
   currentRate,
 }: {
   campaignId: string
-  allocation: AllocationInfo | null
+  allocation: AllocationSummary | null
   walletBalance: number
   currentRate: { tonPriceUsd: number; usdThbRate: number } | null
 }) {
   const router = useRouter()
-  const [editing, setEditing] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -47,7 +48,7 @@ export function AllocationCard({
       })
       if (res.ok) {
         router.refresh()
-        setEditing(false)
+        setAdding(false)
         setAmount('')
       } else {
         const data = await res.json()
@@ -60,19 +61,7 @@ export function AllocationCard({
     }
   }
 
-  async function handleDelete() {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/campaigns/${campaignId}/allocation`, { method: 'DELETE' })
-      if (res.ok) {
-        router.refresh()
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (!allocation && !editing) {
+  if (!allocation && !adding) {
     return (
       <div className="rounded-lg border border-yellow-700/50 bg-yellow-950/10 p-4">
         <div className="flex items-start justify-between gap-4">
@@ -85,13 +74,7 @@ export function AllocationCard({
             </p>
           </div>
           {currentRate && walletBalance > 0 && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditing(true)
-                setAmount('')
-              }}
-            >
+            <Button size="sm" onClick={() => { setAdding(true); setAmount('') }}>
               จัดสรรงบ
             </Button>
           )}
@@ -100,10 +83,10 @@ export function AllocationCard({
     )
   }
 
-  if (editing) {
+  if (adding) {
     return (
       <div className="rounded-lg border p-4 space-y-3">
-        <p className="text-sm font-medium">จัดสรรงบจาก Wallet</p>
+        <p className="text-sm font-medium">จัดสรรงบเพิ่มจาก Wallet</p>
         {currentRate && (
           <p className="text-xs text-muted-foreground">
             อัตราที่จะใช้ (locked): 1 TON = ${currentRate.tonPriceUsd.toFixed(4)} / ฿{currentRate.usdThbRate.toFixed(4)}
@@ -111,20 +94,20 @@ export function AllocationCard({
         )}
         <div className="flex gap-3 items-end">
           <div className="space-y-1.5">
-            <Label>จำนวน TON</Label>
+            <Label>จำนวน TON (สูงสุด {walletBalance.toFixed(4)})</Label>
             <Input
               type="number"
               step="0.00000001"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="500"
+              placeholder={walletBalance.toFixed(4)}
               className="w-40"
             />
           </div>
           <Button onClick={handleSave} disabled={loading}>
             {loading ? 'กำลังบันทึก...' : 'ยืนยัน'}
           </Button>
-          <Button variant="outline" onClick={() => { setEditing(false); setError('') }}>
+          <Button variant="outline" onClick={() => { setAdding(false); setError('') }}>
             ยกเลิก
           </Button>
         </div>
@@ -133,15 +116,15 @@ export function AllocationCard({
     )
   }
 
-  // Has allocation
-  const remainingTon = allocation!.amountTon - allocation!.totalSpendTon
+  // Has allocation(s)
+  const remainingTon = allocation!.totalAmountTon - allocation!.totalSpendTon
 
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">งบจาก Wallet</p>
-          <p className="font-medium">{allocation!.amountTon.toFixed(4)} TON</p>
+          <p className="text-sm text-muted-foreground">งบจาก Wallet{allocation!.count > 1 ? ` (${allocation!.count} รายการ)` : ''}</p>
+          <p className="font-medium">{allocation!.totalAmountTon.toFixed(4)} TON</p>
           <p className="text-xs text-muted-foreground">
             1 TON = ${allocation!.tonPriceUsd.toFixed(4)} / ฿{allocation!.usdThbRate.toFixed(4)} (locked)
           </p>
@@ -151,25 +134,14 @@ export function AllocationCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditing(true)
-              setAmount(String(allocation!.amountTon))
-            }}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive"
-            disabled={loading}
-            onClick={handleDelete}
-          >
-            ลบ
-          </Button>
+          {walletBalance > 0 && (
+            <Button size="sm" variant="outline" onClick={() => { setAdding(true); setAmount('') }}>
+              + เพิ่มงบ
+            </Button>
+          )}
+          <Link href="/wallet" className="text-xs text-muted-foreground hover:text-foreground self-center px-2">
+            จัดการใน Wallet →
+          </Link>
         </div>
       </div>
     </div>

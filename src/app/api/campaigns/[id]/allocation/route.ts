@@ -9,22 +9,25 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const allocation = await prisma.campaignAllocation.findUnique({
+    const allocations = await prisma.campaignAllocation.findMany({
       where: { campaignId: id },
       include: { deposit: true },
+      orderBy: { allocatedAt: 'asc' },
     })
 
-    if (!allocation) return NextResponse.json(null)
+    if (allocations.length === 0) return NextResponse.json(null)
 
-    return NextResponse.json({
-      id: allocation.id,
-      amountTon: Number(allocation.amountTon),
-      depositId: allocation.depositId,
-      allocatedAt: allocation.allocatedAt.toISOString(),
-      tonPriceUsd: Number(allocation.deposit.tonPriceUsd),
-      usdThbRate: Number(allocation.deposit.usdThbRate),
-      depositedAt: allocation.deposit.depositedAt.toISOString(),
-    })
+    return NextResponse.json(
+      allocations.map(a => ({
+        id: a.id,
+        amountTon: Number(a.amountTon),
+        depositId: a.depositId,
+        allocatedAt: a.allocatedAt.toISOString(),
+        tonPriceUsd: Number(a.deposit.tonPriceUsd),
+        usdThbRate: Number(a.deposit.usdThbRate),
+        depositedAt: a.deposit.depositedAt.toISOString(),
+      }))
+    )
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -52,32 +55,6 @@ export async function POST(
       return NextResponse.json({ error: 'amountTon must be > 0' }, { status: 400 })
     }
 
-    const existing = await prisma.campaignAllocation.findUnique({
-      where: { campaignId },
-      include: { deposit: { include: { allocations: true } } },
-    })
-
-    if (existing) {
-      const depositTotal = Number(existing.deposit.amountTon)
-      const depositAllocated = existing.deposit.allocations.reduce(
-        (s, a) => s + Number(a.amountTon),
-        0
-      )
-      const depositRemaining = depositTotal - depositAllocated
-      const currentAmount = Number(existing.amountTon)
-      const maxAllowed = depositRemaining + currentAmount
-
-      if (amountTon > maxAllowed) {
-        return NextResponse.json({ error: 'INSUFFICIENT_BALANCE' }, { status: 400 })
-      }
-
-      await prisma.campaignAllocation.update({
-        where: { campaignId },
-        data: { amountTon, ...(allocatedAt ? { allocatedAt } : {}) },
-      })
-      return NextResponse.json({ ok: true })
-    }
-
     if (depositId) {
       const deposit = await prisma.walletDeposit.findUnique({
         where: { id: depositId },
@@ -97,7 +74,7 @@ export async function POST(
       return NextResponse.json({ ok: true }, { status: 201 })
     }
 
-    // FIFO fallback
+    // FIFO: pick deposit with enough remaining balance
     const deposits = await prisma.walletDeposit.findMany({
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
@@ -133,15 +110,13 @@ export async function DELETE(
 ) {
   try {
     const { id: campaignId } = await params
-    const existing = await prisma.campaignAllocation.findUnique({
-      where: { campaignId },
-    })
+    const count = await prisma.campaignAllocation.count({ where: { campaignId } })
 
-    if (!existing) {
+    if (count === 0) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    await prisma.campaignAllocation.delete({ where: { campaignId } })
+    await prisma.campaignAllocation.deleteMany({ where: { campaignId } })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

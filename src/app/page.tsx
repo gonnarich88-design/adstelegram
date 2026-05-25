@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     prisma.campaign.findMany({
       include: {
         entries: { orderBy: { date: 'asc' } },
-        allocation: true,
+        allocations: true,
       },
       orderBy: { createdAt: 'desc' },
     }),
