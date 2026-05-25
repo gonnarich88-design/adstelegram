@@ -230,7 +230,7 @@ export function WalletClient({
                 <p className="text-sm font-semibold text-green-400">+{tx.amountTon.toFixed(4)}</p>
                 <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
               </div>
-              {!tx.hasAllocations && (
+              {!tx.hasAllocations && tx.type !== 'REFUND' && (
                 <Button
                   size="sm"
                   variant="ghost"
