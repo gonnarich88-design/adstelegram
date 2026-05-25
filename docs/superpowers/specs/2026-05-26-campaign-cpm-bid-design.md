@@ -36,7 +36,7 @@ estimatedImpressionsPerDay = (dailyBudgetTon / bidCpmTon) × 1000
 1. Target type
 2. Placement name
 3. Daily Budget *(required)*
-4. **CPM Bid** *(required, ใหม่)* — input type number, placeholder เช่น `0.50`
+4. **CPM Bid** *(required, ใหม่)* — label: "CPM Bid (TON)", input type number, step 0.0001, placeholder เช่น `0.50`
 5. Total Budget *(optional)*
 6. Note *(optional)*
 
@@ -55,7 +55,7 @@ validation: required + > 0 (เหมือน dailyBudgetTon)
 ```
 
 - ถ้า `bidCpmTon` เป็น NULL → แสดงแค่กล่อง Daily Budget (ไม่มีกล่อง CPM Bid)
-- estimated impressions แสดงเป็น `~X,XXX imp/วัน` (format ด้วย `toLocaleString`)
+- estimated impressions แสดงเป็น `~X,XXX imp/วัน` (Math.round ก่อน แล้ว toLocaleString('th-TH'))
 
 ### 3. Campaign Detail Page (`campaigns/[id]/page.tsx`)
 
@@ -76,7 +76,9 @@ include `bidCpmTon` ใน response (Prisma ส่งมาเป็น Decimal 
 
 ### POST /api/campaigns และ PUT /api/campaigns/[id]
 
-รับ `bidCpmTon: number` จาก body, validate > 0 ก่อน save
+รับ `bidCpmTon: number | null` จาก body
+- POST: validate bidCpmTon > 0 (form จะส่งมาเสมอ)
+- PUT: validate > 0 เฉพาะเมื่อ bidCpmTon ไม่ใช่ null (อนุญาต null เพื่อ backward compat)
 
 ## Export / Import (`lib/export.ts`)
 
