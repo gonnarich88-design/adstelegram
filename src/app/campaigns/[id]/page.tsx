@@ -48,12 +48,15 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const walletBalance = computeWalletBalance(depositsNormalized, allAllocations)
   const currentRate = findCurrentRate(depositsNormalized, allAllocations)
 
+  const totalSpendTon = campaign.entries.reduce((sum, e) => sum + Number(e.spendTon), 0)
+
   const allocationForCard = campaign.allocation
     ? {
         id: campaign.allocation.id,
         amountTon: Number(campaign.allocation.amountTon),
         tonPriceUsd: Number(campaign.allocation.deposit.tonPriceUsd),
         usdThbRate: Number(campaign.allocation.deposit.usdThbRate),
+        totalSpendTon,
       }
     : null
 

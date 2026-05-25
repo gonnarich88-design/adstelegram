@@ -18,6 +18,7 @@ interface Allocation {
   campaignName: string
   amountTon: number
   allocatedAt: string
+  totalSpendTon: number
 }
 
 interface Deposit {
@@ -33,7 +34,7 @@ interface Deposit {
 
 type TxRow =
   | { kind: 'deposit'; id: string; amountTon: number; date: string; note: string | null; remaining: number; hasAllocations: boolean }
-  | { kind: 'allocation'; id: string; campaignId: string; campaignName: string; amountTon: number; date: string }
+  | { kind: 'allocation'; id: string; campaignId: string; campaignName: string; amountTon: number; date: string; totalSpendTon: number }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -145,6 +146,7 @@ export function WalletClient({
         campaignName: a.campaignName,
         amountTon: a.amountTon,
         date: a.allocatedAt,
+        totalSpendTon: a.totalSpendTon,
       })),
     ])
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -239,7 +241,13 @@ export function WalletClient({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{tx.campaignName}</p>
-                  <p className="text-xs text-muted-foreground">จัดสรรให้ Campaign</p>
+                  <p className="text-xs text-muted-foreground">
+                    จัดสรรให้ Campaign · ใช้ {tx.totalSpendTon.toFixed(4)} / เหลือ{' '}
+                    <span className={(tx.amountTon - tx.totalSpendTon) < 0 ? 'text-red-400' : 'text-green-400'}>
+                      {(tx.amountTon - tx.totalSpendTon).toFixed(4)}
+                    </span>
+                    {' '}TON
+                  </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-semibold text-red-400">−{tx.amountTon.toFixed(4)}</p>

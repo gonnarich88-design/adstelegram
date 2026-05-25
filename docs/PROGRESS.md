@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-25 (session 3) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-25 (session 4) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 **Allocate-from-Wallet feature ครบ + deploy แล้ว — 33 tests ผ่าน, TypeScript clean**
@@ -48,6 +48,7 @@ commits สุดท้าย: `685b286` (API depositId) → `5176ed4` (Allocate
 - [x] **Allocate from Wallet Page** — จัดสรรงบจากหน้า Wallet ได้เลยโดยไม่ต้องไปหน้า Campaign: API POST allocation รับ `depositId` โดยตรง, `AllocateForm` component inline ใน deposit card, WalletClient toggle state, WalletPage fetch unallocated campaigns, Dashboard+CampaignCard แสดงยอดที่จัดสรร (commits `685b286`–`701ecc4`)
 - [x] **Wallet Flat-List + allocatedAt** — เพิ่ม `allocatedAt` field ใน CampaignAllocation (schema migration), API expose/accept field, export/import preserve, WalletClient redesign เป็น flat transaction list เรียง desc by date (deposit ↑ เขียว, allocation → แดง), AllocateForm ใหม่มี date picker + ใช้ wallet balance แทน per-deposit max (commits `e57fcc1`–`730ac92`) — browser verified ✅
 - [x] **Edit + Delete Allocation** — แก้ไขและลบ allocation ได้จาก wallet page: ปุ่ม "แก้ไข"/"ลบ" ในทุก allocation row, inline edit form พร้อม date picker + amount field (pre-filled, max = balance + allocation เดิม), ไม่มีการเปลี่ยนแปลง API (commit `38e94fa`) — browser verified ✅
+- [x] **Campaign Remaining Budget** — แสดง "ใช้ไปแล้ว / คงเหลือ" ใน AllocationCard (campaign detail) และ allocation row (wallet page): คำนวณ SUM(spendTon) ทุก entry, แดงถ้าติดลบ — wallet page ใช้ Prisma groupBy + Map, TypeScript clean, 33 tests ผ่าน
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี — Wallet System ครบทุก task)

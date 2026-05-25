@@ -11,6 +11,7 @@ interface AllocationInfo {
   amountTon: number
   tonPriceUsd: number
   usdThbRate: number
+  totalSpendTon: number
 }
 
 export function AllocationCard({
@@ -133,6 +134,8 @@ export function AllocationCard({
   }
 
   // Has allocation
+  const remainingTon = allocation!.amountTon - allocation!.totalSpendTon
+
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between gap-4">
@@ -142,6 +145,10 @@ export function AllocationCard({
           <p className="text-xs text-muted-foreground">
             1 TON = ${allocation!.tonPriceUsd.toFixed(4)} / ฿{allocation!.usdThbRate.toFixed(4)} (locked)
           </p>
+          <div className="mt-1.5 flex gap-3 text-xs">
+            <span className="text-muted-foreground">ใช้ไปแล้ว: <span className="text-foreground">{allocation!.totalSpendTon.toFixed(4)} TON</span></span>
+            <span className="text-muted-foreground">คงเหลือ: <span className={remainingTon < 0 ? 'text-red-400 font-medium' : 'text-green-400 font-medium'}>{remainingTon.toFixed(4)} TON</span></span>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
