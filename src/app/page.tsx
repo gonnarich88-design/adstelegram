@@ -10,7 +10,10 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const [campaigns, deposits] = await Promise.all([
     prisma.campaign.findMany({
-      include: { entries: { orderBy: { date: 'asc' } } },
+      include: {
+        entries: { orderBy: { date: 'asc' } },
+        allocation: true,
+      },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.walletDeposit.findMany({
