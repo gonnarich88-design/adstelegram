@@ -29,6 +29,8 @@ export async function exportData(): Promise<ExportData> {
       usdThbRate: d.usdThbRate.toString(),
       depositedAt: d.depositedAt.toISOString(),
       note: d.note,
+      type: d.type,
+      refundCampaignId: d.refundCampaignId ?? null,
       createdAt: d.createdAt.toISOString(),
     })),
     campaignAllocations: campaignAllocations.map(a => ({
@@ -121,6 +123,8 @@ export async function importData(data: ExportData): Promise<void> {
           usdThbRate: d.usdThbRate,
           depositedAt: new Date(d.depositedAt),
           note: d.note ?? null,
+          type: d.type ?? 'DEPOSIT',
+          refundCampaignId: d.refundCampaignId ?? null,
         },
       })
     }
