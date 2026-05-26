@@ -40,7 +40,7 @@ interface Deposit {
 }
 
 type TxRow =
-  | { kind: 'deposit'; id: string; amountTon: number; amountThb: number; tonPriceUsd: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
+  | { kind: 'deposit'; id: string; amountTon: number; amountThb: number; tonPriceUsd: number; usdThbRate: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
   | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; amountThb: number; date: string; createdAt: string; usedTon: number; remainingTon: number; splitCount: number }
 
 function formatDate(iso: string): string {
@@ -74,6 +74,11 @@ export function WalletClient({
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
   const [deletingAllocationId, setDeletingAllocationId] = useState<string | null>(null)
+  const [editingDepositId, setEditingDepositId] = useState<string | null>(null)
+  const [editDepositForm, setEditDepositForm] = useState({ amountTon: '', depositedAt: '', tonPriceUsd: '', usdThbRate: '', note: '' })
+  const [editDepositFetching, setEditDepositFetching] = useState(false)
+  const [editDepositLoading, setEditDepositLoading] = useState(false)
+  const [editDepositError, setEditDepositError] = useState('')
 
   function startEdit(allocationId: string, amountTon: number, date: string) {
     setEditingAllocationId(allocationId)
@@ -143,6 +148,65 @@ export function WalletClient({
     }
   }
 
+  function startEditDeposit(tx: { id: string; amountTon: number; date: string; tonPriceUsd: number; usdThbRate: number; note: string | null }) {
+    setEditingDepositId(tx.id)
+    setEditDepositForm({
+      amountTon: tx.amountTon.toFixed(8).replace(/\.?0+$/, ''),
+      depositedAt: tx.date.split('T')[0],
+      tonPriceUsd: tx.tonPriceUsd.toFixed(4),
+      usdThbRate: tx.usdThbRate.toFixed(4),
+      note: tx.note ?? '',
+    })
+    setEditDepositError('')
+    setShowDepositForm(false)
+  }
+
+  async function fetchDepositRate(date: string) {
+    if (!date) return
+    setEditDepositFetching(true)
+    try {
+      const res = await fetch(`/api/rates/historical?from=${date}&to=${date}`)
+      if (res.ok) {
+        const data = await res.json()
+        const rate = data[date]
+        if (rate) {
+          setEditDepositForm(f => ({ ...f, tonPriceUsd: rate.tonUsd.toFixed(4), usdThbRate: rate.usdThb.toFixed(4) }))
+        }
+      }
+    } catch { /* manual fallback */ }
+    finally { setEditDepositFetching(false) }
+  }
+
+  async function handleSaveDeposit(id: string) {
+    const amountTon = parseFloat(editDepositForm.amountTon)
+    const tonPriceUsd = parseFloat(editDepositForm.tonPriceUsd)
+    const usdThbRate = parseFloat(editDepositForm.usdThbRate)
+    if (isNaN(amountTon) || amountTon <= 0 || isNaN(tonPriceUsd) || tonPriceUsd <= 0 || isNaN(usdThbRate) || usdThbRate <= 0) {
+      setEditDepositError('กรุณาใส่ข้อมูลให้ถูกต้อง')
+      return
+    }
+    setEditDepositLoading(true)
+    setEditDepositError('')
+    try {
+      const res = await fetch(`/api/wallet/deposits/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amountTon, tonPriceUsd, usdThbRate, depositedAt: editDepositForm.depositedAt, note: editDepositForm.note || null }),
+      })
+      if (res.ok) {
+        setEditingDepositId(null)
+        router.refresh()
+      } else {
+        const data = await res.json()
+        setEditDepositError(data.detail ?? data.error ?? 'บันทึกไม่สำเร็จ')
+      }
+    } catch {
+      setEditDepositError('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')
+    } finally {
+      setEditDepositLoading(false)
+    }
+  }
+
   const rawAllocations = deposits.flatMap(d =>
     d.allocations.map(a => ({
       id: a.id,
@@ -201,6 +265,7 @@ export function WalletClient({
       amountTon: d.amountTon,
       amountThb: d.amountTon * d.tonPriceUsd * d.usdThbRate,
       tonPriceUsd: d.tonPriceUsd,
+      usdThbRate: d.usdThbRate,
       date: d.depositedAt,
       createdAt: d.createdAt,
       note: d.note,
@@ -325,20 +390,102 @@ export function WalletClient({
                         </td>
                         <td className="px-1 py-2.5">
                           {tx.type !== 'REFUND' && (
-                            tx.hasAllocations
-                              ? <span className="text-xs text-muted-foreground/50 px-2">ล็อก</span>
-                              : <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-destructive h-6 px-2 text-xs"
-                                  disabled={deletingId === tx.id}
-                                  onClick={() => handleDeleteDeposit(tx.id)}
-                                >
-                                  ลบ
-                                </Button>
+                            <div className="flex gap-0.5">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => editingDepositId === tx.id ? setEditingDepositId(null) : startEditDeposit(tx)}
+                              >
+                                {editingDepositId === tx.id ? 'ยกเลิก' : 'แก้ไข'}
+                              </Button>
+                              {tx.hasAllocations
+                                ? <span className="text-xs text-muted-foreground/50 px-2 self-center">ล็อก</span>
+                                : <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-destructive h-6 px-2 text-xs"
+                                    disabled={deletingId === tx.id}
+                                    onClick={() => handleDeleteDeposit(tx.id)}
+                                  >
+                                    ลบ
+                                  </Button>
+                              }
+                            </div>
                           )}
                         </td>
                       </tr>
+                      {editingDepositId === tx.id && (
+                        <tr>
+                          <td colSpan={6} className="px-3 pb-3 pt-0">
+                            <div className="mt-1 space-y-3 rounded-md border p-3 bg-muted/10">
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium">จำนวน TON</label>
+                                  <input
+                                    type="number"
+                                    step="0.00000001"
+                                    min="0.00000001"
+                                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                    value={editDepositForm.amountTon}
+                                    onChange={e => setEditDepositForm(f => ({ ...f, amountTon: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium">วันที่ฝาก</label>
+                                  <input
+                                    type="date"
+                                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                    value={editDepositForm.depositedAt}
+                                    onChange={e => {
+                                      setEditDepositForm(f => ({ ...f, depositedAt: e.target.value, tonPriceUsd: '', usdThbRate: '' }))
+                                      fetchDepositRate(e.target.value)
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium">
+                                    ราคา TON/USD{editDepositFetching && <span className="ml-1 text-blue-400">(กำลังดึง...)</span>}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.0001"
+                                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                    value={editDepositForm.tonPriceUsd}
+                                    onChange={e => setEditDepositForm(f => ({ ...f, tonPriceUsd: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium">อัตรา USD/THB</label>
+                                  <input
+                                    type="number"
+                                    step="0.0001"
+                                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                    value={editDepositForm.usdThbRate}
+                                    onChange={e => setEditDepositForm(f => ({ ...f, usdThbRate: e.target.value }))}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-medium">หมายเหตุ (optional)</label>
+                                <input
+                                  type="text"
+                                  className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                  value={editDepositForm.note}
+                                  onChange={e => setEditDepositForm(f => ({ ...f, note: e.target.value }))}
+                                  placeholder="เช่น ซื้อรอบเดือนพฤษภาคม"
+                                />
+                              </div>
+                              {editDepositError && <p className="text-xs text-destructive">{editDepositError}</p>}
+                              <Button size="sm" disabled={editDepositLoading} onClick={() => handleSaveDeposit(tx.id)}>
+                                {editDepositLoading ? 'กำลังบันทึก...' : 'บันทึก'}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </Fragment>
                   ) : (
                     <Fragment key={`alloc-${tx.ids[0]}`}>
