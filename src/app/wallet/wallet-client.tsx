@@ -252,7 +252,7 @@ export function WalletClient({
           {currentRate ? (
             <p className="text-sm text-muted-foreground mt-1">
               1 TON = ${currentRate.tonPriceUsd.toFixed(4)} / ฿{currentRate.usdThbRate.toFixed(4)}
-              <span className="ml-2 text-xs">(อัตราของ deposit เก่าที่สุดที่ยังมีเงินเหลือ)</span>
+              <span className="ml-2 text-xs">(อัตราปัจจุบัน)</span>
             </p>
           ) : (
             <p className="text-sm text-muted-foreground mt-1">ไม่มี deposit ที่มีเงินเหลือ</p>
