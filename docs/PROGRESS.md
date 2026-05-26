@@ -2,8 +2,8 @@
 > อัปเดตล่าสุด: 2026-05-26 (session 12) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Campaign Grouping by Target Type — เสร็จ**
-commit ล่าสุด: `cf3f95b` (feat: group dashboard campaigns by target type (CHANNEL / BOT))
+**Wallet + Dashboard fixes — เสร็จทั้งหมด**
+commit ล่าสุด: `2acef32` (fix: FIFO allocation drains oldest deposits first, splits across deposits if needed)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
@@ -90,9 +90,11 @@ commit ล่าสุด: `cf3f95b` (feat: group dashboard campaigns by target 
 - [x] **FIFO Wallet Deposit Pricing** — computeFifoRate ใน lib/wallet.ts (8 unit tests), entries/new ใช้ FIFO แทน latestAllocation, UI แสดง deposit date + remaining TON — browser verified ✅ (session 11)
   - `computeFifoRate(allocations, totalSpentTon)` sort by allocatedAt ASC, walk FIFO, คืน rate ของ batch ปัจจุบัน (commits `13e430f`, `473030e`, `1d6f619`)
 - [x] **Campaign Grouping by Target Type** — แบ่ง Dashboard campaign list เป็น 2 sections (CHANNEL / BOT) พร้อม heading + count badge, ซ่อน section ว่าง — แก้แค่ `page.tsx` ไม่มี client state (commit `cf3f95b`, session 12)
+- [x] **fix: Wallet transaction sort** — เรียงตาม `createdAt` (เวลากดจริงใน DB) แทน user-facing date — deposit กดก่อนอยู่ล่าง, จัดสรรทีหลังอยู่บน (commit `bd20262`, session 12)
+- [x] **fix: FIFO allocation ข้าม deposit** — เดิมต้องหา deposit เดี่ยวที่มีพอ ทำให้ error ทั้งที่ยอดรวมพอ — แก้ให้ตัด deposit เก่าสุดให้หมดก่อนแล้วต่อ deposit ถัดไป (FIFO split) สร้าง allocation records หลายรายการในครั้งเดียว (commit `2acef32`, session 12)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — Campaign CPM Bid + Campaign Refund + FIFO Pricing ครบ พร้อม deploy production
+1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ
 2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
