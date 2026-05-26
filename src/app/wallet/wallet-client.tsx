@@ -39,7 +39,7 @@ interface Deposit {
 
 type TxRow =
   | { kind: 'deposit'; id: string; amountTon: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
-  | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; totalSpendTon: number; splitCount: number }
+  | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; usedTon: number; remainingTon: number; splitCount: number }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -155,6 +155,35 @@ export function WalletClient({
     allocationGroupMap.set(key, group)
   }
 
+  // FIFO: distribute campaign spend across allocation groups, oldest-first
+  const campaignGroupsList = new Map<string, Array<{ groupKey: string; amountTon: number; date: string; createdAt: string; totalSpendTon: number }>>()
+  for (const [groupKey, group] of allocationGroupMap) {
+    const first = group[0]
+    const list = campaignGroupsList.get(first.campaignId) ?? []
+    list.push({
+      groupKey,
+      amountTon: group.reduce((s, a) => s + a.amountTon, 0),
+      date: first.date,
+      createdAt: first.createdAt,
+      totalSpendTon: first.totalSpendTon,
+    })
+    campaignGroupsList.set(first.campaignId, list)
+  }
+
+  const groupFifoMap = new Map<string, { usedTon: number; remainingTon: number }>()
+  for (const groups of campaignGroupsList.values()) {
+    groups.sort((a, b) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime() ||
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    let remainingSpend = groups[0].totalSpendTon
+    for (const g of groups) {
+      const used = Math.min(g.amountTon, Math.max(0, remainingSpend))
+      groupFifoMap.set(g.groupKey, { usedTon: used, remainingTon: g.amountTon - used })
+      remainingSpend -= used
+    }
+  }
+
   const transactions: TxRow[] = [
     ...deposits.map(d => ({
       kind: 'deposit' as const,
@@ -170,6 +199,8 @@ export function WalletClient({
     })),
     ...Array.from(allocationGroupMap.values()).map(group => {
       const first = group[0]
+      const groupKey = `${first.campaignId}::${first.createdAt}`
+      const fifo = groupFifoMap.get(groupKey) ?? { usedTon: 0, remainingTon: 0 }
       return {
         kind: 'allocation' as const,
         ids: group.map(a => a.id),
@@ -178,7 +209,8 @@ export function WalletClient({
         amountTon: group.reduce((s, a) => s + a.amountTon, 0),
         date: first.date,
         createdAt: first.createdAt,
-        totalSpendTon: first.totalSpendTon,
+        usedTon: fifo.usedTon,
+        remainingTon: fifo.remainingTon,
         splitCount: group.length,
       }
     }),
@@ -279,9 +311,9 @@ export function WalletClient({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{tx.campaignName}</p>
                   <p className="text-xs text-muted-foreground">
-                    จัดสรรให้ Campaign · ใช้ {tx.totalSpendTon.toFixed(4)} / เหลือ{' '}
-                    <span className={(tx.amountTon - tx.totalSpendTon) < 0 ? 'text-red-400' : 'text-green-400'}>
-                      {(tx.amountTon - tx.totalSpendTon).toFixed(4)}
+                    จัดสรรให้ Campaign · ใช้ {tx.usedTon.toFixed(4)} / เหลือ{' '}
+                    <span className={tx.remainingTon < 0 ? 'text-red-400' : 'text-green-400'}>
+                      {tx.remainingTon.toFixed(4)}
                     </span>
                     {' '}TON
                     {tx.splitCount > 1 && (
