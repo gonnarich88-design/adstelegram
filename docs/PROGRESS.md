@@ -1,9 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 11) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 12) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**FIFO Wallet Deposit Pricing — implement + browser verified เสร็จ**
-commit ล่าสุด: `1d6f619` (feat: show deposit date and remaining TON in rate lock UI)
+**Campaign Grouping by Target Type — เสร็จ**
+commit ล่าสุด: `cf3f95b` (feat: group dashboard campaigns by target type (CHANNEL / BOT))
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
@@ -89,6 +89,7 @@ commit ล่าสุด: `1d6f619` (feat: show deposit date and remaining TON 
   - `DELETE /deposits/[id]` reject 409 ถ้า deposit type = REFUND
 - [x] **FIFO Wallet Deposit Pricing** — computeFifoRate ใน lib/wallet.ts (8 unit tests), entries/new ใช้ FIFO แทน latestAllocation, UI แสดง deposit date + remaining TON — browser verified ✅ (session 11)
   - `computeFifoRate(allocations, totalSpentTon)` sort by allocatedAt ASC, walk FIFO, คืน rate ของ batch ปัจจุบัน (commits `13e430f`, `473030e`, `1d6f619`)
+- [x] **Campaign Grouping by Target Type** — แบ่ง Dashboard campaign list เป็น 2 sections (CHANNEL / BOT) พร้อม heading + count badge, ซ่อน section ว่าง — แก้แค่ `page.tsx` ไม่มี client state (commit `cf3f95b`, session 12)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
 1. **Deploy** — Campaign CPM Bid + Campaign Refund + FIFO Pricing ครบ พร้อม deploy production
