@@ -71,19 +71,26 @@ export default async function WalletPage() {
     }
   })
 
+  const balanceThb = depositsForClient.reduce(
+    (s, d) => s + d.remaining * d.tonPriceUsd * d.usdThbRate, 0
+  )
+
   return (
     <WalletClient
       balance={balance}
+      balanceThb={balanceThb}
       currentRate={currentRate}
       deposits={depositsForClient}
-      availableCampaigns={allCampaigns.map(c => ({
-        id: c.id,
-        name: c.name,
-        status: c.status,
-        currentAllocationTon: c.allocations.length > 0
-        ? c.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
-        : undefined,
-      }))}
+      availableCampaigns={allCampaigns
+        .filter(c => c.status === 'ACTIVE' || c.status === 'PAUSED')
+        .map(c => ({
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          currentAllocationTon: c.allocations.length > 0
+            ? c.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+            : undefined,
+        }))}
     />
   )
 }

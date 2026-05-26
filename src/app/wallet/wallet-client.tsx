@@ -53,11 +53,13 @@ function formatThb(thb: number): string {
 
 export function WalletClient({
   balance,
+  balanceThb,
   currentRate,
   deposits,
   availableCampaigns,
 }: {
   balance: number
+  balanceThb: number
   currentRate: { tonPriceUsd: number; usdThbRate: number } | null
   deposits: Deposit[]
   availableCampaigns: Campaign[]
@@ -246,6 +248,7 @@ export function WalletClient({
         <div>
           <h1 className="text-2xl font-bold">TON Wallet</h1>
           <p className="text-3xl font-bold mt-1">{balance.toFixed(4)} TON</p>
+          <p className="text-lg font-semibold text-muted-foreground">≈ {formatThb(balanceThb)}</p>
           {currentRate ? (
             <p className="text-sm text-muted-foreground mt-1">
               1 TON = ${currentRate.tonPriceUsd.toFixed(4)} / ฿{currentRate.usdThbRate.toFixed(4)}
@@ -320,16 +323,18 @@ export function WalletClient({
                           {tx.bal.toFixed(4)}
                         </td>
                         <td className="px-1 py-2.5">
-                          {!tx.hasAllocations && tx.type !== 'REFUND' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-destructive h-6 px-2 text-xs"
-                              disabled={deletingId === tx.id}
-                              onClick={() => handleDeleteDeposit(tx.id)}
-                            >
-                              ลบ
-                            </Button>
+                          {tx.type !== 'REFUND' && (
+                            tx.hasAllocations
+                              ? <span className="text-xs text-muted-foreground/50 px-2">ล็อก</span>
+                              : <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive h-6 px-2 text-xs"
+                                  disabled={deletingId === tx.id}
+                                  onClick={() => handleDeleteDeposit(tx.id)}
+                                >
+                                  ลบ
+                                </Button>
                           )}
                         </td>
                       </tr>
@@ -426,6 +431,7 @@ export function WalletClient({
                   </td>
                   <td className="px-3 py-2.5 text-right font-mono font-bold">
                     {balance.toFixed(4)} TON
+                    <span className="block text-xs text-muted-foreground font-sans font-normal">{formatThb(balanceThb)}</span>
                   </td>
                   <td></td>
                 </tr>
