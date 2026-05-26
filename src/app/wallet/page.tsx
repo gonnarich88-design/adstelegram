@@ -65,6 +65,8 @@ export default async function WalletPage() {
         allocatedAt: a.allocatedAt.toISOString(),
         createdAt: a.createdAt.toISOString(),
         totalSpendTon: spendMap.get(a.campaignId) ?? 0,
+        tonPriceUsd: Number(d.tonPriceUsd),
+        usdThbRate: Number(d.usdThbRate),
       })),
     }
   })

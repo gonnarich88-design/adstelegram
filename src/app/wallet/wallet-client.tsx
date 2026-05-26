@@ -21,6 +21,8 @@ interface Allocation {
   allocatedAt: string
   createdAt: string
   totalSpendTon: number
+  tonPriceUsd: number
+  usdThbRate: number
 }
 
 interface Deposit {
@@ -38,11 +40,15 @@ interface Deposit {
 }
 
 type TxRow =
-  | { kind: 'deposit'; id: string; amountTon: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
-  | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; usedTon: number; remainingTon: number; splitCount: number }
+  | { kind: 'deposit'; id: string; amountTon: number; amountThb: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
+  | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; amountThb: number; date: string; createdAt: string; usedTon: number; remainingTon: number; splitCount: number }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
+}
+
+function formatThb(thb: number): string {
+  return '฿' + Math.round(thb).toLocaleString('th-TH')
 }
 
 export function WalletClient({
@@ -144,6 +150,8 @@ export function WalletClient({
       date: a.allocatedAt,
       createdAt: a.createdAt,
       totalSpendTon: a.totalSpendTon,
+      tonPriceUsd: a.tonPriceUsd,
+      usdThbRate: a.usdThbRate,
     }))
   )
 
@@ -189,6 +197,7 @@ export function WalletClient({
       kind: 'deposit' as const,
       id: d.id,
       amountTon: d.amountTon,
+      amountThb: d.amountTon * d.tonPriceUsd * d.usdThbRate,
       date: d.depositedAt,
       createdAt: d.createdAt,
       note: d.note,
@@ -207,6 +216,7 @@ export function WalletClient({
         campaignId: first.campaignId,
         campaignName: first.campaignName,
         amountTon: group.reduce((s, a) => s + a.amountTon, 0),
+        amountThb: group.reduce((s, a) => s + a.amountTon * a.tonPriceUsd * a.usdThbRate, 0),
         date: first.date,
         createdAt: first.createdAt,
         usedTon: fifo.usedTon,
@@ -303,6 +313,7 @@ export function WalletClient({
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono text-green-400">
                           {tx.amountTon.toFixed(4)}
+                          <span className="block text-xs text-muted-foreground font-sans">{formatThb(tx.amountThb)}</span>
                         </td>
                         <td className="px-3 py-2.5 text-right text-muted-foreground/30">—</td>
                         <td className="px-3 py-2.5 text-right font-mono font-medium">
@@ -338,6 +349,7 @@ export function WalletClient({
                         <td className="px-3 py-2.5 text-right text-muted-foreground/30">—</td>
                         <td className="px-3 py-2.5 text-right font-mono text-red-400">
                           {tx.amountTon.toFixed(4)}
+                          <span className="block text-xs text-muted-foreground font-sans">{formatThb(tx.amountThb)}</span>
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono font-medium">
                           {tx.bal.toFixed(4)}

@@ -1,14 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 13) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 14) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Wallet UX improvements — เสร็จทั้งหมด**
-commit ล่าสุด: `0a39653` (feat: redesign wallet history as passbook table)
+**Wallet THB display — เสร็จแล้ว**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
 
 ## เสร็จแล้ว
+- [x] Wallet passbook: แสดงยอด THB (฿) ใต้ตัวเลข TON ทุก row (ฝาก + จัดสรร) — คำนวณจาก rate ที่บันทึกไว้ตอน deposit, allocation ที่ split หลาย deposit ใช้ weighted sum
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
 - [x] Docker + EasyPanel deployment configuration
 - [x] Fix Prisma v6 + Docker runner issues (copy node_modules, migrate path)
