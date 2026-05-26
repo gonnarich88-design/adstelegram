@@ -35,6 +35,8 @@ export default async function DashboardPage() {
 
   const summary = allEntries.length > 0 ? calcAggregateMetrics(allEntries) : null
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
+  const channelCampaigns = campaigns.filter(c => c.targetType === 'CHANNEL')
+  const botCampaigns = campaigns.filter(c => c.targetType === 'BOT')
 
   const depositsNum = deposits.map(d => ({ ...d, amountTon: Number(d.amountTon), tonPriceUsd: Number(d.tonPriceUsd), usdThbRate: Number(d.usdThbRate) }))
   const allocationsNum = deposits.flatMap(d => d.allocations).map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
@@ -115,10 +117,33 @@ export default async function DashboardPage() {
           <Link href="/campaigns/new" className={buttonVariants()}>สร้าง campaign แรก</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {campaigns.map(c => (
-            <CampaignCard key={c.id} campaign={c} />
-          ))}
+        <div className="space-y-8">
+          {channelCampaigns.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-lg font-semibold">CHANNEL</h2>
+                <span className="text-sm text-muted-foreground">· {channelCampaigns.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {channelCampaigns.map(c => (
+                  <CampaignCard key={c.id} campaign={c} />
+                ))}
+              </div>
+            </div>
+          )}
+          {botCampaigns.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-lg font-semibold">BOT</h2>
+                <span className="text-sm text-muted-foreground">· {botCampaigns.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {botCampaigns.map(c => (
+                  <CampaignCard key={c.id} campaign={c} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
