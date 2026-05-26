@@ -40,7 +40,7 @@ interface Deposit {
 }
 
 type TxRow =
-  | { kind: 'deposit'; id: string; amountTon: number; amountThb: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
+  | { kind: 'deposit'; id: string; amountTon: number; amountThb: number; tonPriceUsd: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
   | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; amountThb: number; date: string; createdAt: string; usedTon: number; remainingTon: number; splitCount: number }
 
 function formatDate(iso: string): string {
@@ -200,6 +200,7 @@ export function WalletClient({
       id: d.id,
       amountTon: d.amountTon,
       amountThb: d.amountTon * d.tonPriceUsd * d.usdThbRate,
+      tonPriceUsd: d.tonPriceUsd,
       date: d.depositedAt,
       createdAt: d.createdAt,
       note: d.note,
@@ -316,7 +317,7 @@ export function WalletClient({
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono text-green-400">
                           {tx.amountTon.toFixed(4)}
-                          <span className="block text-xs text-muted-foreground font-sans">{formatThb(tx.amountThb)}</span>
+                          <span className="block text-xs text-muted-foreground font-sans">${tx.tonPriceUsd.toFixed(2)}/TON · {formatThb(tx.amountThb)}</span>
                         </td>
                         <td className="px-3 py-2.5 text-right text-muted-foreground/30">—</td>
                         <td className="px-3 py-2.5 text-right font-mono font-medium">
