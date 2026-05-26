@@ -39,7 +39,7 @@ interface Deposit {
 
 type TxRow =
   | { kind: 'deposit'; id: string; amountTon: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
-  | { kind: 'allocation'; id: string; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; totalSpendTon: number }
+  | { kind: 'allocation'; ids: string[]; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; totalSpendTon: number; splitCount: number }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -103,16 +103,18 @@ export function WalletClient({
     }
   }
 
-  async function handleDeleteAllocation(allocationId: string) {
-    setDeletingAllocationId(allocationId)
+  async function handleDeleteAllocation(ids: string[]) {
+    setDeletingAllocationId(ids[0])
     try {
-      const res = await fetch(`/api/wallet/allocations/${allocationId}`, { method: 'DELETE' })
-      if (res.ok) {
-        router.refresh()
-      } else {
-        const data = await res.json()
-        alert(data.error ?? 'ลบไม่สำเร็จ')
+      for (const id of ids) {
+        const res = await fetch(`/api/wallet/allocations/${id}`, { method: 'DELETE' })
+        if (!res.ok) {
+          const data = await res.json()
+          alert(data.error ?? 'ลบไม่สำเร็จ')
+          return
+        }
       }
+      router.refresh()
     } finally {
       setDeletingAllocationId(null)
     }
@@ -133,32 +135,54 @@ export function WalletClient({
     }
   }
 
-  const transactions: TxRow[] = deposits
-    .flatMap(d => [
-      {
-        kind: 'deposit' as const,
-        id: d.id,
-        amountTon: d.amountTon,
-        date: d.depositedAt,
-        createdAt: d.createdAt,
-        note: d.note,
-        type: d.type,
-        refundCampaignName: d.refundCampaignName,
-        remaining: d.remaining,
-        hasAllocations: d.allocations.length > 0,
-      },
-      ...d.allocations.map(a => ({
+  const rawAllocations = deposits.flatMap(d =>
+    d.allocations.map(a => ({
+      id: a.id,
+      campaignId: a.campaignId,
+      campaignName: a.campaignName,
+      amountTon: a.amountTon,
+      date: a.allocatedAt,
+      createdAt: a.createdAt,
+      totalSpendTon: a.totalSpendTon,
+    }))
+  )
+
+  const allocationGroupMap = new Map<string, typeof rawAllocations>()
+  for (const a of rawAllocations) {
+    const key = `${a.campaignId}::${a.createdAt}`
+    const group = allocationGroupMap.get(key) ?? []
+    group.push(a)
+    allocationGroupMap.set(key, group)
+  }
+
+  const transactions: TxRow[] = [
+    ...deposits.map(d => ({
+      kind: 'deposit' as const,
+      id: d.id,
+      amountTon: d.amountTon,
+      date: d.depositedAt,
+      createdAt: d.createdAt,
+      note: d.note,
+      type: d.type,
+      refundCampaignName: d.refundCampaignName,
+      remaining: d.remaining,
+      hasAllocations: d.allocations.length > 0,
+    })),
+    ...Array.from(allocationGroupMap.values()).map(group => {
+      const first = group[0]
+      return {
         kind: 'allocation' as const,
-        id: a.id,
-        campaignId: a.campaignId,
-        campaignName: a.campaignName,
-        amountTon: a.amountTon,
-        date: a.allocatedAt,
-        createdAt: a.createdAt,
-        totalSpendTon: a.totalSpendTon,
-      })),
-    ])
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        ids: group.map(a => a.id),
+        campaignId: first.campaignId,
+        campaignName: first.campaignName,
+        amountTon: group.reduce((s, a) => s + a.amountTon, 0),
+        date: first.date,
+        createdAt: first.createdAt,
+        totalSpendTon: first.totalSpendTon,
+        splitCount: group.length,
+      }
+    }),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const canAllocate = balance > 0 && availableCampaigns.length > 0
 
@@ -247,7 +271,7 @@ export function WalletClient({
               )}
             </div>
           ) : (
-            <div key={`alloc-${tx.id}`} className="border-b border-border/40 last:border-0">
+            <div key={`alloc-${tx.ids[0]}`} className="border-b border-border/40 last:border-0">
               <div className="flex items-center gap-3 py-2.5">
                 <div className="w-8 h-8 rounded-full bg-red-950 text-red-400 flex items-center justify-center text-sm flex-shrink-0">
                   →
@@ -260,6 +284,9 @@ export function WalletClient({
                       {(tx.amountTon - tx.totalSpendTon).toFixed(4)}
                     </span>
                     {' '}TON
+                    {tx.splitCount > 1 && (
+                      <span className="ml-1 text-muted-foreground/60">(ตัดจาก {tx.splitCount} ยอด)</span>
+                    )}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -267,26 +294,28 @@ export function WalletClient({
                   <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => editingAllocationId === tx.id ? setEditingAllocationId(null) : startEdit(tx.id, tx.amountTon, tx.date)}
-                  >
-                    {editingAllocationId === tx.id ? 'ยกเลิก' : 'แก้ไข'}
-                  </Button>
+                  {tx.splitCount === 1 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => editingAllocationId === tx.ids[0] ? setEditingAllocationId(null) : startEdit(tx.ids[0], tx.amountTon, tx.date)}
+                    >
+                      {editingAllocationId === tx.ids[0] ? 'ยกเลิก' : 'แก้ไข'}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-destructive h-7 px-2 text-xs"
-                    disabled={deletingAllocationId === tx.id}
-                    onClick={() => handleDeleteAllocation(tx.id)}
+                    disabled={deletingAllocationId === tx.ids[0]}
+                    onClick={() => handleDeleteAllocation(tx.ids)}
                   >
                     ลบ
                   </Button>
                 </div>
               </div>
-              {editingAllocationId === tx.id && (
+              {tx.splitCount === 1 && editingAllocationId === tx.ids[0] && (
                 <div className="mb-2 ml-11 space-y-3 rounded-md border p-3 bg-muted/10">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
@@ -315,7 +344,7 @@ export function WalletClient({
                   <Button
                     size="sm"
                     disabled={editLoading}
-                    onClick={() => handleSaveEdit(tx.id, balance + tx.amountTon)}
+                    onClick={() => handleSaveEdit(tx.ids[0], balance + tx.amountTon)}
                   >
                     {editLoading ? 'กำลังบันทึก...' : 'บันทึก'}
                   </Button>

@@ -76,7 +76,6 @@ export async function POST(
 
     // FIFO: drain oldest deposits first, split across deposits if needed
     const deposits = await prisma.walletDeposit.findMany({
-      where: { type: 'DEPOSIT' },
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
     })
