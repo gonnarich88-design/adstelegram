@@ -74,29 +74,35 @@ export async function POST(
       return NextResponse.json({ ok: true }, { status: 201 })
     }
 
-    // FIFO: pick deposit with enough remaining balance
+    // FIFO: drain oldest deposits first, split across deposits if needed
     const deposits = await prisma.walletDeposit.findMany({
+      where: { type: 'DEPOSIT' },
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
     })
 
-    const targetDeposit = deposits.find(d => {
+    const totalAvailable = deposits.reduce((sum, d) => {
       const allocated = d.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
-      return Number(d.amountTon) - allocated >= amountTon
-    })
+      return sum + Number(d.amountTon) - allocated
+    }, 0)
 
-    if (!targetDeposit) {
+    if (totalAvailable < amountTon) {
       return NextResponse.json({ error: 'INSUFFICIENT_BALANCE' }, { status: 400 })
     }
 
-    await prisma.campaignAllocation.create({
-      data: {
-        depositId: targetDeposit.id,
-        campaignId,
-        amountTon,
-        ...(allocatedAt ? { allocatedAt } : {}),
-      },
-    })
+    const records: { depositId: string; campaignId: string; amountTon: number; allocatedAt?: Date }[] = []
+    let remaining = amountTon
+    for (const d of deposits) {
+      if (remaining <= 0) break
+      const allocated = d.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+      const depositRemaining = Number(d.amountTon) - allocated
+      if (depositRemaining <= 0) continue
+      const use = Math.min(remaining, depositRemaining)
+      records.push({ depositId: d.id, campaignId, amountTon: use, ...(allocatedAt ? { allocatedAt } : {}) })
+      remaining -= use
+    }
+
+    await prisma.campaignAllocation.createMany({ data: records })
 
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch {
