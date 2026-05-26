@@ -66,7 +66,7 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget, allocati
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
-  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number; depositedAt: string; remainingTon: number }
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -220,7 +220,11 @@ export function CsvImport({ campaignId, targetType, defaultDailyBudget, allocati
           <div className="space-y-3">
             {/* Rate status */}
             {allocationRate && (
-              <p className="text-xs text-blue-400">ใช้อัตราจาก Wallet Deposit: 1 TON = ${allocationRate.tonPriceUsd.toFixed(4)} / ฿{allocationRate.usdThbRate.toFixed(4)} (locked)</p>
+              <p className="text-xs text-blue-400">
+                ใช้อัตราจาก Deposit {new Date(allocationRate.depositedAt).toLocaleDateString('th-TH')}:
+                {' '}1 TON = ${allocationRate.tonPriceUsd.toFixed(4)}
+                {' · '}คงเหลือ {allocationRate.remainingTon.toFixed(2)} TON (locked)
+              </p>
             )}
             {!allocationRate && ratesFetching && (
               <p className="text-xs text-blue-400">กำลังดึง rate ย้อนหลังรายวัน...</p>

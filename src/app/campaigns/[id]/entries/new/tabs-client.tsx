@@ -8,7 +8,7 @@ export function TabsClient({ campaignId, targetType, defaultDailyBudget, allocat
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
-  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number; depositedAt: string; remainingTon: number }
 }) {
   const [tab, setTab] = useState<'manual' | 'csv'>('manual')
 

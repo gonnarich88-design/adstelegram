@@ -12,7 +12,7 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
   campaignId: string
   targetType: string
   defaultDailyBudget?: string
-  allocationRate?: { tonPriceUsd: number; usdThbRate: number }
+  allocationRate?: { tonPriceUsd: number; usdThbRate: number; depositedAt: string; remainingTon: number }
   entry?: {
     date: string
     spendTon: number
@@ -176,7 +176,10 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
             className={allocationRate && !entry ? 'opacity-70 cursor-not-allowed' : ''}
           />
           {allocationRate && !entry && (
-            <p className="text-xs text-blue-400">อัตราจาก Wallet Deposit (locked)</p>
+            <p className="text-xs text-blue-400">
+              อัตราจาก Deposit {new Date(allocationRate.depositedAt).toLocaleDateString('th-TH')}
+              {' · '}คงเหลือ {allocationRate.remainingTon.toFixed(2)} TON
+            </p>
           )}
           {fetchedAt && !allocationRate && <p className="text-xs text-green-500">อัปเดต {fetchedAt}</p>}
         </div>
