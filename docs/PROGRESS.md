@@ -1,9 +1,9 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 12) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 13) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Wallet + Dashboard fixes — เสร็จทั้งหมด**
-commit ล่าสุด: `2acef32` (fix: FIFO allocation drains oldest deposits first, splits across deposits if needed)
+**Wallet UX improvements — เสร็จทั้งหมด**
+commit ล่าสุด: `0a39653` (feat: redesign wallet history as passbook table)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
@@ -92,6 +92,10 @@ commit ล่าสุด: `2acef32` (fix: FIFO allocation drains oldest deposit
 - [x] **Campaign Grouping by Target Type** — แบ่ง Dashboard campaign list เป็น 2 sections (CHANNEL / BOT) พร้อม heading + count badge, ซ่อน section ว่าง — แก้แค่ `page.tsx` ไม่มี client state (commit `cf3f95b`, session 12)
 - [x] **fix: Wallet transaction sort** — เรียงตาม `createdAt` (เวลากดจริงใน DB) แทน user-facing date — deposit กดก่อนอยู่ล่าง, จัดสรรทีหลังอยู่บน (commit `bd20262`, session 12)
 - [x] **fix: FIFO allocation ข้าม deposit** — เดิมต้องหา deposit เดี่ยวที่มีพอ ทำให้ error ทั้งที่ยอดรวมพอ — แก้ให้ตัด deposit เก่าสุดให้หมดก่อนแล้วต่อ deposit ถัดไป (FIFO split) สร้าง allocation records หลายรายการในครั้งเดียว (commit `2acef32`, session 12)
+- [x] **fix: REFUND deposit ถูก exclude จาก allocation API** — `where: { type: 'DEPOSIT' }` filter ทำให้ยอดที่คืนจาก campaign ถูก block — ลบ filter ออก รวม REFUND+DEPOSIT ในการคำนวณ FIFO (commit `54eb4c8`, session 13)
+- [x] **Wallet history: group FIFO-split rows** — allocation ที่ split ข้าม 2+ deposits แสดงเป็น 1 แถว (groupKey = campaignId+createdAt), total amount, note "(N ยอด)" — ซ่อนปุ่มแก้ไขสำหรับ batch, ลบลบทั้ง batch (commit `54eb4c8`, session 13)
+- [x] **Wallet history: FIFO spend display** — "ใช้/เหลือ" ในแต่ละแถวคำนวณ FIFO จริง — ยอด spend ตัดจาก allocation เก่าสุดก่อน แทนที่ `amountTon - totalCampaignSpend` ที่ทำให้ติดลบทุกแถว (commit `9ced84e`, session 13)
+- [x] **Wallet history: passbook table** — เปลี่ยน card-list เป็นตาราง 5 คอลัมน์ วันที่/รายการ/ฝาก/ถอน/คงเหลือ, เรียงเก่า→ใหม่, running balance สะสม, summary row ยอดคงเหลือ (commit `0a39653`, session 13)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
 1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ
