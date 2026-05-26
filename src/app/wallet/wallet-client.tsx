@@ -19,6 +19,7 @@ interface Allocation {
   campaignName: string
   amountTon: number
   allocatedAt: string
+  createdAt: string
   totalSpendTon: number
 }
 
@@ -28,6 +29,7 @@ interface Deposit {
   tonPriceUsd: number
   usdThbRate: number
   depositedAt: string
+  createdAt: string
   note: string | null
   type: 'DEPOSIT' | 'REFUND'
   refundCampaignName: string | null
@@ -36,8 +38,8 @@ interface Deposit {
 }
 
 type TxRow =
-  | { kind: 'deposit'; id: string; amountTon: number; date: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
-  | { kind: 'allocation'; id: string; campaignId: string; campaignName: string; amountTon: number; date: string; totalSpendTon: number }
+  | { kind: 'deposit'; id: string; amountTon: number; date: string; createdAt: string; note: string | null; type: 'DEPOSIT' | 'REFUND'; refundCampaignName: string | null; remaining: number; hasAllocations: boolean }
+  | { kind: 'allocation'; id: string; campaignId: string; campaignName: string; amountTon: number; date: string; createdAt: string; totalSpendTon: number }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -138,6 +140,7 @@ export function WalletClient({
         id: d.id,
         amountTon: d.amountTon,
         date: d.depositedAt,
+        createdAt: d.createdAt,
         note: d.note,
         type: d.type,
         refundCampaignName: d.refundCampaignName,
@@ -151,10 +154,11 @@ export function WalletClient({
         campaignName: a.campaignName,
         amountTon: a.amountTon,
         date: a.allocatedAt,
+        createdAt: a.createdAt,
         totalSpendTon: a.totalSpendTon,
       })),
     ])
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const canAllocate = balance > 0 && availableCampaigns.length > 0
 

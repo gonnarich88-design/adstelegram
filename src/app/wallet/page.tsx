@@ -52,6 +52,7 @@ export default async function WalletPage() {
       tonPriceUsd: Number(d.tonPriceUsd),
       usdThbRate: Number(d.usdThbRate),
       depositedAt: d.depositedAt.toISOString(),
+      createdAt: d.createdAt.toISOString(),
       note: d.note,
       type: d.type,
       refundCampaignName: d.refundCampaign?.name ?? null,
@@ -62,6 +63,7 @@ export default async function WalletPage() {
         campaignName: a.campaign.name,
         amountTon: Number(a.amountTon),
         allocatedAt: a.allocatedAt.toISOString(),
+        createdAt: a.createdAt.toISOString(),
         totalSpendTon: spendMap.get(a.campaignId) ?? 0,
       })),
     }
