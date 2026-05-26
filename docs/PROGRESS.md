@@ -1,16 +1,12 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 10) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-26 (session 11) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**FIFO Wallet Deposit Pricing — design + plan เสร็จ รอ implement ใน chat ถัดไป**
-commit ล่าสุด: `1baab79` (docs: FIFO wallet deposit pricing implementation plan)
+**FIFO Wallet Deposit Pricing — implement + browser verified เสร็จ**
+commit ล่าสุด: `1d6f619` (feat: show deposit date and remaining TON in rate lock UI)
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **FIFO Wallet Deposit Pricing** — implement ตาม plan ที่ `docs/superpowers/plans/2026-05-26-wallet-deposit-pricing.md`
-  - Task 1: เพิ่ม `computeFifoRate()` ใน `src/lib/wallet.ts` + unit tests (8 cases)
-  - Task 2: อัปเดต `entries/new/page.tsx` — query + FIFO logic
-  - Task 3: ขยาย `allocationRate` type ใน 3 ไฟล์ + UI text
-  - Task 4: Smoke test ใน browser
+(ไม่มีงานค้าง)
 
 ## เสร็จแล้ว
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
@@ -91,9 +87,11 @@ commit ล่าสุด: `1baab79` (docs: FIFO wallet deposit pricing implemen
   - Edit page: pass bidCpmTon ใน initialData (commit `06fe07c`)
   - `POST /refund` reject 409 ถ้า campaign ถูก CANCELLED แล้ว
   - `DELETE /deposits/[id]` reject 409 ถ้า deposit type = REFUND
+- [x] **FIFO Wallet Deposit Pricing** — computeFifoRate ใน lib/wallet.ts (8 unit tests), entries/new ใช้ FIFO แทน latestAllocation, UI แสดง deposit date + remaining TON — browser verified ✅ (session 11)
+  - `computeFifoRate(allocations, totalSpentTon)` sort by allocatedAt ASC, walk FIFO, คืน rate ของ batch ปัจจุบัน (commits `13e430f`, `473030e`, `1d6f619`)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — Campaign CPM Bid + Campaign Refund ครบ พร้อม deploy production
+1. **Deploy** — Campaign CPM Bid + Campaign Refund + FIFO Pricing ครบ พร้อม deploy production
 2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
