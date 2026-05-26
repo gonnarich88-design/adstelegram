@@ -26,3 +26,42 @@ export function findCurrentRate(
   }
   return null
 }
+
+export function computeFifoRate(
+  allocations: Array<{
+    amountTon: number
+    allocatedAt: Date
+    deposit: { tonPriceUsd: number; usdThbRate: number; depositedAt: Date }
+  }>,
+  totalSpentTon: number
+): {
+  tonPriceUsd: number
+  usdThbRate: number
+  depositedAt: Date
+  remainingTon: number
+} | null {
+  if (allocations.length === 0) return null
+
+  const sorted = [...allocations].sort((a, b) => a.allocatedAt.getTime() - b.allocatedAt.getTime())
+  const lastAlloc = sorted[sorted.length - 1]
+  let running = 0
+
+  for (const alloc of sorted) {
+    if (totalSpentTon < running + alloc.amountTon) {
+      return {
+        tonPriceUsd: alloc.deposit.tonPriceUsd,
+        usdThbRate:  alloc.deposit.usdThbRate,
+        depositedAt: alloc.deposit.depositedAt,
+        remainingTon: alloc.amountTon - (totalSpentTon - running),
+      }
+    }
+    running += alloc.amountTon
+  }
+
+  return {
+    tonPriceUsd: lastAlloc.deposit.tonPriceUsd,
+    usdThbRate:  lastAlloc.deposit.usdThbRate,
+    depositedAt: lastAlloc.deposit.depositedAt,
+    remainingTon: 0,
+  }
+}
