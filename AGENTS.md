@@ -70,7 +70,7 @@ docker-compose down                   # stop
 ## Workflow
 
 - **Commit message**: ใช้ conventional commits — `feat:` `fix:` `docs:` `chore:` `refactor:` เสมอ
-- **ก่อน commit**: run `npm test` ทุกครั้ง (17 tests, ~140ms)
+- **ก่อน commit**: run `npm test` ทุกครั้ง (44 tests, ~180ms)
 - **เมื่อแก้ `prisma/schema.prisma`**: ต้อง run `npx prisma migrate dev` แล้วตาม `npx prisma generate` เสมอ ห้ามแก้ schema แล้วข้ามขั้นตอนนี้
 
 ---
@@ -89,14 +89,24 @@ src/
 │   │   └── [id]/
 │   │       ├── page.tsx        # Campaign detail + performance entries
 │   │       ├── edit/           # แก้ไข Campaign
-│   │       └── entries/route.ts # API: GET entries / POST entry (single หรือ bulk array)
+│   │       ├── entries/route.ts # API: GET entries / POST entry (single หรือ bulk array)
+│   │       └── refund/route.ts  # API: POST refund → CANCELLED status + REFUND deposit
+│   ├── wallet/
+│   │   ├── page.tsx            # Wallet: balance, passbook table (ฝาก/ถอน/คงเหลือ)
+│   │   ├── wallet-client.tsx   # Client: transaction table + inline forms
+│   │   ├── deposit-form.tsx    # Form ฝากเงิน
+│   │   └── allocate-form.tsx   # Form จัดสรรงบให้ Campaign (FIFO split)
 │   └── api/
 │       ├── auth/login/         # POST: login → set JWT cookie
 │       ├── auth/logout/        # POST: clear JWT cookie
 │       ├── campaigns/          # GET/POST campaigns
 │       ├── campaigns/[id]/     # GET/PUT/DELETE campaign
+│       ├── campaigns/[id]/allocation/ # GET/POST/DELETE allocation (FIFO across deposits)
 │       ├── export/             # GET: export JSON backup / POST: import JSON backup (ลบทั้งหมดแล้ว restore)
-│       └── rates/              # GET: fetch TON/USD + USD/THB rates
+│       ├── rates/              # GET: fetch TON/USD + USD/THB rates
+│       ├── wallet/balance/     # GET: wallet balance
+│       ├── wallet/deposits/    # GET/POST deposits; DELETE /[id]
+│       └── wallet/allocations/[id]/ # PATCH/DELETE allocation by id
 ├── components/
 │   ├── ui/                     # shadcn/ui base components (button, card, input, ฯลฯ)
 │   ├── campaign-card.tsx       # การ์ดแสดง Campaign summary
@@ -112,11 +122,13 @@ src/
 │   ├── metrics.ts              # คำนวณ aggregate metrics (CPM, CPC, CTR ฯลฯ)
 │   ├── prisma.ts               # Prisma client singleton
 │   ├── rates.ts                # ดึง exchange rate จาก API
+│   ├── wallet.ts               # computeWalletBalance, findCurrentRate, computeFifoRate
 │   └── utils.ts                # cn() และ utilities ทั่วไป
 └── middleware.ts                # Auth guard: redirect ถ้าไม่มี JWT
 
 prisma/
-├── schema.prisma               # Database schema (Campaign, PerformanceEntry)
+├── schema.prisma               # Database schema: Campaign, PerformanceEntry, WalletDeposit, CampaignAllocation
+│                               # Enums: TargetType (CHANNEL|BOT), CampaignStatus (ACTIVE|PAUSED|DONE|CANCELLED), DepositType (DEPOSIT|REFUND)
 └── migrations/                 # Migration files
 
 tests/                          # Vitest unit tests (auth, export, metrics, rates)
@@ -133,11 +145,21 @@ scripts/start.sh                # Entrypoint สำหรับ Docker
 - `budgetTon`: งบประมาณรวม (Decimal 18,8)
 - `dailyBudgetTon`: งบประมาณรายวัน (optional)
 - `placementName`: ชื่อ placement (optional)
-- `status`: `ACTIVE` | `PAUSED` | `DONE`
+- `status`: `ACTIVE` | `PAUSED` | `DONE` | `CANCELLED`
+- `bidCpmTon`: CPM bid (Decimal, optional)
 
 **PerformanceEntry** — ข้อมูลประสิทธิภาพรายวัน
 - `spendTon`, `dailyBudgetTon`, `tonPriceUsd`, `usdThbRate`
 - `impressions`, `views`, `clicks`, `joins`
+
+**WalletDeposit** — รายการฝากเงินหรือ refund เข้า wallet
+- `amountTon`, `tonPriceUsd`, `usdThbRate`, `depositedAt`
+- `type`: `DEPOSIT` | `REFUND`
+- `refundCampaignId`: อ้างอิง Campaign ที่ถูก refund (optional)
+
+**CampaignAllocation** — การจัดสรรงบจาก deposit ให้ campaign
+- `depositId`, `campaignId`, `amountTon`, `allocatedAt`
+- allocation 1 ครั้งอาจสร้างหลาย records (FIFO split ข้าม deposits)
 
 ---
 
