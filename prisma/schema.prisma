@@ -82,6 +82,7 @@ enum TargetType {
 enum CampaignStatus {
   ACTIVE
   PAUSED
+  STOPPED
   DONE
   CANCELLED
 }

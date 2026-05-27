@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+async function autoStopIfDepleted(campaignId: string) {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: {
+      status: true,
+      allocations: { select: { amountTon: true } },
+      entries: { select: { spendTon: true } },
+    },
+  })
+  if (!campaign || campaign.status !== 'ACTIVE') return
+  const totalAllocated = campaign.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+  if (totalAllocated === 0) return
+  const totalSpent = campaign.entries.reduce((s, e) => s + Number(e.spendTon), 0)
+  if (totalSpent >= totalAllocated) {
+    await prisma.campaign.update({ where: { id: campaignId }, data: { status: 'STOPPED' } })
+  }
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -51,6 +69,7 @@ export async function POST(
           })
         )
       )
+      await autoStopIfDepleted(id)
       return NextResponse.json(created, { status: 201 })
     }
 
@@ -63,6 +82,7 @@ export async function POST(
       create: { campaignId: id, date: new Date(body.date), ...upsertFields(body) },
       update: upsertFields(body),
     })
+    await autoStopIfDepleted(id)
     return NextResponse.json(entry, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

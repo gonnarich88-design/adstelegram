@@ -183,6 +183,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
             <SelectContent>
               <SelectItem value="ACTIVE">ACTIVE</SelectItem>
               <SelectItem value="PAUSED">PAUSED</SelectItem>
+              <SelectItem value="STOPPED">STOPPED</SelectItem>
               <SelectItem value="DONE">DONE</SelectItem>
             </SelectContent>
           </Select>

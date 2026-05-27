@@ -12,7 +12,7 @@ import { RefundButton } from './refund-button'
 
 export const dynamic = 'force-dynamic'
 
-const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', DONE: 'outline', CANCELLED: 'destructive' } as const
+const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', STOPPED: 'secondary', DONE: 'outline', CANCELLED: 'destructive' } as const
 
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

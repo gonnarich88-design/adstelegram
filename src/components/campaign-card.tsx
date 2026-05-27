@@ -6,6 +6,7 @@ import { calcAggregateMetrics } from '@/lib/metrics'
 const STATUS_COLORS = {
   ACTIVE: 'default',
   PAUSED: 'secondary',
+  STOPPED: 'secondary',
   DONE: 'outline',
   CANCELLED: 'destructive',
 } as const
