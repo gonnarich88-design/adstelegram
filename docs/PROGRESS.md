@@ -2,17 +2,13 @@
 > อัปเดตล่าสุด: 2026-05-27 (session 18) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Dashboard V2 — พร้อม implement** (spec + plan เสร็จแล้ว)
+**Dashboard V2 เสร็จสมบูรณ์** — browser verified ✅
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **Dashboard V2** — implement ตาม plan `docs/superpowers/plans/2026-05-27-dashboard-v2.md`
-  - Task 1: Hero Summary Bar (แทน Wallet Card + KPI Cards grid เดิม)
-  - Task 2: WoW Strip (สัปดาห์นี้ vs ที่แล้ว — Joins/CPS/Spend/CTR)
-  - Task 3: Campaign Leaderboard 3×2 (Top 3: Joins/CPS/Spend/CTR/Clicks/Views)
-  - Task 4: Smoke test + push
-  - **หมายเหตุ:** Budget Alerts และ Top Performers 3 cards จะถูกลบออก
+(ว่าง)
 
 ## เสร็จแล้ว
+- [x] **Dashboard V2** — Hero Summary Bar (5 slots) + WoW Strip + Campaign Leaderboard 3×2 (Joins/CPS/Spend/CTR/Clicks/Views) — layout C, ลบ Budget Alerts + Top Performers + Wallet Card + KPI grid เดิม — browser verified ✅ (session 18)
 - [x] **Dashboard Enhancements** — delta indicators บน KPI cards (วันนี้ vs เมื่อวาน), Budget Alerts (critical/warning/ok เรียง urgency), Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR) — browser verified ✅ (session 18)
 - [x] **feat: split Trend chart — Joins (CHANNEL) และ Startbot (BOT) แยกเส้นตาม targetType** — groupEntriesByDate แยก field, chart แสดง/ซ่อนเส้นตามข้อมูลจริง, 51 tests pass (session 17)
 - [x] **fix: Dashboard tooltip text contrast** — labelStyle + itemStyle ใช้ foreground color แทนสีเส้น (session 17)
