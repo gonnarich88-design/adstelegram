@@ -60,6 +60,7 @@ export default async function DashboardPage() {
         date: e.date,
         spendTon: Number(e.spendTon),
         joins: e.joins,
+        targetType: c.targetType,
       }))
     )
   )
@@ -189,7 +190,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Trend Chart */}
-      <DashboardChart chartData={chartData} joinsLabel={joinsLabel} />
+      <DashboardChart chartData={chartData} />
     </div>
   )
 }

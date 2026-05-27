@@ -10,13 +10,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  TooltipProps,
 } from 'recharts'
 import type { ChartDataPoint } from '@/lib/chart'
 
 type Range = '7d' | '30d' | 'all'
 
-export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData: ChartDataPoint[]; joinsLabel?: string }) {
+export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
   const [range, setRange] = useState<Range>('30d')
 
   const filtered = useMemo(() => {
@@ -27,6 +26,9 @@ export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData:
     const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`
     return chartData.filter(d => d.date >= cutoffStr)
   }, [chartData, range])
+
+  const hasChannel = useMemo(() => chartData.some(d => d.joins > 0), [chartData])
+  const hasBot = useMemo(() => chartData.some(d => d.startbot > 0), [chartData])
 
   if (chartData.length === 0) {
     return (
@@ -72,7 +74,7 @@ export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData:
             width={48}
           />
           <YAxis
-            yAxisId="joins"
+            yAxisId="count"
             orientation="right"
             tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
             tickLine={false}
@@ -86,11 +88,12 @@ export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData:
               borderRadius: '6px',
               fontSize: '12px',
             }}
-            formatter={(value, name) =>
-              name === 'spendTon'
-                ? [`${Number(value).toFixed(3)} TON`, 'Spend']
-                : [value, joinsLabel]
-            }
+            formatter={(value, name) => {
+              if (name === 'spendTon') return [`${Number(value).toFixed(3)} TON`, 'Spend']
+              if (name === 'joins') return [value, 'Joins']
+              if (name === 'startbot') return [value, 'Startbot']
+              return [value, name]
+            }}
           />
           <Area
             yAxisId="spend"
@@ -101,23 +104,42 @@ export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData:
             strokeWidth={2}
             dot={false}
           />
-          <Line
-            yAxisId="joins"
-            type="monotone"
-            dataKey="joins"
-            stroke="#22c55e"
-            strokeWidth={2}
-            dot={false}
-          />
+          {hasChannel && (
+            <Line
+              yAxisId="count"
+              type="monotone"
+              dataKey="joins"
+              stroke="#22c55e"
+              strokeWidth={2}
+              dot={false}
+            />
+          )}
+          {hasBot && (
+            <Line
+              yAxisId="count"
+              type="monotone"
+              dataKey="startbot"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dot={false}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
       <div className="flex gap-4 mt-2 justify-center">
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="inline-block w-3 h-0.5 bg-blue-500" /> Spend (TON)
         </span>
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="inline-block w-3 h-0.5 bg-green-500" /> {joinsLabel}
-        </span>
+        {hasChannel && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-3 h-0.5 bg-green-500" /> Joins
+          </span>
+        )}
+        {hasBot && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-3 h-0.5 bg-amber-500" /> Startbot
+          </span>
+        )}
       </div>
     </div>
   )
