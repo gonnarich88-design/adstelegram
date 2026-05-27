@@ -50,9 +50,11 @@ const yesterdayEntries = allRawEntries.filter(e => e.date.toISOString().slice(0,
 
 ### Styling
 
-- ▲ เขียว (`text-green-400`) ถ้าค่าดีขึ้น (spend ลด, joins เพิ่ม, CPS ถูกลง)
-- ▼ แดง (`text-red-400`) ถ้าแย่ลง
-- `—` สีเทา ถ้าไม่มีข้อมูลวันนี้ หรือ เมื่อวาน (สำหรับ CPS comparison)
+| Card | Format | Color logic |
+|------|--------|-------------|
+| Total Spend | `วันนี้ X.XX TON` | เทา (`text-muted-foreground`) — informational เฉยๆ ไม่มี ▲▼ |
+| Total Startbot/Joins | `▲ +X วันนี้` | เขียวถ้า > 0, เทาถ้า = 0, `—` ถ้าไม่มีข้อมูล |
+| Avg CPS | `฿XX → ฿XX` (เมื่อวาน → วันนี้) | วันนี้ **เขียว**ถ้าถูกลง, **แดง**ถ้าแพงขึ้น, `—` ถ้าข้อมูลไม่ครบ |
 
 ---
 
@@ -106,7 +108,7 @@ const burnRate7d = spend7d / 7
 [🟢 OK]       New Campaign            ใช้ไป 9/50 TON · เหลือ ~22 วัน     [badge: OK · 22d]
 ```
 
-- ซ่อน section ทั้งก้อนถ้า `activeCampaigns === 0`
+- ซ่อน section ทั้งก้อนถ้า `campaignAlerts.length === 0` (ครอบทั้งกรณี ไม่มี ACTIVE campaign และ ACTIVE แต่ยังไม่มี allocation)
 - ถ้า `daysLeft = null` → แสดงแค่ "เหลือ X.XX TON" ไม่มีประมาณวัน
 - TON ที่แสดงใน detail = `remainingTon.toFixed(2)` และ `totalAllocatedTon.toFixed(2)`
 
