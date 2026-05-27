@@ -2,12 +2,18 @@
 > อัปเดตล่าสุด: 2026-05-27 (session 17) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Dashboard Redesign — เสร็จแล้ว** (browser verified ✅)
+**Dashboard Enhancements — พร้อม implement** (spec + plan เสร็จแล้ว)
 
 ## กำลังทำ / ค้างอยู่
-(ไม่มีงานค้าง)
+- [ ] **Dashboard Enhancements** — implement ตาม plan `docs/superpowers/plans/2026-05-27-dashboard-enhancements.md`
+  - Task 1: Delta indicators บน KPI cards (วันนี้ vs เมื่อวาน)
+  - Task 2: Budget Alerts section (critical/warning/ok)
+  - Task 3: Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR)
+  - Task 4: Smoke test + push
 
 ## เสร็จแล้ว
+- [x] **feat: split Trend chart — Joins (CHANNEL) และ Startbot (BOT) แยกเส้นตาม targetType** — groupEntriesByDate แยก field, chart แสดง/ซ่อนเส้นตามข้อมูลจริง, 51 tests pass (session 17)
+- [x] **fix: Dashboard tooltip text contrast** — labelStyle + itemStyle ใช้ foreground color แทนสีเส้น (session 17)
 - [x] **fix: Dashboard joins label dynamic** — KPI card "Total Joins/Startbot", chart tooltip+legend, CPS subtitle แสดง label ตาม targetType จริง (BOT ล้วน → "Startbot", CHANNEL ล้วน → "Joins", mix → "Joins / Startbot"), ซ่อน subtitle "รวม CHANNEL + BOT" ถ้าไม่ mix — 49 tests pass (session 17)
 - [x] **Dashboard Redesign** — aggregate overview (Wallet + 5 KPI cards + Trend chart recharts 7d/30d/ทั้งหมด toggle), campaign grid ย้ายไป `/campaigns` page ใหม่, Nav เปลี่ยนเป็น Campaigns link + startsWith active state — browser verified ✅ (session 16)
   - spec: `docs/superpowers/specs/2026-05-27-dashboard-redesign.md`
