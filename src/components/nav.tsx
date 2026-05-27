@@ -18,10 +18,15 @@ export function Nav() {
 
   const links = [
     { href: '/', label: 'Dashboard' },
-    { href: '/campaigns/new', label: '+ Campaign' },
+    { href: '/campaigns', label: 'Campaigns' },
     { href: '/wallet', label: 'Wallet' },
     { href: '/settings', label: 'Settings' },
   ]
+
+  function isActive(href: string) {
+    if (href === '/campaigns') return pathname.startsWith('/campaigns')
+    return pathname === href
+  }
 
   return (
     <nav className="border-b px-6 py-3 flex items-center gap-6">
@@ -31,7 +36,7 @@ export function Nav() {
           <Link
             key={l.href}
             href={l.href}
-            className={`text-sm ${pathname === l.href ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`text-sm ${isActive(l.href) ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {l.label}
           </Link>
