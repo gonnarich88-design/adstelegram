@@ -119,6 +119,39 @@ export default async function DashboardPage() {
     return j > 0 ? thb / j : null
   })()
 
+  type AlertLevel = 'critical' | 'warning' | 'ok'
+  interface CampaignAlert {
+    id: string
+    name: string
+    targetName: string
+    totalAllocatedTon: number
+    totalSpentTon: number
+    remainingTon: number
+    daysLeft: number | null
+    level: AlertLevel
+  }
+
+  const campaignAlerts: CampaignAlert[] = campaigns
+    .filter(c => c.status === 'ACTIVE')
+    .map(c => {
+      const totalAllocatedTon = c.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
+      if (totalAllocatedTon === 0) return null
+      const totalSpentTon = c.entries.reduce((s, e) => s + Number(e.spendTon), 0)
+      const remainingTon = totalAllocatedTon - totalSpentTon
+      const spend7d = c.entries
+        .filter(e => new Date(e.date) >= sevenDaysAgo)
+        .reduce((s, e) => s + Number(e.spendTon), 0)
+      const burnRate7d = spend7d / 7
+      const daysLeft = burnRate7d > 0 ? remainingTon / burnRate7d : null
+      const level: AlertLevel =
+        daysLeft !== null && daysLeft <= 3 ? 'critical'
+        : daysLeft !== null && daysLeft <= 7 ? 'warning'
+        : 'ok'
+      return { id: c.id, name: c.name, targetName: c.targetName, totalAllocatedTon, totalSpentTon, remainingTon, daysLeft, level }
+    })
+    .filter((a): a is CampaignAlert => a !== null)
+    .sort((a, b) => ({ critical: 0, warning: 1, ok: 2 }[a.level] - { critical: 0, warning: 1, ok: 2 }[b.level]))
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -230,6 +263,50 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Budget Alerts */}
+      {campaignAlerts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Budget Alerts</p>
+          {campaignAlerts.map(alert => (
+            <div
+              key={alert.id}
+              className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
+                alert.level === 'critical' ? 'border-red-900/50 bg-red-950/20'
+                : alert.level === 'warning' ? 'border-amber-900/50 bg-amber-950/20'
+                : 'border-green-900/50 bg-green-950/20'
+              }`}
+            >
+              <div>
+                <p className={`text-sm font-medium ${
+                  alert.level === 'critical' ? 'text-red-300'
+                  : alert.level === 'warning' ? 'text-amber-300'
+                  : 'text-green-300'
+                }`}>
+                  {alert.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ใช้ไป {alert.totalSpentTon.toFixed(2)}/{alert.totalAllocatedTon.toFixed(2)} TON
+                  {alert.daysLeft !== null
+                    ? ` · เหลือ ~${Math.ceil(alert.daysLeft)} วัน`
+                    : ` · เหลือ ${alert.remainingTon.toFixed(2)} TON`}
+                </p>
+              </div>
+              <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                alert.level === 'critical' ? 'bg-red-900 text-red-200'
+                : alert.level === 'warning' ? 'bg-amber-900 text-amber-200'
+                : 'bg-green-900 text-green-200'
+              }`}>
+                {alert.level === 'critical'
+                  ? `Critical · ${Math.ceil(alert.daysLeft!)}d`
+                  : alert.level === 'warning'
+                  ? `Low · ${Math.ceil(alert.daysLeft!)}d`
+                  : alert.daysLeft !== null ? `OK · ${Math.ceil(alert.daysLeft)}d` : 'OK'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Trend Chart */}
       <DashboardChart chartData={chartData} />
