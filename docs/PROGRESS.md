@@ -1,8 +1,8 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-26 (session 14) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-27 (session 15) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Wallet THB display — เสร็จแล้ว**
+**Auto-stop depleted campaigns — เสร็จแล้ว**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
@@ -96,9 +96,15 @@
 - [x] **Wallet history: group FIFO-split rows** — allocation ที่ split ข้าม 2+ deposits แสดงเป็น 1 แถว (groupKey = campaignId+createdAt), total amount, note "(N ยอด)" — ซ่อนปุ่มแก้ไขสำหรับ batch, ลบลบทั้ง batch (commit `54eb4c8`, session 13)
 - [x] **Wallet history: FIFO spend display** — "ใช้/เหลือ" ในแต่ละแถวคำนวณ FIFO จริง — ยอด spend ตัดจาก allocation เก่าสุดก่อน แทนที่ `amountTon - totalCampaignSpend` ที่ทำให้ติดลบทุกแถว (commit `9ced84e`, session 13)
 - [x] **Wallet history: passbook table** — เปลี่ยน card-list เป็นตาราง 5 คอลัมน์ วันที่/รายการ/ฝาก/ถอน/คงเหลือ, เรียงเก่า→ใหม่, running balance สะสม, summary row ยอดคงเหลือ (commit `0a39653`, session 13)
+- [x] **Wallet: THB sub-text ทุก row** — ฝาก: แสดง `$X.XX/TON · ฿X,XXX` ใต้ตัวเลข TON, จัดสรร: แสดง `฿X,XXX` — คำนวณ weighted sum per deposit, FIFO-correct (session 14)
+- [x] **Wallet: THB balance header/footer** — ยอดคงเหลือ TON มี `≈ ฿X,XXX` subtitle, footer row แสดง THB ใต้ TON — คำนวณ `Σ (remaining × tonPriceUsd × usdThbRate)` ต่อ deposit (session 14)
+- [x] **Wallet: filter CANCELLED/DONE จาก AllocateForm** — ช่อง Campaign ใน form จัดสรรแสดงเฉพาะ ACTIVE และ PAUSED (session 14)
+- [x] **Wallet: แสดง rate ต่อ deposit row** — `$X.XX/TON · ฿XX,XXX` แสดงใต้ยอด TON ทุก deposit row สำหรับ cross-deposit comparison (session 14)
+- [x] **Deposit edit + delete** — ปุ่มแก้ไข/ลบใน deposit rows: inline edit form (amountTon, วันที่, tonPriceUsd, usdThbRate, note) พร้อม auto-fetch rate by date, PATCH API validate amountTon ≥ totalAllocated, ล็อก delete ถ้ามี allocation (commit `e14b78c`, session 15)
+- [x] **Auto-stop depleted campaigns** — status ใหม่ `STOPPED` (migration `20260527074851_add_stopped_status`): หลัง POST entry (single+bulk) ถ้า totalSpent ≥ totalAllocated และ status=ACTIVE → เปลี่ยนเป็น STOPPED อัตโนมัติ, passive check บน dashboard+detail page สำหรับ campaigns ที่ depleted ก่อนเปิด feature (commits `55d500e`, `126bd97`, session 15)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ
+1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ (migration `add_stopped_status` ต้อง `prisma migrate deploy` บน production ด้วย)
 2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
