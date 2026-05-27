@@ -86,13 +86,11 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
               borderRadius: '6px',
               fontSize: '12px',
             }}
-            formatter={(value: any) => {
-              if (typeof value === 'number') {
-                return value.toFixed(3)
-              }
-              return value
-            }}
-            labelFormatter={(label: any) => `Date: ${label}`}
+            formatter={(value, name) =>
+              name === 'spendTon'
+                ? [`${Number(value).toFixed(3)} TON`, 'Spend']
+                : [value, 'Joins']
+            }
           />
           <Area
             yAxisId="spend"
