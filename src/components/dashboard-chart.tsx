@@ -16,7 +16,7 @@ import type { ChartDataPoint } from '@/lib/chart'
 
 type Range = '7d' | '30d' | 'all'
 
-export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
+export function DashboardChart({ chartData, joinsLabel = 'Joins' }: { chartData: ChartDataPoint[]; joinsLabel?: string }) {
   const [range, setRange] = useState<Range>('30d')
 
   const filtered = useMemo(() => {
@@ -89,7 +89,7 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
             formatter={(value, name) =>
               name === 'spendTon'
                 ? [`${Number(value).toFixed(3)} TON`, 'Spend']
-                : [value, 'Joins']
+                : [value, joinsLabel]
             }
           />
           <Area
@@ -116,7 +116,7 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
           <span className="inline-block w-3 h-0.5 bg-blue-500" /> Spend (TON)
         </span>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="inline-block w-3 h-0.5 bg-green-500" /> Joins
+          <span className="inline-block w-3 h-0.5 bg-green-500" /> {joinsLabel}
         </span>
       </div>
     </div>

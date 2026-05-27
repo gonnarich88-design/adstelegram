@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-27 (session 16) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-27 (session 17) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 **Dashboard Redesign — เสร็จแล้ว** (browser verified ✅)
@@ -8,6 +8,7 @@
 (ไม่มีงานค้าง)
 
 ## เสร็จแล้ว
+- [x] **fix: Dashboard joins label dynamic** — KPI card "Total Joins/Startbot", chart tooltip+legend, CPS subtitle แสดง label ตาม targetType จริง (BOT ล้วน → "Startbot", CHANNEL ล้วน → "Joins", mix → "Joins / Startbot"), ซ่อน subtitle "รวม CHANNEL + BOT" ถ้าไม่ mix — 49 tests pass (session 17)
 - [x] **Dashboard Redesign** — aggregate overview (Wallet + 5 KPI cards + Trend chart recharts 7d/30d/ทั้งหมด toggle), campaign grid ย้ายไป `/campaigns` page ใหม่, Nav เปลี่ยนเป็น Campaigns link + startsWith active state — browser verified ✅ (session 16)
   - spec: `docs/superpowers/specs/2026-05-27-dashboard-redesign.md`
   - plan: `docs/superpowers/plans/2026-05-27-dashboard-redesign.md`

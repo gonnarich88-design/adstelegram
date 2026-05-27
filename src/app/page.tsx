@@ -85,6 +85,13 @@ export default async function DashboardPage() {
   const burnRate7d = recentSpend / 7
   const daysLeft = burnRate7d > 0 ? Math.floor(walletBalance / burnRate7d) : null
 
+  const targetTypes = new Set(campaigns.map(c => c.targetType))
+  const joinsLabel =
+    targetTypes.size === 0 ? 'Joins'
+    : targetTypes.size === 1 && targetTypes.has('BOT') ? 'Startbot'
+    : targetTypes.size === 1 ? 'Joins'
+    : 'Joins / Startbot'
+
   const cpsThb =
     summary && summary.totalJoins > 0
       ? summary.spendThb / summary.totalJoins
@@ -150,11 +157,13 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="rounded-lg border p-4">
-          <p className="text-sm text-muted-foreground">Total Joins</p>
+          <p className="text-sm text-muted-foreground">Total {joinsLabel}</p>
           <p className="text-2xl font-bold">
             {summary ? summary.totalJoins.toLocaleString() : '0'}
           </p>
-          <p className="text-sm text-muted-foreground">รวม CHANNEL + BOT</p>
+          {targetTypes.size > 1 && (
+            <p className="text-sm text-muted-foreground">รวม CHANNEL + BOT</p>
+          )}
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Campaigns</p>
@@ -175,12 +184,12 @@ export default async function DashboardPage() {
           <p className="text-2xl font-bold">
             {cpsThb !== null ? `฿${cpsThb.toFixed(2)}` : '—'}
           </p>
-          <p className="text-sm text-muted-foreground">cost per join</p>
+          <p className="text-sm text-muted-foreground">cost per {joinsLabel.toLowerCase()}</p>
         </div>
       </div>
 
       {/* Trend Chart */}
-      <DashboardChart chartData={chartData} />
+      <DashboardChart chartData={chartData} joinsLabel={joinsLabel} />
     </div>
   )
 }
