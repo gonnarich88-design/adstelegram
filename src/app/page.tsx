@@ -152,6 +152,38 @@ export default async function DashboardPage() {
     .filter((a): a is CampaignAlert => a !== null)
     .sort((a, b) => ({ critical: 0, warning: 1, ok: 2 }[a.level] - { critical: 0, warning: 1, ok: 2 }[b.level]))
 
+  interface CampaignStat {
+    id: string
+    name: string
+    targetName: string
+    joins: number
+    cpsThb: number | null
+    ctr: number | null
+  }
+
+  const campaignStats: CampaignStat[] = campaigns
+    .filter(c => c.status === 'ACTIVE' || c.status === 'PAUSED')
+    .map(c => {
+      const entries7d = c.entries.filter(e => new Date(e.date) >= sevenDaysAgo)
+      const spendThb7d = entries7d.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+      const joins = entries7d.reduce((s, e) => s + e.joins, 0)
+      const views = entries7d.reduce((s, e) => s + e.views, 0)
+      const clicks = entries7d.reduce((s, e) => s + e.clicks, 0)
+      return {
+        id: c.id,
+        name: c.name,
+        targetName: c.targetName,
+        joins,
+        cpsThb: joins > 0 ? spendThb7d / joins : null,
+        ctr: views > 0 ? (clicks / views) * 100 : null,
+      }
+    })
+    .filter(c => c.joins > 0 || c.ctr !== null)
+
+  const bestCps = campaignStats.filter(c => c.cpsThb !== null).sort((a, b) => a.cpsThb! - b.cpsThb!)[0] ?? null
+  const mostJoins = campaignStats.length > 0 ? [...campaignStats].sort((a, b) => b.joins - a.joins)[0] : null
+  const bestCtr = campaignStats.filter(c => c.ctr !== null).sort((a, b) => b.ctr! - a.ctr!)[0] ?? null
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -305,6 +337,42 @@ export default async function DashboardPage() {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Top Performers */}
+      {campaignStats.length > 0 && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground mb-3">Top Performers (7 วันล่าสุด)</p>
+          <div className="grid grid-cols-3 gap-4">
+            {bestCps && (
+              <div className="rounded-lg border border-t-2 border-t-amber-500 p-4 bg-muted/10">
+                <p className="text-base mb-1">🏆</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Best CPS</p>
+                <p className="text-sm font-semibold mt-1 truncate">{bestCps.name}</p>
+                <p className="text-xl font-bold text-amber-400 mt-1">฿{bestCps.cpsThb!.toFixed(0)}</p>
+                <p className="text-xs text-muted-foreground">{bestCps.joins.toLocaleString()} {joinsLabel.toLowerCase()}</p>
+              </div>
+            )}
+            {mostJoins && (
+              <div className="rounded-lg border border-t-2 border-t-blue-500 p-4 bg-muted/10">
+                <p className="text-base mb-1">📈</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Most {joinsLabel}</p>
+                <p className="text-sm font-semibold mt-1 truncate">{mostJoins.name}</p>
+                <p className="text-xl font-bold text-blue-400 mt-1">{mostJoins.joins.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">ใน 7 วันล่าสุด</p>
+              </div>
+            )}
+            {bestCtr && (
+              <div className="rounded-lg border border-t-2 border-t-purple-500 p-4 bg-muted/10">
+                <p className="text-base mb-1">🎯</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Best CTR</p>
+                <p className="text-sm font-semibold mt-1 truncate">{bestCtr.name}</p>
+                <p className="text-xl font-bold text-purple-400 mt-1">{bestCtr.ctr!.toFixed(2)}%</p>
+                <p className="text-xs text-muted-foreground">{bestCtr.targetName}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
