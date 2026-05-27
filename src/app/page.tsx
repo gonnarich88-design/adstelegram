@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma'
-import { CampaignCard } from '@/components/campaign-card'
 import { calcAggregateMetrics } from '@/lib/metrics'
 import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
+import { groupEntriesByDate } from '@/lib/chart'
+import { DashboardChart } from '@/components/dashboard-chart'
 import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +37,7 @@ export default async function DashboardPage() {
     campaigns.forEach(c => { if (depletedIds.includes(c.id)) (c as { status: string }).status = 'STOPPED' })
   }
 
+  // Aggregate metrics
   const allEntries = campaigns.flatMap(c => c.entries).map(e => ({
     spendTon: Number(e.spendTon),
     dailyBudgetTon: Number(e.dailyBudgetTon),
@@ -47,14 +48,32 @@ export default async function DashboardPage() {
     clicks: e.clicks,
     joins: e.joins,
   }))
-
   const summary = allEntries.length > 0 ? calcAggregateMetrics(allEntries) : null
-  const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
-  const channelCampaigns = campaigns.filter(c => c.targetType === 'CHANNEL')
-  const botCampaigns = campaigns.filter(c => c.targetType === 'BOT')
 
-  const depositsNum = deposits.map(d => ({ ...d, amountTon: Number(d.amountTon), tonPriceUsd: Number(d.tonPriceUsd), usdThbRate: Number(d.usdThbRate) }))
-  const allocationsNum = deposits.flatMap(d => d.allocations).map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
+  const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
+  const totalCampaigns = campaigns.length
+
+  // Chart data — date serialized to string (ISO YYYY-MM-DD) before passing to Client Component
+  const chartData = groupEntriesByDate(
+    campaigns.flatMap(c =>
+      c.entries.map(e => ({
+        date: e.date,
+        spendTon: Number(e.spendTon),
+        joins: e.joins,
+      }))
+    )
+  )
+
+  // Wallet
+  const depositsNum = deposits.map(d => ({
+    ...d,
+    amountTon: Number(d.amountTon),
+    tonPriceUsd: Number(d.tonPriceUsd),
+    usdThbRate: Number(d.usdThbRate),
+  }))
+  const allocationsNum = deposits
+    .flatMap(d => d.allocations)
+    .map(a => ({ depositId: a.depositId, amountTon: Number(a.amountTon) }))
   const walletBalance = computeWalletBalance(depositsNum, allocationsNum)
   const currentRate = findCurrentRate(depositsNum, allocationsNum)
 
@@ -66,19 +85,25 @@ export default async function DashboardPage() {
   const burnRate7d = recentSpend / 7
   const daysLeft = burnRate7d > 0 ? Math.floor(walletBalance / burnRate7d) : null
 
+  const cpsThb =
+    summary && summary.totalJoins > 0
+      ? summary.spendThb / summary.totalJoins
+      : null
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Link href="/campaigns/new" className={buttonVariants({ size: 'sm' })}>+ Campaign</Link>
-      </div>
+      <h1 className="text-2xl font-bold">Dashboard</h1>
 
+      {/* Wallet Card */}
       {walletBalance > 0 && (
         <div className="rounded-lg border p-4 bg-muted/20">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm text-muted-foreground mb-0.5">
-                TON Wallet · <Link href="/wallet" className="text-blue-400 hover:underline">ดูรายละเอียด</Link>
+                TON Wallet ·{' '}
+                <Link href="/wallet" className="text-blue-400 hover:underline">
+                  ดูรายละเอียด
+                </Link>
               </p>
               <p className="text-2xl font-bold">{walletBalance.toFixed(2)} TON</p>
               {currentRate && (
@@ -90,15 +115,22 @@ export default async function DashboardPage() {
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Burn rate (7d avg)</p>
               <p className="text-base font-semibold">{burnRate7d.toFixed(2)} TON/วัน</p>
-              {daysLeft !== null && (
+              {daysLeft !== null ? (
                 <p className="text-sm text-muted-foreground mt-0.5">
                   คงเหลือประมาณ{' '}
-                  <span className={`font-medium ${daysLeft <= 7 ? 'text-destructive' : daysLeft <= 14 ? 'text-yellow-400' : 'text-green-400'}`}>
+                  <span
+                    className={`font-medium ${
+                      daysLeft <= 7
+                        ? 'text-destructive'
+                        : daysLeft <= 14
+                        ? 'text-yellow-400'
+                        : 'text-green-400'
+                    }`}
+                  >
                     {daysLeft} วัน
                   </span>
                 </p>
-              )}
-              {daysLeft === null && (
+              ) : (
                 <p className="text-sm text-muted-foreground mt-0.5">ไม่มีข้อมูล 7 วันล่าสุด</p>
               )}
             </div>
@@ -106,61 +138,49 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {summary && (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Total Spend</p>
-            <p className="text-2xl font-bold">{summary.totalSpendTon.toFixed(2)} TON</p>
-            <p className="text-sm text-muted-foreground">≈ ฿{summary.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Active Campaigns</p>
-            <p className="text-2xl font-bold text-green-500">{activeCampaigns}</p>
-            <p className="text-sm text-muted-foreground">{campaigns.length} ทั้งหมด</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Avg CTR</p>
-            <p className="text-2xl font-bold text-blue-400">{summary.ctr.toFixed(2)}%</p>
-            <p className="text-sm text-muted-foreground">{summary.totalViews.toLocaleString()} views</p>
-          </div>
+      {/* KPI Cards — always show */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Total Spend</p>
+          <p className="text-2xl font-bold">
+            {summary ? summary.totalSpendTon.toFixed(2) : '0.00'} TON
+          </p>
+          <p className="text-sm text-muted-foreground">
+            ≈ ฿{summary ? summary.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 }) : '0'}
+          </p>
         </div>
-      )}
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Total Joins</p>
+          <p className="text-2xl font-bold">
+            {summary ? summary.totalJoins.toLocaleString() : '0'}
+          </p>
+          <p className="text-sm text-muted-foreground">รวม CHANNEL + BOT</p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Campaigns</p>
+          <p className="text-2xl font-bold text-green-500">{activeCampaigns} Active</p>
+          <p className="text-sm text-muted-foreground">{totalCampaigns} ทั้งหมด</p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Avg CTR</p>
+          <p className="text-2xl font-bold text-blue-400">
+            {summary ? summary.ctr.toFixed(2) : '0.00'}%
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {summary ? summary.totalViews.toLocaleString() : '0'} views
+          </p>
+        </div>
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Avg CPS</p>
+          <p className="text-2xl font-bold">
+            {cpsThb !== null ? `฿${cpsThb.toFixed(2)}` : '—'}
+          </p>
+          <p className="text-sm text-muted-foreground">cost per join</p>
+        </div>
+      </div>
 
-      {campaigns.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="mb-4">ยังไม่มี campaign</p>
-          <Link href="/campaigns/new" className={buttonVariants()}>สร้าง campaign แรก</Link>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {channelCampaigns.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-lg font-semibold">CHANNEL</h2>
-                <span className="text-sm text-muted-foreground">· {channelCampaigns.length}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {channelCampaigns.map(c => (
-                  <CampaignCard key={c.id} campaign={c} />
-                ))}
-              </div>
-            </div>
-          )}
-          {botCampaigns.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-lg font-semibold">BOT</h2>
-                <span className="text-sm text-muted-foreground">· {botCampaigns.length}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {botCampaigns.map(c => (
-                  <CampaignCard key={c.id} campaign={c} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Trend Chart */}
+      <DashboardChart chartData={chartData} />
     </div>
   )
 }
