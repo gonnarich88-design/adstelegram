@@ -14,21 +14,6 @@ export default async function CampaignsPage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  // Auto-stop campaigns whose allocated budget is fully spent
-  const depletedIds = campaigns
-    .filter(c => {
-      if (c.status !== 'ACTIVE') return false
-      const allocated = c.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
-      if (allocated === 0) return false
-      const spent = c.entries.reduce((s, e) => s + Number(e.spendTon), 0)
-      return spent >= allocated
-    })
-    .map(c => c.id)
-  if (depletedIds.length > 0) {
-    await prisma.campaign.updateMany({ where: { id: { in: depletedIds } }, data: { status: 'STOPPED' } })
-    campaigns.forEach(c => { if (depletedIds.includes(c.id)) (c as { status: string }).status = 'STOPPED' })
-  }
-
   const channelCampaigns = campaigns.filter(c => c.targetType === 'CHANNEL')
   const botCampaigns = campaigns.filter(c => c.targetType === 'BOT')
 
