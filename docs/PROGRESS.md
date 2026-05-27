@@ -1,13 +1,16 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-27 (session 15) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-27 (session 16) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Auto-stop depleted campaigns — เสร็จแล้ว**
+**Dashboard Redesign — เสร็จแล้ว** (browser verified ✅)
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มีงานค้าง)
 
 ## เสร็จแล้ว
+- [x] **Dashboard Redesign** — aggregate overview (Wallet + 5 KPI cards + Trend chart recharts 7d/30d/ทั้งหมด toggle), campaign grid ย้ายไป `/campaigns` page ใหม่, Nav เปลี่ยนเป็น Campaigns link + startsWith active state — browser verified ✅ (session 16)
+  - spec: `docs/superpowers/specs/2026-05-27-dashboard-redesign.md`
+  - plan: `docs/superpowers/plans/2026-05-27-dashboard-redesign.md`
 - [x] Wallet passbook: แสดงยอด THB (฿) ใต้ตัวเลข TON ทุก row (ฝาก + จัดสรร) — คำนวณจาก rate ที่บันทึกไว้ตอน deposit, allocation ที่ split หลาย deposit ใช้ weighted sum
 - [x] Init project: Next.js 16 + Prisma + PostgreSQL + Auth (JWT, single password)
 - [x] Docker + EasyPanel deployment configuration
