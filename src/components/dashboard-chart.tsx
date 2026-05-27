@@ -88,6 +88,8 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
               borderRadius: '6px',
               fontSize: '12px',
             }}
+            labelStyle={{ color: 'hsl(var(--foreground))' }}
+            itemStyle={{ color: 'hsl(var(--foreground))' }}
             formatter={(value, name) => {
               if (name === 'spendTon') return [`${Number(value).toFixed(3)} TON`, 'Spend']
               if (name === 'joins') return [value, 'Joins']
