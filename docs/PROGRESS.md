@@ -5,13 +5,10 @@
 **Dashboard Enhancements — พร้อม implement** (spec + plan เสร็จแล้ว)
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **Dashboard Enhancements** — implement ตาม plan `docs/superpowers/plans/2026-05-27-dashboard-enhancements.md`
-  - Task 1: Delta indicators บน KPI cards (วันนี้ vs เมื่อวาน)
-  - Task 2: Budget Alerts section (critical/warning/ok)
-  - Task 3: Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR)
-  - Task 4: Smoke test + push
+_(ไม่มีงานค้าง)_
 
 ## เสร็จแล้ว
+- [x] **Dashboard Enhancements** — delta indicators บน KPI cards (วันนี้ vs เมื่อวาน), Budget Alerts (critical/warning/ok เรียง urgency), Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR) — browser verified ✅ (session 18)
 - [x] **feat: split Trend chart — Joins (CHANNEL) และ Startbot (BOT) แยกเส้นตาม targetType** — groupEntriesByDate แยก field, chart แสดง/ซ่อนเส้นตามข้อมูลจริง, 51 tests pass (session 17)
 - [x] **fix: Dashboard tooltip text contrast** — labelStyle + itemStyle ใช้ foreground color แทนสีเส้น (session 17)
 - [x] **fix: Dashboard joins label dynamic** — KPI card "Total Joins/Startbot", chart tooltip+legend, CPS subtitle แสดง label ตาม targetType จริง (BOT ล้วน → "Startbot", CHANNEL ล้วน → "Joins", mix → "Joins / Startbot"), ซ่อน subtitle "รวม CHANNEL + BOT" ถ้าไม่ mix — 49 tests pass (session 17)
