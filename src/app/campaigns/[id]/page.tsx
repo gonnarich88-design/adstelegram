@@ -53,6 +53,11 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const totalAllocatedTon = campaign.allocations.reduce((s, a) => s + Number(a.amountTon), 0)
   const estimatedRefundTon = Math.max(0, totalAllocatedTon - totalSpendTon)
 
+  if (campaign.status === 'ACTIVE' && totalAllocatedTon > 0 && totalSpendTon >= totalAllocatedTon) {
+    await prisma.campaign.update({ where: { id }, data: { status: 'STOPPED' } })
+    ;(campaign as { status: string }).status = 'STOPPED'
+  }
+
   const lastAllocation = campaign.allocations.at(-1)
   const allocationForCard = campaign.allocations.length > 0
     ? {
