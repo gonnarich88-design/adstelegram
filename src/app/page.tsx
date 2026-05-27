@@ -98,6 +98,27 @@ export default async function DashboardPage() {
       ? summary.spendThb / summary.totalJoins
       : null
 
+  const allRawEntries = campaigns.flatMap(c => c.entries)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  const todayEntries = allRawEntries.filter(e => e.date.toISOString().slice(0, 10) === todayStr)
+  const yesterdayEntries = allRawEntries.filter(e => e.date.toISOString().slice(0, 10) === yesterdayStr)
+
+  const todaySpend = todayEntries.reduce((s, e) => s + Number(e.spendTon), 0)
+  const todayJoins = todayEntries.reduce((s, e) => s + e.joins, 0)
+  const todayHasData = todayEntries.length > 0
+
+  const todayCpsThb = (() => {
+    const thb = todayEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+    const j = todayEntries.reduce((s, e) => s + e.joins, 0)
+    return j > 0 ? thb / j : null
+  })()
+  const yesterdayCpsThb = (() => {
+    const thb = yesterdayEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+    const j = yesterdayEntries.reduce((s, e) => s + e.joins, 0)
+    return j > 0 ? thb / j : null
+  })()
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -156,6 +177,9 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">
             ≈ ฿{summary ? summary.spendThb.toLocaleString('th-TH', { maximumFractionDigits: 0 }) : '0'}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {todayHasData ? `วันนี้ ${todaySpend.toFixed(2)} TON` : '—'}
+          </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Total {joinsLabel}</p>
@@ -165,6 +189,13 @@ export default async function DashboardPage() {
           {targetTypes.size > 1 && (
             <p className="text-sm text-muted-foreground">รวม CHANNEL + BOT</p>
           )}
+          <p className={`text-xs mt-1 ${
+            !todayHasData ? 'text-muted-foreground'
+            : todayJoins > 0 ? 'text-green-400'
+            : 'text-muted-foreground'
+          }`}>
+            {todayHasData ? (todayJoins > 0 ? `▲ +${todayJoins} วันนี้` : `0 วันนี้`) : '—'}
+          </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Campaigns</p>
@@ -186,6 +217,17 @@ export default async function DashboardPage() {
             {cpsThb !== null ? `฿${cpsThb.toFixed(2)}` : '—'}
           </p>
           <p className="text-sm text-muted-foreground">cost per {joinsLabel.toLowerCase()}</p>
+          {todayCpsThb !== null && yesterdayCpsThb !== null ? (
+            <p className={`text-xs mt-1 font-medium ${
+              todayCpsThb < yesterdayCpsThb ? 'text-green-400'
+              : todayCpsThb > yesterdayCpsThb ? 'text-red-400'
+              : 'text-muted-foreground'
+            }`}>
+              ฿{yesterdayCpsThb.toFixed(0)} → ฿{todayCpsThb.toFixed(0)}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">—</p>
+          )}
         </div>
       </div>
 
