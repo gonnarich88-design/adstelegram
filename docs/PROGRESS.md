@@ -1,11 +1,16 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-27 (session 17) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-27 (session 18) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Dashboard Enhancements — พร้อม implement** (spec + plan เสร็จแล้ว)
+**Dashboard V2 — พร้อม implement** (spec + plan เสร็จแล้ว)
 
 ## กำลังทำ / ค้างอยู่
-_(ไม่มีงานค้าง)_
+- [ ] **Dashboard V2** — implement ตาม plan `docs/superpowers/plans/2026-05-27-dashboard-v2.md`
+  - Task 1: Hero Summary Bar (แทน Wallet Card + KPI Cards grid เดิม)
+  - Task 2: WoW Strip (สัปดาห์นี้ vs ที่แล้ว — Joins/CPS/Spend/CTR)
+  - Task 3: Campaign Leaderboard 3×2 (Top 3: Joins/CPS/Spend/CTR/Clicks/Views)
+  - Task 4: Smoke test + push
+  - **หมายเหตุ:** Budget Alerts และ Top Performers 3 cards จะถูกลบออก
 
 ## เสร็จแล้ว
 - [x] **Dashboard Enhancements** — delta indicators บน KPI cards (วันนี้ vs เมื่อวาน), Budget Alerts (critical/warning/ok เรียง urgency), Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR) — browser verified ✅ (session 18)
