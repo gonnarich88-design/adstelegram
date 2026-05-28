@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-27 (session 18) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-28 (session 18) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 **Dashboard V2 เสร็จสมบูรณ์** — browser verified ✅
@@ -8,6 +8,7 @@
 (ว่าง)
 
 ## เสร็จแล้ว
+- [x] **fix: Wallet passbook sort** — swap primary key จาก `date` → `createdAt` ป้องกัน deposit ใหม่กระโดดขึ้นไปก่อน allocation เก่าเมื่อมีวันที่เดียวกัน — running balance ถูกต้องตามลำดับที่บันทึกจริง (session 18)
 - [x] **Dashboard V2** — Hero Summary Bar (5 slots) + WoW Strip + Campaign Leaderboard 3×2 (Joins/CPS/Spend/CTR/Clicks/Views) — layout C, ลบ Budget Alerts + Top Performers + Wallet Card + KPI grid เดิม — browser verified ✅ (session 18)
 - [x] **Dashboard Enhancements** — delta indicators บน KPI cards (วันนี้ vs เมื่อวาน), Budget Alerts (critical/warning/ok เรียง urgency), Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR) — browser verified ✅ (session 18)
 - [x] **feat: split Trend chart — Joins (CHANNEL) และ Startbot (BOT) แยกเส้นตาม targetType** — groupEntriesByDate แยก field, chart แสดง/ซ่อนเส้นตามข้อมูลจริง, 51 tests pass (session 17)
