@@ -11,6 +11,8 @@ export interface DailyTotal {
   spendTon: number
   spendThb: number
   dailyBudgetTon: number
+  registrations?: number
+  depositCount?: number
 }
 
 function fmtThb(n: number) {
@@ -53,8 +55,13 @@ function monthAgg(rows: DailyTotal[]) {
   const spendTon = rows.reduce((s, r) => s + r.spendTon, 0)
   const spendThb = rows.reduce((s, r) => s + r.spendThb, 0)
   const dailyBudgetTon = rows.reduce((s, r) => s + r.dailyBudgetTon, 0)
+  const hasReg = rows.some(r => r.registrations !== undefined)
+  const hasDep = rows.some(r => r.depositCount !== undefined)
+  const registrations = hasReg ? rows.reduce((s, r) => s + (r.registrations ?? 0), 0) : undefined
+  const depositCount = hasDep ? rows.reduce((s, r) => s + (r.depositCount ?? 0), 0) : undefined
   return {
     views, clicks, joins, spendTon, spendThb, dailyBudgetTon,
+    registrations, depositCount,
     ctr: views > 0 ? (clicks / views) * 100 : 0,
     cr: clicks > 0 ? (joins / clicks) * 100 : 0,
     cpc: clicks > 0 ? spendThb / clicks : 0,
@@ -122,6 +129,8 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                       <th className="text-right py-2 px-2">Views</th>
                       <th className="text-right py-2 px-2">Clicks</th>
                       <th className="text-right py-2 px-2">{joinsLabel}</th>
+                      <th className="text-right py-2 px-2 text-purple-400">สมัคร</th>
+                      <th className="text-right py-2 px-2 text-blue-400">ฝาก</th>
                       <th className="text-right py-2 px-2">Spend (TON)</th>
                       <th className="text-right py-2 px-2 text-green-400">มูลค่า (฿)</th>
                       <th className="text-right py-2 px-2">CTR</th>
@@ -142,6 +151,8 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                           <td className="text-right py-1.5 px-2">{r.views.toLocaleString()}</td>
                           <td className="text-right py-1.5 px-2">{r.clicks.toLocaleString()}</td>
                           <td className="text-right py-1.5 px-2">{r.joins.toLocaleString()}</td>
+                          <td className="text-right py-1.5 px-2 text-purple-400">{r.registrations !== undefined ? r.registrations.toLocaleString() : '—'}</td>
+                          <td className="text-right py-1.5 px-2 text-blue-400">{r.depositCount !== undefined ? r.depositCount.toLocaleString() : '—'}</td>
                           <td className="text-right py-1.5 px-2 text-muted-foreground">{r.spendTon.toFixed(2)}</td>
                           <td className="text-right py-1.5 px-2 text-green-400">{fmtThbInt(r.spendThb)}</td>
                           <td className="text-right py-1.5 px-2">{m.ctr.toFixed(2)}%</td>
@@ -158,6 +169,8 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                       <td className="text-right py-2 px-2">{agg.views.toLocaleString()}</td>
                       <td className="text-right py-2 px-2">{agg.clicks.toLocaleString()}</td>
                       <td className="text-right py-2 px-2">{agg.joins.toLocaleString()}</td>
+                      <td className="text-right py-2 px-2 text-purple-400">{agg.registrations !== undefined ? agg.registrations.toLocaleString() : '—'}</td>
+                      <td className="text-right py-2 px-2 text-blue-400">{agg.depositCount !== undefined ? agg.depositCount.toLocaleString() : '—'}</td>
                       <td className="text-right py-2 px-2 text-muted-foreground">{agg.spendTon.toFixed(2)}</td>
                       <td className="text-right py-2 px-2 text-green-400 font-bold">{fmtThbInt(agg.spendThb)}</td>
                       <td className="text-right py-2 px-2">{agg.ctr.toFixed(2)}%</td>

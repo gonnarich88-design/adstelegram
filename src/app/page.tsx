@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const [campaigns, deposits, last30Conversions] = await Promise.all([
+  const [campaigns, deposits, allConversions] = await Promise.all([
     prisma.campaign.findMany({
       include: {
         entries: { orderBy: { date: 'asc' } },
@@ -22,10 +22,9 @@ export default async function DashboardPage() {
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
     }),
-    prisma.dailyConversion.findMany({
-      where: { date: { gte: thirtyDaysAgo } },
-    }),
+    prisma.dailyConversion.findMany(),
   ])
+  const last30Conversions = allConversions.filter(r => new Date(r.date) >= thirtyDaysAgo)
 
   // Auto-stop campaigns whose allocated budget is fully spent
   const depletedIds = campaigns
@@ -236,6 +235,9 @@ export default async function DashboardPage() {
   const hasLeaderboard = stats7d.length > 0
 
   // Daily totals across all campaigns
+  const conversionByDate = new Map(
+    allConversions.map(r => [r.date.toISOString().slice(0, 10), r])
+  )
   const dailyTotalsMap = new Map<string, { views: number; clicks: number; joins: number; spendTon: number; spendThb: number; dailyBudgetTon: number }>()
   campaigns.forEach(c => {
     const campaignBudget = Number(c.dailyBudgetTon)
@@ -254,7 +256,15 @@ export default async function DashboardPage() {
     })
   })
   const dailyTotals: DailyTotal[] = Array.from(dailyTotalsMap.entries())
-    .map(([date, v]) => ({ date, ...v }))
+    .map(([date, v]) => {
+      const conv = conversionByDate.get(date)
+      return {
+        date,
+        ...v,
+        registrations: conv?.registrations,
+        depositCount: conv?.depositCount,
+      }
+    })
     .sort((a, b) => b.date.localeCompare(a.date))
 
   // Conversion strip (30d)
