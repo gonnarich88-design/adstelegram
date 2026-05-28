@@ -120,25 +120,41 @@ export default async function DashboardPage() {
     return j > 0 ? thb / j : null
   })()
 
-  // WoW computation
-  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-  const thisWeekEntries = allRawEntries.filter(e => new Date(e.date) >= sevenDaysAgo)
-  const lastWeekEntries = allRawEntries.filter(e => {
-    const d = new Date(e.date)
-    return d >= fourteenDaysAgo && d < sevenDaysAgo
+  // WoW computation — calendar week (UTC, Monday–Sunday)
+  const todayUtc = new Date(todayStr + 'T00:00:00Z')
+  const dowUtc = todayUtc.getUTCDay()
+  const thisMonday = new Date(todayUtc)
+  thisMonday.setUTCDate(todayUtc.getUTCDate() - (dowUtc === 0 ? 6 : dowUtc - 1))
+  const lastMonday = new Date(thisMonday)
+  lastMonday.setUTCDate(thisMonday.getUTCDate() - 7)
+  const lastSunday = new Date(thisMonday.getTime() - 86400000)
+
+  const thisMondayStr = thisMonday.toISOString().slice(0, 10)
+  const lastMondayStr = lastMonday.toISOString().slice(0, 10)
+  const lastSundayStr = lastSunday.toISOString().slice(0, 10)
+
+  const fmtWowDate = (iso: string) =>
+    new Date(iso + 'T00:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+  const thisWeekLabel = `${fmtWowDate(thisMondayStr)}–${fmtWowDate(todayStr)}`
+  const lastWeekLabel = `${fmtWowDate(lastMondayStr)}–${fmtWowDate(lastSundayStr)}`
+
+  const thisWeekEntries = allRawEntries.filter(e => {
+    const d = e.date.toISOString().slice(0, 10)
+    return d >= thisMondayStr && d <= todayStr
   })
+  const lastWeekEntries = allRawEntries.filter(e => {
+    const d = e.date.toISOString().slice(0, 10)
+    return d >= lastMondayStr && d <= lastSundayStr
+  })
+
   const wowJoinsA = thisWeekEntries.reduce((s, e) => s + e.joins, 0)
   const wowJoinsB = lastWeekEntries.reduce((s, e) => s + e.joins, 0)
   const wowSpendA = thisWeekEntries.reduce((s, e) => s + Number(e.spendTon), 0)
   const wowSpendB = lastWeekEntries.reduce((s, e) => s + Number(e.spendTon), 0)
-  const wowCpsA = (() => {
-    const thb = thisWeekEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
-    return wowJoinsA > 0 ? thb / wowJoinsA : null
-  })()
-  const wowCpsB = (() => {
-    const thb = lastWeekEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
-    return wowJoinsB > 0 ? thb / wowJoinsB : null
-  })()
+  const wowSpendThbA = thisWeekEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+  const wowSpendThbB = lastWeekEntries.reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+  const wowCpsA = wowJoinsA > 0 ? wowSpendThbA / wowJoinsA : null
+  const wowCpsB = wowJoinsB > 0 ? wowSpendThbB / wowJoinsB : null
   const wowCtrA = (() => {
     const v = thisWeekEntries.reduce((s, e) => s + e.views, 0)
     const c = thisWeekEntries.reduce((s, e) => s + e.clicks, 0)
@@ -149,7 +165,29 @@ export default async function DashboardPage() {
     const c = lastWeekEntries.reduce((s, e) => s + e.clicks, 0)
     return v > 0 ? (c / v) * 100 : null
   })()
-  const hasWowData = lastWeekEntries.length > 0
+
+  // Conversion WoW
+  const thisWeekConversions = last30Conversions.filter(r => {
+    const d = r.date.toISOString().slice(0, 10)
+    return d >= thisMondayStr && d <= todayStr
+  })
+  const lastWeekConversions = last30Conversions.filter(r => {
+    const d = r.date.toISOString().slice(0, 10)
+    return d >= lastMondayStr && d <= lastSundayStr
+  })
+  const wowRegA = thisWeekConversions.reduce((s, r) => s + r.registrations, 0)
+  const wowRegB = lastWeekConversions.reduce((s, r) => s + r.registrations, 0)
+  const wowDepA = thisWeekConversions.reduce((s, r) => s + r.depositCount, 0)
+  const wowDepB = lastWeekConversions.reduce((s, r) => s + r.depositCount, 0)
+  const wowDepAmtA = thisWeekConversions.reduce((s, r) => s + Number(r.depositAmountThb), 0)
+  const wowDepAmtB = lastWeekConversions.reduce((s, r) => s + Number(r.depositAmountThb), 0)
+  const wowCprA = wowRegA > 0 ? wowSpendThbA / wowRegA : null
+  const wowCprB = wowRegB > 0 ? wowSpendThbB / wowRegB : null
+  const wowCpdA = wowDepA > 0 ? wowSpendThbA / wowDepA : null
+  const wowCpdB = wowDepB > 0 ? wowSpendThbB / wowDepB : null
+
+  const hasWowData = lastWeekEntries.length > 0 || lastWeekConversions.length > 0
+  const hasWowConversions = thisWeekConversions.length > 0 || lastWeekConversions.length > 0
 
   // Leaderboard computation
   interface CampaignStat7d {
@@ -311,62 +349,66 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* 2-column body */}
+      {/* WoW + Leaderboard */}
       {(hasWowData || hasLeaderboard) && (
-        <div className="grid grid-cols-3 gap-4">
-          {/* WoW Strip — col-span-1 */}
-          {hasWowData && (
-            <div className="rounded-lg border p-4 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">สัปดาห์นี้ vs ที่แล้ว</p>
-              {[
-                {
-                  label: joinsLabel,
-                  a: wowJoinsA, b: wowJoinsB,
-                  fmt: (v: number) => v.toLocaleString(),
-                  goodUp: true,
-                },
-                {
-                  label: 'CPS ฿',
-                  a: wowCpsA, b: wowCpsB,
-                  fmt: (v: number) => `฿${v.toFixed(0)}`,
-                  goodUp: false,
-                },
-                {
-                  label: 'Spend TON',
-                  a: wowSpendA, b: wowSpendB,
-                  fmt: (v: number) => v.toFixed(2),
-                  goodUp: false,
-                },
-                {
-                  label: 'CTR%',
-                  a: wowCtrA, b: wowCtrB,
-                  fmt: (v: number) => `${v.toFixed(2)}%`,
-                  goodUp: true,
-                },
-              ].map(({ label, a, b, fmt, goodUp }) => {
-                if (a === null || b === null) return null
-                const pct = b !== 0 ? ((a - b) / b) * 100 : null
-                const up = (a as number) > (b as number)
-                const good = goodUp ? up : !up
-                const color = pct === null || pct === 0 ? 'text-muted-foreground' : good ? 'text-green-400' : 'text-red-400'
-                return (
-                  <div key={label} className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${color}`}>
-                        {fmt(a as number)} {pct !== null ? `${up ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)}%` : ''}
-                      </p>
-                      <p className="text-xs text-muted-foreground">vs {fmt(b as number)}</p>
-                    </div>
+        <div className="space-y-4">
+          {/* WoW — full width, 2 sections */}
+          {hasWowData && (() => {
+            const wowRow = (label: string, a: number | null, b: number | null, fmt: (v: number) => string, goodUp: boolean) => {
+              if (a === null && b === null) return null
+              const aVal = a ?? 0
+              const bVal = b ?? 0
+              const pct = bVal !== 0 ? ((aVal - bVal) / bVal) * 100 : null
+              const up = aVal > bVal
+              const good = goodUp ? up : !up
+              const color = pct === null || Math.abs(pct) < 0.5 ? 'text-muted-foreground' : good ? 'text-green-400' : 'text-red-400'
+              return (
+                <div key={label} className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <div className="text-right">
+                    <p className={`text-sm font-semibold ${color}`}>
+                      {fmt(aVal)}{pct !== null ? ` ${up ? '↑' : '↓'}${Math.abs(pct).toFixed(0)}%` : ''}
+                    </p>
+                    <p className="text-xs text-muted-foreground">vs {fmt(bVal)}</p>
                   </div>
-                )
-              })}
-            </div>
-          )}
+                </div>
+              )
+            }
+            return (
+              <div className="rounded-lg border p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">สัปดาห์นี้ vs ที่แล้ว</p>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>นี้: <span className="text-foreground">{thisWeekLabel}</span></span>
+                    <span>ที่แล้ว: <span className="text-foreground">{lastWeekLabel}</span></span>
+                  </div>
+                </div>
+                <div className={`grid gap-6 ${hasWowConversions ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ads</p>
+                    {wowRow(joinsLabel, wowJoinsA, wowJoinsB, v => v.toLocaleString(), true)}
+                    {wowRow('CPS ฿', wowCpsA, wowCpsB, v => `฿${v.toFixed(0)}`, false)}
+                    {wowRow('Spend TON', wowSpendA, wowSpendB, v => v.toFixed(2), false)}
+                    {wowRow('CTR%', wowCtrA, wowCtrB, v => `${v.toFixed(2)}%`, true)}
+                  </div>
+                  {hasWowConversions && (
+                    <div className="space-y-2 border-l pl-6">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Conversions</p>
+                      {wowRow('สมัครสมาชิก', wowRegA, wowRegB, v => v.toLocaleString(), true)}
+                      {wowRow('ฝากเงิน (คน)', wowDepA, wowDepB, v => v.toLocaleString(), true)}
+                      {wowRow('ยอดฝาก', wowDepAmtA, wowDepAmtB, v => `฿${Math.round(v).toLocaleString('th-TH')}`, true)}
+                      {wowRow('CPR ฿', wowCprA, wowCprB, v => `฿${v.toFixed(0)}`, false)}
+                      {wowRow('CPD ฿', wowCpdA, wowCpdB, v => `฿${v.toFixed(0)}`, false)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
-          {/* Leaderboard — col-span-2 */}
+          {/* Leaderboard */}
           {hasLeaderboard && (
-            <div className={hasWowData ? 'col-span-2' : 'col-span-3'}>
+            <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Campaign Leaderboard — 7 วันล่าสุด</p>
               <div className="grid grid-cols-3 gap-3">
                 {([
