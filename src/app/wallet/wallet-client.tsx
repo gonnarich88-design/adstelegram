@@ -299,8 +299,8 @@ export function WalletClient({
   let runningBal = 0
   const tableRows = [...transactions]
     .sort((a, b) =>
-      new Date(a.date).getTime() - new Date(b.date).getTime() ||
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
+      new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     .map(tx => {
       if (tx.kind === 'deposit') runningBal += tx.amountTon
