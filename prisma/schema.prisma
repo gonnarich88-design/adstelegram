@@ -91,3 +91,16 @@ enum DepositType {
   DEPOSIT
   REFUND
 }
+
+model DailyConversion {
+  id                String   @id @default(cuid())
+  date              DateTime @db.Date
+  registrations     Int
+  depositCount      Int
+  depositAmountThb  Decimal  @db.Decimal(18, 2)
+  note              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([date])
+}
