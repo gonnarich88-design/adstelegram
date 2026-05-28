@@ -28,12 +28,12 @@ export function EntryForm({ campaignId, targetType, defaultDailyBudget, entry, e
 }) {
   const joinsLabel = targetType === 'BOT' ? 'Startbot' : 'Joins'
   const router = useRouter()
-  const today = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
   // entry.date คือ ISO string จาก server (.toISOString())
   // ใช้ .slice(0, 10) ได้ปลอดภัยเพราะเป็น UTC midnight — ไม่มี timezone shift
   const [form, setForm] = useState({
-    date: entry ? entry.date.slice(0, 10) : today,
+    date: entry ? entry.date.slice(0, 10) : yesterday,
     dailyBudgetTon: entry ? String(entry.dailyBudgetTon) : (defaultDailyBudget ?? ''),
     spendTon: entry ? String(entry.spendTon) : '',
     tonPriceUsd: entry

@@ -135,7 +135,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           />
           <Link href={`/campaigns/${id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>แก้ไข</Link>
           {campaign.status !== 'CANCELLED' && (
-            <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกวันนี้</Link>
+            <Link href={`/campaigns/${id}/entries/new`} className={buttonVariants({ size: 'sm' })}>+ บันทึกข้อมูล</Link>
           )}
         </div>
       </div>
