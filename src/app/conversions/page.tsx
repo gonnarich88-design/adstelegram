@@ -29,6 +29,7 @@ export default async function ConversionsPage() {
       date: dateStr,
       registrations: r.registrations,
       depositCount: r.depositCount,
+      depositTxCount: r.depositTxCount,
       depositAmountThb,
       note: r.note,
       spendThb,

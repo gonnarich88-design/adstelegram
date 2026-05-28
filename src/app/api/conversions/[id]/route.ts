@@ -8,7 +8,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await req.json()
-    const { date, registrations, depositCount, depositAmountThb, note } = body
+    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note } = body
 
     if (date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
@@ -18,6 +18,9 @@ export async function PATCH(
     }
     if (depositCount !== undefined && (typeof depositCount !== 'number' || !Number.isInteger(depositCount) || depositCount < 0)) {
       return NextResponse.json({ error: 'depositCount must be non-negative integer' }, { status: 400 })
+    }
+    if (depositTxCount !== undefined && (typeof depositTxCount !== 'number' || !Number.isInteger(depositTxCount) || depositTxCount < 0)) {
+      return NextResponse.json({ error: 'depositTxCount must be non-negative integer' }, { status: 400 })
     }
     if (
       depositAmountThb !== undefined &&
@@ -32,6 +35,7 @@ export async function PATCH(
         ...(date !== undefined && { date: new Date(date) }),
         ...(registrations !== undefined && { registrations }),
         ...(depositCount !== undefined && { depositCount }),
+        ...(depositTxCount !== undefined && { depositTxCount }),
         ...(depositAmountThb !== undefined && { depositAmountThb }),
         ...(note !== undefined && { note: note ?? null }),
       },

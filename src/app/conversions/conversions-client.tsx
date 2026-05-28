@@ -9,6 +9,7 @@ export interface ConversionRow {
   date: string
   registrations: number
   depositCount: number
+  depositTxCount: number
   depositAmountThb: number
   note: string | null
   spendThb: number | null
@@ -20,6 +21,7 @@ interface FormState {
   date: string
   registrations: string
   depositCount: string
+  depositTxCount: string
   depositAmountThb: string
   note: string
 }
@@ -43,24 +45,29 @@ function fmtThb(n: number) {
 // React จะสร้าง component ใหม่ทุก render ทำให้ input เสีย focus
 function InputRow({ f, setF }: { f: FormState; setF: (fn: (prev: FormState) => FormState) => void }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       <div className="space-y-1.5">
         <label className="text-xs font-medium">วันที่ *</label>
         <input type="date" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
           value={f.date} onChange={e => setF(p => ({ ...p, date: e.target.value }))} />
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium">สมัครสมาชิก (คน) *</label>
+        <label className="text-xs font-medium">จำนวนสมาชิกสมัครใหม่ *</label>
         <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
           value={f.registrations} onChange={e => setF(p => ({ ...p, registrations: e.target.value }))} />
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium">ฝากเงิน (คน) *</label>
+        <label className="text-xs font-medium">จำนวนสมาชิกที่ฝากเงิน *</label>
         <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
           value={f.depositCount} onChange={e => setF(p => ({ ...p, depositCount: e.target.value }))} />
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium">ฝากเงิน (฿) *</label>
+        <label className="text-xs font-medium">จำนวนรายการฝาก *</label>
+        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+          value={f.depositTxCount} onChange={e => setF(p => ({ ...p, depositTxCount: e.target.value }))} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium">ยอดฝาก (฿) *</label>
         <input type="number" min="0" step="0.01" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
           value={f.depositAmountThb} onChange={e => setF(p => ({ ...p, depositAmountThb: e.target.value }))} />
       </div>
@@ -70,7 +77,7 @@ function InputRow({ f, setF }: { f: FormState; setF: (fn: (prev: FormState) => F
 
 export function ConversionsClient({ records }: { records: ConversionRow[] }) {
   const router = useRouter()
-  const emptyForm: FormState = { date: todayStr(), registrations: '', depositCount: '', depositAmountThb: '', note: '' }
+  const emptyForm: FormState = { date: todayStr(), registrations: '', depositCount: '', depositTxCount: '', depositAmountThb: '', note: '' }
 
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
@@ -87,10 +94,12 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
     if (!f.date) return 'กรุณาใส่วันที่'
     const reg = parseInt(f.registrations)
     const dep = parseInt(f.depositCount)
+    const tx = parseInt(f.depositTxCount)
     const amt = parseFloat(f.depositAmountThb)
-    if (isNaN(reg) || reg < 0) return 'สมัครสมาชิกต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
-    if (isNaN(dep) || dep < 0) return 'ฝากเงิน (คน) ต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
-    if (isNaN(amt) || amt < 0) return 'ฝากเงิน (฿) ต้องเป็นตัวเลขที่ไม่ติดลบ'
+    if (isNaN(reg) || reg < 0) return 'จำนวนสมาชิกสมัครใหม่ต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
+    if (isNaN(dep) || dep < 0) return 'จำนวนสมาชิกที่ฝากเงินต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
+    if (isNaN(tx) || tx < 0) return 'จำนวนรายการฝากต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
+    if (isNaN(amt) || amt < 0) return 'ยอดฝากต้องเป็นตัวเลขที่ไม่ติดลบ'
     return null
   }
 
@@ -108,6 +117,7 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
           date: form.date,
           registrations: parseInt(form.registrations),
           depositCount: parseInt(form.depositCount),
+          depositTxCount: parseInt(form.depositTxCount),
           depositAmountThb: parseFloat(form.depositAmountThb),
           note: form.note || null,
         }),
@@ -134,6 +144,7 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
       date: r.date,
       registrations: r.registrations.toString(),
       depositCount: r.depositCount.toString(),
+      depositTxCount: r.depositTxCount.toString(),
       depositAmountThb: r.depositAmountThb.toFixed(2),
       note: r.note ?? '',
     })
@@ -153,6 +164,7 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
           date: editForm.date,
           registrations: parseInt(editForm.registrations),
           depositCount: parseInt(editForm.depositCount),
+          depositTxCount: parseInt(editForm.depositTxCount),
           depositAmountThb: parseFloat(editForm.depositAmountThb),
           note: editForm.note || null,
         }),
@@ -225,9 +237,10 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
             <thead>
               <tr className="border-b bg-muted/20 text-xs text-muted-foreground">
                 <th className="px-3 py-2 text-left font-medium whitespace-nowrap">วันที่</th>
-                <th className="px-3 py-2 text-right font-medium">สมัคร</th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">ฝาก (คน)</th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">ฝาก (฿)</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">สมาชิกสมัครใหม่</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">สมาชิกที่ฝากเงิน</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">รายการฝาก</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">ยอดฝาก</th>
                 <th className="px-3 py-2 text-right font-medium whitespace-nowrap">CPR (฿)</th>
                 <th className="px-3 py-2 text-right font-medium whitespace-nowrap">CPD (฿)</th>
                 <th className="px-1 py-2"></th>
@@ -245,6 +258,9 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
                     </td>
                     <td className="px-3 py-2.5 text-right font-medium text-blue-400">
                       {r.depositCount.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium text-blue-300">
+                      {r.depositTxCount.toLocaleString()}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       {fmtThb(r.depositAmountThb)}
@@ -279,7 +295,7 @@ export function ConversionsClient({ records }: { records: ConversionRow[] }) {
                   </tr>
                   {editingId === r.id && (
                     <tr>
-                      <td colSpan={7} className="px-3 pb-3 pt-0">
+                      <td colSpan={8} className="px-3 pb-3 pt-0">
                         <div className="mt-1 space-y-3 rounded-md border p-3 bg-muted/10">
                           <InputRow f={editForm} setF={setEditForm} />
                           <div className="flex items-end gap-3">

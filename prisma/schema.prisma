@@ -97,6 +97,7 @@ model DailyConversion {
   date              DateTime @db.Date
   registrations     Int
   depositCount      Int
+  depositTxCount    Int      @default(0)
   depositAmountThb  Decimal  @db.Decimal(18, 2)
   note              String?
   createdAt         DateTime @default(now())

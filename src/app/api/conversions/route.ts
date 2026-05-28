@@ -14,6 +14,7 @@ export async function GET() {
         date: r.date.toISOString().slice(0, 10),
         registrations: r.registrations,
         depositCount: r.depositCount,
+        depositTxCount: r.depositTxCount,
         depositAmountThb: Number(r.depositAmountThb),
         note: r.note,
         createdAt: r.createdAt.toISOString(),
@@ -27,7 +28,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { date, registrations, depositCount, depositAmountThb, note } = body
+    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note } = body
 
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
     if (typeof depositCount !== 'number' || !Number.isInteger(depositCount) || depositCount < 0) {
       return NextResponse.json({ error: 'depositCount must be non-negative integer' }, { status: 400 })
     }
+    if (typeof depositTxCount !== 'number' || !Number.isInteger(depositTxCount) || depositTxCount < 0) {
+      return NextResponse.json({ error: 'depositTxCount must be non-negative integer' }, { status: 400 })
+    }
     if (typeof depositAmountThb !== 'number' || isNaN(depositAmountThb) || depositAmountThb < 0) {
       return NextResponse.json({ error: 'depositAmountThb must be non-negative number' }, { status: 400 })
     }
@@ -47,6 +51,7 @@ export async function POST(req: NextRequest) {
         date: new Date(date),
         registrations,
         depositCount,
+        depositTxCount,
         depositAmountThb,
         note: note ?? null,
       },
