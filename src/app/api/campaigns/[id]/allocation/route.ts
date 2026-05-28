@@ -71,6 +71,10 @@ export async function POST(
       await prisma.campaignAllocation.create({
         data: { depositId, campaignId, amountTon, ...(allocatedAt ? { allocatedAt } : {}) },
       })
+      await prisma.campaign.updateMany({
+        where: { id: campaignId, status: 'STOPPED' },
+        data: { status: 'ACTIVE' },
+      })
       return NextResponse.json({ ok: true }, { status: 201 })
     }
 
@@ -102,6 +106,10 @@ export async function POST(
     }
 
     await prisma.campaignAllocation.createMany({ data: records })
+    await prisma.campaign.updateMany({
+      where: { id: campaignId, status: 'STOPPED' },
+      data: { status: 'ACTIVE' },
+    })
 
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch {
