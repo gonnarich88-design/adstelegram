@@ -13,10 +13,10 @@ export async function PATCH(
     if (date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
     }
-    if (registrations !== undefined && (!Number.isInteger(registrations) || registrations < 0)) {
+    if (registrations !== undefined && (typeof registrations !== 'number' || !Number.isInteger(registrations) || registrations < 0)) {
       return NextResponse.json({ error: 'registrations must be non-negative integer' }, { status: 400 })
     }
-    if (depositCount !== undefined && (!Number.isInteger(depositCount) || depositCount < 0)) {
+    if (depositCount !== undefined && (typeof depositCount !== 'number' || !Number.isInteger(depositCount) || depositCount < 0)) {
       return NextResponse.json({ error: 'depositCount must be non-negative integer' }, { status: 400 })
     }
     if (

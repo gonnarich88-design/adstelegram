@@ -270,8 +270,11 @@ export default async function DashboardPage() {
       {/* Conversion Strip */}
       {conversionStrip && (
         <div className="rounded-lg border bg-muted/5 px-6 py-4">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
             Conversions — 30 วันล่าสุด
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            จาก {last30Conversions.length} วันที่มีข้อมูล
           </p>
           <div className="grid grid-cols-2 gap-0 divide-x divide-border sm:grid-cols-4">
             <div className="pr-6">
