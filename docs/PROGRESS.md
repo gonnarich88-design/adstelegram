@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-28 (session 19) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-28 (session 19, push) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 **Daily Conversions feature เสร็จสมบูรณ์ — ไม่มีงานค้าง**
@@ -115,7 +115,9 @@
 - [x] **Auto-stop depleted campaigns** — status ใหม่ `STOPPED` (migration `20260527074851_add_stopped_status`): หลัง POST entry (single+bulk) ถ้า totalSpent ≥ totalAllocated และ status=ACTIVE → เปลี่ยนเป็น STOPPED อัตโนมัติ, passive check บน dashboard+detail page สำหรับ campaigns ที่ depleted ก่อนเปิด feature (commits `55d500e`, `126bd97`, session 15)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ (migration `add_stopped_status` ต้อง `prisma migrate deploy` บน production ด้วย)
+1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ — migrations ที่ต้อง `prisma migrate deploy` บน production:
+   - `add_stopped_status`
+   - `add_daily_conversions`
 2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
