@@ -19,7 +19,10 @@ export async function PATCH(
     if (depositCount !== undefined && (!Number.isInteger(depositCount) || depositCount < 0)) {
       return NextResponse.json({ error: 'depositCount must be non-negative integer' }, { status: 400 })
     }
-    if (depositAmountThb !== undefined && (isNaN(depositAmountThb) || depositAmountThb < 0)) {
+    if (
+      depositAmountThb !== undefined &&
+      (typeof depositAmountThb !== 'number' || isNaN(depositAmountThb) || depositAmountThb < 0)
+    ) {
       return NextResponse.json({ error: 'depositAmountThb must be non-negative' }, { status: 400 })
     }
 
