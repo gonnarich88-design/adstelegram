@@ -3,6 +3,7 @@ import { calcAggregateMetrics } from '@/lib/metrics'
 import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
 import { groupEntriesByDate } from '@/lib/chart'
 import { DashboardChart } from '@/components/dashboard-chart'
+import { DailyTotalTable, type DailyTotal } from '@/components/daily-total-table'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -234,6 +235,28 @@ export default async function DashboardPage() {
   }
   const hasLeaderboard = stats7d.length > 0
 
+  // Daily totals across all campaigns
+  const dailyTotalsMap = new Map<string, { views: number; clicks: number; joins: number; spendTon: number; spendThb: number; dailyBudgetTon: number }>()
+  campaigns.forEach(c => {
+    const campaignBudget = Number(c.dailyBudgetTon)
+    c.entries.forEach(e => {
+      const dateKey = e.date.toISOString().slice(0, 10)
+      const prev = dailyTotalsMap.get(dateKey) ?? { views: 0, clicks: 0, joins: 0, spendTon: 0, spendThb: 0, dailyBudgetTon: 0 }
+      const ton = Number(e.spendTon)
+      dailyTotalsMap.set(dateKey, {
+        views: prev.views + e.views,
+        clicks: prev.clicks + e.clicks,
+        joins: prev.joins + e.joins,
+        spendTon: prev.spendTon + ton,
+        spendThb: prev.spendThb + ton * Number(e.tonPriceUsd) * Number(e.usdThbRate),
+        dailyBudgetTon: prev.dailyBudgetTon + (campaignBudget || Number(e.dailyBudgetTon)),
+      })
+    })
+  })
+  const dailyTotals: DailyTotal[] = Array.from(dailyTotalsMap.entries())
+    .map(([date, v]) => ({ date, ...v }))
+    .sort((a, b) => b.date.localeCompare(a.date))
+
   // Conversion strip (30d)
   const hasConversionData = last30Conversions.length > 0
   const conversionStrip = hasConversionData ? (() => {
@@ -442,6 +465,14 @@ export default async function DashboardPage() {
 
       {/* Trend Chart */}
       <DashboardChart chartData={chartData} />
+
+      {/* Daily Performance Summary */}
+      {dailyTotals.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Daily Performance — รวมทุกแคมเปญ</h2>
+          <DailyTotalTable dailyTotals={dailyTotals} joinsLabel={joinsLabel} />
+        </div>
+      )}
     </div>
   )
 }

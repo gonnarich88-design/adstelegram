@@ -1,11 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-28 (session 20) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-28 (session 21) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 20 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
+**Session 21 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
+
+## เสร็จแล้ว (session 21)
+- [x] **Daily Performance Summary บน Dashboard** — สรุปยอดรวมทุกแคมเปญรายวัน ล่างสุดของหน้า Dashboard: component ใหม่ `DailyTotalTable`, aggregate entries ทุก campaign ที่มีข้อมูลวันนั้น, accordion รายเดือน (ล่าสุดเปิดอัตโนมัติ), columns: Views/Clicks/Joins/Spend TON/฿/CTR/CR/CPC/CPS/BSP, monthly summary row — browser verified ✅ (session 21)
 
 ## เสร็จแล้ว (session 20)
 - [x] **entry form default date → เมื่อวาน** — เปลี่ยน `today` → `yesterday` ใน entry-form.tsx, ปุ่ม "บันทึกวันนี้" → "บันทึกข้อมูล" (commit `df96a44`)
