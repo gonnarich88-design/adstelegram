@@ -8,7 +8,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const [campaigns, deposits] = await Promise.all([
+  const [campaigns, deposits, last30Conversions] = await Promise.all([
     prisma.campaign.findMany({
       include: {
         entries: { orderBy: { date: 'asc' } },
@@ -19,6 +19,9 @@ export default async function DashboardPage() {
     prisma.walletDeposit.findMany({
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
+    }),
+    prisma.dailyConversion.findMany({
+      where: { date: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
     }),
   ])
 
@@ -192,6 +195,25 @@ export default async function DashboardPage() {
   }
   const hasLeaderboard = stats7d.length > 0
 
+  // Conversion strip (30d)
+  const hasConversionData = last30Conversions.length > 0
+  const conversionStrip = hasConversionData ? (() => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const totalRegistrations = last30Conversions.reduce((s, r) => s + r.registrations, 0)
+    const totalDepositCount = last30Conversions.reduce((s, r) => s + r.depositCount, 0)
+    const totalDepositAmountThb = last30Conversions.reduce((s, r) => s + Number(r.depositAmountThb), 0)
+    const last30SpendThb = allRawEntries
+      .filter(e => new Date(e.date) >= thirtyDaysAgo)
+      .reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
+    return {
+      totalRegistrations,
+      totalDepositCount,
+      totalDepositAmountThb,
+      cpr: totalRegistrations > 0 ? last30SpendThb / totalRegistrations : null,
+      cpd: totalDepositCount > 0 ? last30SpendThb / totalDepositCount : null,
+    }
+  })() : null
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -243,6 +265,47 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Conversion Strip */}
+      {conversionStrip && (
+        <div className="rounded-lg border bg-muted/5 px-6 py-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            Conversions — 30 วันล่าสุด
+          </p>
+          <div className="grid grid-cols-2 gap-0 divide-x divide-border sm:grid-cols-4">
+            <div className="pr-6">
+              <p className="text-xs text-muted-foreground">สมัครสมาชิก</p>
+              <p className="text-2xl font-bold text-green-400 mt-0.5">
+                {conversionStrip.totalRegistrations.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">คน</p>
+            </div>
+            <div className="px-6">
+              <p className="text-xs text-muted-foreground">ฝากเงิน</p>
+              <p className="text-2xl font-bold text-blue-400 mt-0.5">
+                {conversionStrip.totalDepositCount.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                คน · ฿{Math.round(conversionStrip.totalDepositAmountThb).toLocaleString('th-TH')}
+              </p>
+            </div>
+            <div className="px-6">
+              <p className="text-xs text-muted-foreground">CPR</p>
+              <p className="text-2xl font-bold text-amber-400 mt-0.5">
+                {conversionStrip.cpr !== null ? `฿${Math.round(conversionStrip.cpr).toLocaleString('th-TH')}` : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">/สมัคร</p>
+            </div>
+            <div className="pl-6">
+              <p className="text-xs text-muted-foreground">CPD</p>
+              <p className="text-2xl font-bold text-amber-400 mt-0.5">
+                {conversionStrip.cpd !== null ? `฿${Math.round(conversionStrip.cpd).toLocaleString('th-TH')}` : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">/ฝาก</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2-column body */}
       {(hasWowData || hasLeaderboard) && (
