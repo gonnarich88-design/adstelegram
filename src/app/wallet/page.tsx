@@ -82,7 +82,7 @@ export default async function WalletPage() {
       currentRate={currentRate}
       deposits={depositsForClient}
       availableCampaigns={allCampaigns
-        .filter(c => c.status === 'ACTIVE' || c.status === 'PAUSED')
+        .filter(c => c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'STOPPED')
         .map(c => ({
           id: c.id,
           name: c.name,
