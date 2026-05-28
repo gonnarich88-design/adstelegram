@@ -2,18 +2,18 @@
 > อัปเดตล่าสุด: 2026-05-28 (session 19) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Daily Conversions feature — spec + plan พร้อมแล้ว รอ implement**
+**Daily Conversions feature — Tasks 1–6 เสร็จแล้ว รอ Task 7–8**
 
 ## กำลังทำ / ค้างอยู่
 - [ ] **Daily Conversions feature** — implement ตาม plan `docs/superpowers/plans/2026-05-28-daily-conversions.md`
-  - Task 1: Prisma schema migration (`DailyConversion` model)
-  - Task 2: API GET + POST `/api/conversions`
-  - Task 3: API PATCH + DELETE `/api/conversions/[id]`
-  - Task 4: Export/Import + Vitest tests
-  - Task 5: Nav link
-  - Task 6: หน้า `/conversions` (Server + Client component)
-  - Task 7: Dashboard Conversion strip (30d)
-  - Task 8: Smoke test + PROGRESS update
+  - [x] Task 1: Prisma schema migration (`DailyConversion` model)
+  - [x] Task 2: API GET + POST `/api/conversions`
+  - [x] Task 3: API PATCH + DELETE `/api/conversions/[id]`
+  - [x] Task 4: Export/Import + Vitest tests
+  - [x] Task 5: Nav link
+  - [x] Task 6: หน้า `/conversions` (Server + Client component) — commit `7375cb3`
+  - [ ] Task 7: Dashboard Conversion strip (30d)
+  - [ ] Task 8: Smoke test + PROGRESS update
 
 ## เสร็จแล้ว
 - [x] **Daily Conversions — Spec + Plan** — brainstorm → design approved → spec `docs/superpowers/specs/2026-05-28-daily-conversions-design.md` → plan `docs/superpowers/plans/2026-05-28-daily-conversions.md` — รอ implement (session 19)
