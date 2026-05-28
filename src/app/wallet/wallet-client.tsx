@@ -67,6 +67,7 @@ export function WalletClient({
   const router = useRouter()
   const [showDepositForm, setShowDepositForm] = useState(false)
   const [showAllocateForm, setShowAllocateForm] = useState(false)
+  const [showAll, setShowAll] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingAllocationId, setEditingAllocationId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
@@ -308,6 +309,10 @@ export function WalletClient({
       return { ...tx, bal: runningBal }
     })
 
+  const displayRows = showAll
+    ? [...tableRows].reverse()
+    : [...tableRows].reverse().slice(0, 20)
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-start justify-between gap-4">
@@ -368,7 +373,7 @@ export function WalletClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {tableRows.map(tx =>
+                {displayRows.map(tx =>
                   tx.kind === 'deposit' ? (
                     <Fragment key={`dep-${tx.id}`}>
                       <tr className="hover:bg-muted/10">
@@ -586,6 +591,14 @@ export function WalletClient({
               </tbody>
             </table>
           </div>
+        )}
+        {!showAll && tableRows.length > 20 && (
+          <button
+            className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setShowAll(true)}
+          >
+            ดูทั้งหมด ({tableRows.length} รายการ)
+          </button>
         )}
       </div>
     </div>
