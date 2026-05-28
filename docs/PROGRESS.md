@@ -1,13 +1,24 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-28 (session 19, push) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-28 (session 20) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Daily Conversions feature เสร็จสมบูรณ์ — ไม่มีงานค้าง**
+**Session 20 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
 
-## เสร็จแล้ว
+## เสร็จแล้ว (session 20)
+- [x] **entry form default date → เมื่อวาน** — เปลี่ยน `today` → `yesterday` ใน entry-form.tsx, ปุ่ม "บันทึกวันนี้" → "บันทึกข้อมูล" (commit `df96a44`)
+- [x] **Campaign status badge colors** — ACTIVE เขียว, STOPPED เหลือง, CANCELLED แดง (เดิม), PAUSED เทา — เปลี่ยนจาก `variant` เป็น `className` โดยตรง (commit `0d648b1`)
+- [x] **Conversions: เพิ่ม depositTxCount** — schema migration `add_deposit_tx_count`, form 5 field: วันที่/สมาชิกสมัครใหม่/สมาชิกที่ฝากเงิน/จำนวนรายการฝาก/ยอดฝาก, API + export/import รองรับ backward compat (commit `9735e94`)
+- [x] **auto-activate STOPPED on allocation** — POST `/api/campaigns/[id]/allocation` ทั้ง single-deposit และ FIFO path: ถ้า campaign status = STOPPED → เปลี่ยนเป็น ACTIVE อัตโนมัติ (commit `c23d326`)
+- [x] **Wallet: รวม STOPPED ใน dropdown** — filter `ACTIVE | PAUSED | STOPPED` เพื่อให้จัดสรรงบให้ STOPPED campaign ได้ (commit `a1d22c4`)
+- [x] **Wallet: newest-first + limit 20 rows** — displayRows reverse + slice(0,20), ปุ่ม "ดูทั้งหมด (X รายการ)" (commit `9c6a7cf`)
+- [x] **Conversions: grouped by month + summary cards** — แต่ละเดือนมี header + 6 summary cards (สมาชิกใหม่/ฝากเงิน/รายการฝาก/ยอดฝาก/CPR/CPD) + ตารางรายวัน newest-first (commit `0752f20`)
+- [x] **auto-activate STOPPED on page load** — campaign detail page: ถ้า STOPPED แต่ totalSpent < totalAllocated → เปลี่ยนเป็น ACTIVE passive check ตอนเปิดหน้า (commit `bedbb69`)
+- [x] **WoW: calendar week + Conversions metrics** — เปลี่ยน rolling 7d → จันทร์–อาทิตย์ UTC, เพิ่มคอลัมน์ Conversions (สมัคร/ฝากเงิน/ยอดฝาก/CPR/CPD), full-width card แยก Ads | Conversions, แสดง date range label (commit `ec26e78`)
+
+## เสร็จแล้ว (session ก่อนหน้า)
 - [x] **Daily Conversions feature** — DailyConversion table, /api/conversions CRUD, หน้า /conversions (form + inline-edit table + CPR/CPD), Dashboard strip 30d, export/import — browser verified ✅ (session 19)
 - [x] **Daily Conversions — Spec + Plan** — brainstorm → design approved → spec `docs/superpowers/specs/2026-05-28-daily-conversions-design.md` → plan `docs/superpowers/plans/2026-05-28-daily-conversions.md` — รอ implement (session 19)
 - [x] **fix: Wallet passbook sort** — swap primary key จาก `date` → `createdAt` ป้องกัน deposit ใหม่กระโดดขึ้นไปก่อน allocation เก่าเมื่อมีวันที่เดียวกัน — running balance ถูกต้องตามลำดับที่บันทึกจริง (session 18)
@@ -118,6 +129,7 @@
 1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ — migrations ที่ต้อง `prisma migrate deploy` บน production:
    - `add_stopped_status`
    - `add_daily_conversions`
+   - `add_deposit_tx_count`
 2. **(Optional)** feature ใหม่ตาม roadmap
 
 ## Decision log
