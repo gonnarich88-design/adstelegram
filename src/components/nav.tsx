@@ -20,11 +20,13 @@ export function Nav() {
     { href: '/', label: 'Dashboard' },
     { href: '/campaigns', label: 'Campaigns' },
     { href: '/wallet', label: 'Wallet' },
+    { href: '/conversions', label: 'Conversions' },
     { href: '/settings', label: 'Settings' },
   ]
 
   function isActive(href: string) {
     if (href === '/campaigns') return pathname.startsWith('/campaigns')
+    if (href === '/conversions') return pathname.startsWith('/conversions')
     return pathname === href
   }
 
