@@ -1,0 +1,312 @@
+'use client'
+
+import { useState, Fragment } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+
+export interface ConversionRow {
+  id: string
+  date: string
+  registrations: number
+  depositCount: number
+  depositAmountThb: number
+  note: string | null
+  spendThb: number | null
+  cpr: number | null
+  cpd: number | null
+}
+
+interface FormState {
+  date: string
+  registrations: string
+  depositCount: string
+  depositAmountThb: string
+  note: string
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function fmtDate(dateStr: string) {
+  // เพิ่ม T00:00:00 เพื่อหลีกเลี่ยง timezone offset เมื่อ parse date-only string
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH', {
+    day: 'numeric', month: 'short', year: '2-digit',
+  })
+}
+
+function fmtThb(n: number) {
+  return '฿' + Math.round(n).toLocaleString('th-TH')
+}
+
+// InputRow ต้องอยู่นอก ConversionsClient เสมอ — ถ้าอยู่ใน render function
+// React จะสร้าง component ใหม่ทุก render ทำให้ input เสีย focus
+function InputRow({ f, setF }: { f: FormState; setF: (fn: (prev: FormState) => FormState) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium">วันที่ *</label>
+        <input type="date" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+          value={f.date} onChange={e => setF(p => ({ ...p, date: e.target.value }))} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium">สมัครสมาชิก (คน) *</label>
+        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+          value={f.registrations} onChange={e => setF(p => ({ ...p, registrations: e.target.value }))} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium">ฝากเงิน (คน) *</label>
+        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+          value={f.depositCount} onChange={e => setF(p => ({ ...p, depositCount: e.target.value }))} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium">ฝากเงิน (฿) *</label>
+        <input type="number" min="0" step="0.01" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+          value={f.depositAmountThb} onChange={e => setF(p => ({ ...p, depositAmountThb: e.target.value }))} />
+      </div>
+    </div>
+  )
+}
+
+export function ConversionsClient({ records }: { records: ConversionRow[] }) {
+  const router = useRouter()
+  const emptyForm: FormState = { date: todayStr(), registrations: '', depositCount: '', depositAmountThb: '', note: '' }
+
+  const [form, setForm] = useState<FormState>(emptyForm)
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<FormState>(emptyForm)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  function validateForm(f: FormState): string | null {
+    if (!f.date) return 'กรุณาใส่วันที่'
+    const reg = parseInt(f.registrations)
+    const dep = parseInt(f.depositCount)
+    const amt = parseFloat(f.depositAmountThb)
+    if (isNaN(reg) || reg < 0) return 'สมัครสมาชิกต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
+    if (isNaN(dep) || dep < 0) return 'ฝากเงิน (คน) ต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
+    if (isNaN(amt) || amt < 0) return 'ฝากเงิน (฿) ต้องเป็นตัวเลขที่ไม่ติดลบ'
+    return null
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const err = validateForm(form)
+    if (err) { setFormError(err); return }
+    setSubmitting(true)
+    setFormError('')
+    try {
+      const res = await fetch('/api/conversions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: form.date,
+          registrations: parseInt(form.registrations),
+          depositCount: parseInt(form.depositCount),
+          depositAmountThb: parseFloat(form.depositAmountThb),
+          note: form.note || null,
+        }),
+      })
+      if (res.ok) {
+        setForm({ ...emptyForm, date: todayStr() })
+        router.refresh()
+      } else {
+        const data = await res.json()
+        setFormError(data.error === 'DUPLICATE_DATE'
+          ? 'มีข้อมูลวันนี้แล้ว กรุณาแก้ไขแทน'
+          : (data.error ?? 'บันทึกไม่สำเร็จ'))
+      }
+    } catch {
+      setFormError('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function startEdit(r: ConversionRow) {
+    setEditingId(r.id)
+    setEditForm({
+      date: r.date,
+      registrations: r.registrations.toString(),
+      depositCount: r.depositCount.toString(),
+      depositAmountThb: r.depositAmountThb.toFixed(2),
+      note: r.note ?? '',
+    })
+    setEditError('')
+  }
+
+  async function handleSaveEdit(id: string) {
+    const err = validateForm(editForm)
+    if (err) { setEditError(err); return }
+    setEditLoading(true)
+    setEditError('')
+    try {
+      const res = await fetch(`/api/conversions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: editForm.date,
+          registrations: parseInt(editForm.registrations),
+          depositCount: parseInt(editForm.depositCount),
+          depositAmountThb: parseFloat(editForm.depositAmountThb),
+          note: editForm.note || null,
+        }),
+      })
+      if (res.ok) {
+        setEditingId(null)
+        router.refresh()
+      } else {
+        const data = await res.json()
+        setEditError(data.error === 'DUPLICATE_DATE'
+          ? 'วันที่ซ้ำกับรายการอื่น'
+          : (data.error ?? 'บันทึกไม่สำเร็จ'))
+      }
+    } catch {
+      setEditError('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/conversions/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.refresh()
+      } else {
+        const data = await res.json()
+        alert(data.error ?? 'ลบไม่สำเร็จ')
+      }
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <h1 className="text-2xl font-bold">Conversions</h1>
+
+      {/* Add form */}
+      <div className="rounded-md border p-4 space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">บันทึกรายวัน</p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <InputRow f={form} setF={setForm} />
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-medium">หมายเหตุ</label>
+              <input
+                type="text"
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                placeholder="optional"
+                value={form.note}
+                onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
+              />
+            </div>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'กำลังบันทึก...' : '+ บันทึก'}
+            </Button>
+          </div>
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
+        </form>
+      </div>
+
+      {/* Table */}
+      {records.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">ยังไม่มีข้อมูล</p>
+      ) : (
+        <div className="overflow-x-auto rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/20 text-xs text-muted-foreground">
+                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">วันที่</th>
+                <th className="px-3 py-2 text-right font-medium">สมัคร</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">ฝาก (คน)</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">ฝาก (฿)</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">CPR (฿)</th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">CPD (฿)</th>
+                <th className="px-1 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {records.map(r => (
+                <Fragment key={r.id}>
+                  <tr className="hover:bg-muted/10">
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {fmtDate(r.date)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium text-green-400">
+                      {r.registrations.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium text-blue-400">
+                      {r.depositCount.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {fmtThb(r.depositAmountThb)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-amber-400">
+                      {r.cpr !== null ? fmtThb(r.cpr) : '—'}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-amber-400">
+                      {r.cpd !== null ? fmtThb(r.cpd) : '—'}
+                    </td>
+                    <td className="px-1 py-2.5">
+                      <div className="flex gap-0.5">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => editingId === r.id ? setEditingId(null) : startEdit(r)}
+                        >
+                          {editingId === r.id ? 'ยกเลิก' : 'แก้ไข'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive h-6 px-2 text-xs"
+                          disabled={deletingId === r.id}
+                          onClick={() => handleDelete(r.id)}
+                        >
+                          ลบ
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                  {editingId === r.id && (
+                    <tr>
+                      <td colSpan={7} className="px-3 pb-3 pt-0">
+                        <div className="mt-1 space-y-3 rounded-md border p-3 bg-muted/10">
+                          <InputRow f={editForm} setF={setEditForm} />
+                          <div className="flex items-end gap-3">
+                            <div className="flex-1 space-y-1.5">
+                              <label className="text-xs font-medium">หมายเหตุ</label>
+                              <input
+                                type="text"
+                                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                                value={editForm.note}
+                                onChange={e => setEditForm(p => ({ ...p, note: e.target.value }))}
+                              />
+                            </div>
+                            <Button size="sm" disabled={editLoading} onClick={() => handleSaveEdit(r.id)}>
+                              {editLoading ? 'กำลังบันทึก...' : 'บันทึก'}
+                            </Button>
+                          </div>
+                          {editError && <p className="text-xs text-destructive">{editError}</p>}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
