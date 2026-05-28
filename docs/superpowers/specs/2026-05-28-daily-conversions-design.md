@@ -78,7 +78,7 @@ CPD (Cost per Depositor)    = dailyAdSpendThb / depositCount
 
 - เรียงจากใหม่ → เก่า
 - คอลัมน์: วันที่, สมัคร, ฝาก(คน), ฝาก(฿), CPR(฿), CPD(฿), actions
-- actions: ปุ่มแก้ไข + ลบ ในแต่ละ row (inline edit เหมือน PerformanceEntry)
+- actions: ปุ่มแก้ไข + ลบ ในแต่ละ row
 - inline edit: แสดง input fields แทน text ใน row เดียวกัน (เหมือน WalletDeposit), save/cancel
 
 ### API Routes
@@ -92,8 +92,10 @@ DELETE /api/conversions/[id]     → ลบ
 
 ### Page component
 
-- Server Component: ดึง DailyConversion ทั้งหมด + aggregate spendThb ต่อวันจาก PerformanceEntry
+- Server Component: ดึง DailyConversion ทั้งหมด + ดึง PerformanceEntry ทั้งหมด → group by date string (`YYYY-MM-DD`) ใน JS แล้ว sum spendThb ต่อวัน
+- การ join ทำใน JavaScript (ไม่ใช่ SQL) เพื่อหลีกเลี่ยง type mismatch ระหว่าง `DailyConversion.date` (DATE) กับ `PerformanceEntry.date` (TIMESTAMP)
 - ส่ง serialized data ไป Client Component สำหรับ form/table interaction
+- หลัง mutation ใช้ `router.refresh()` เพื่อ re-fetch (เหมือน WalletClient)
 - `export const dynamic = 'force-dynamic'`
 
 ---
