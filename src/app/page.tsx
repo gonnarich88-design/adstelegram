@@ -8,6 +8,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const [campaigns, deposits, last30Conversions] = await Promise.all([
     prisma.campaign.findMany({
       include: {
@@ -21,7 +22,7 @@ export default async function DashboardPage() {
       orderBy: { depositedAt: 'asc' },
     }),
     prisma.dailyConversion.findMany({
-      where: { date: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      where: { date: { gte: thirtyDaysAgo } },
     }),
   ])
 
@@ -198,12 +199,12 @@ export default async function DashboardPage() {
   // Conversion strip (30d)
   const hasConversionData = last30Conversions.length > 0
   const conversionStrip = hasConversionData ? (() => {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     const totalRegistrations = last30Conversions.reduce((s, r) => s + r.registrations, 0)
     const totalDepositCount = last30Conversions.reduce((s, r) => s + r.depositCount, 0)
     const totalDepositAmountThb = last30Conversions.reduce((s, r) => s + Number(r.depositAmountThb), 0)
+    const conversionDateStrs = new Set(last30Conversions.map(r => r.date.toISOString().slice(0, 10)))
     const last30SpendThb = allRawEntries
-      .filter(e => new Date(e.date) >= thirtyDaysAgo)
+      .filter(e => conversionDateStrs.has(new Date(e.date).toISOString().slice(0, 10)))
       .reduce((s, e) => s + Number(e.spendTon) * Number(e.tonPriceUsd) * Number(e.usdThbRate), 0)
     return {
       totalRegistrations,
