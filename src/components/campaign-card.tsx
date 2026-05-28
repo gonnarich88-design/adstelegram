@@ -3,13 +3,13 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { calcAggregateMetrics } from '@/lib/metrics'
 
-const STATUS_COLORS = {
-  ACTIVE: 'default',
-  PAUSED: 'secondary',
-  STOPPED: 'secondary',
-  DONE: 'outline',
-  CANCELLED: 'destructive',
-} as const
+const STATUS_CLASS: Record<string, string> = {
+  ACTIVE: 'bg-green-600 text-white hover:bg-green-600',
+  PAUSED: 'bg-secondary text-secondary-foreground hover:bg-secondary',
+  STOPPED: 'bg-yellow-500 text-black hover:bg-yellow-500',
+  DONE: 'border border-border bg-transparent text-foreground',
+  CANCELLED: 'bg-destructive text-white hover:bg-destructive',
+}
 
 function fmt(n: number, digits = 2) {
   return n.toFixed(digits)
@@ -48,7 +48,7 @@ export function CampaignCard({ campaign }: { campaign: any }) {
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-base">{campaign.name}</CardTitle>
-            <Badge variant={STATUS_COLORS[campaign.status as keyof typeof STATUS_COLORS]}>
+            <Badge className={STATUS_CLASS[campaign.status] ?? ''}>
               {campaign.status}
             </Badge>
           </div>
