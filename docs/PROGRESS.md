@@ -1,13 +1,22 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-28 (session 18) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-28 (session 19) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Dashboard V2 เสร็จสมบูรณ์** — browser verified ✅
+**Daily Conversions feature — spec + plan พร้อมแล้ว รอ implement**
 
 ## กำลังทำ / ค้างอยู่
-(ว่าง)
+- [ ] **Daily Conversions feature** — implement ตาม plan `docs/superpowers/plans/2026-05-28-daily-conversions.md`
+  - Task 1: Prisma schema migration (`DailyConversion` model)
+  - Task 2: API GET + POST `/api/conversions`
+  - Task 3: API PATCH + DELETE `/api/conversions/[id]`
+  - Task 4: Export/Import + Vitest tests
+  - Task 5: Nav link
+  - Task 6: หน้า `/conversions` (Server + Client component)
+  - Task 7: Dashboard Conversion strip (30d)
+  - Task 8: Smoke test + PROGRESS update
 
 ## เสร็จแล้ว
+- [x] **Daily Conversions — Spec + Plan** — brainstorm → design approved → spec `docs/superpowers/specs/2026-05-28-daily-conversions-design.md` → plan `docs/superpowers/plans/2026-05-28-daily-conversions.md` — รอ implement (session 19)
 - [x] **fix: Wallet passbook sort** — swap primary key จาก `date` → `createdAt` ป้องกัน deposit ใหม่กระโดดขึ้นไปก่อน allocation เก่าเมื่อมีวันที่เดียวกัน — running balance ถูกต้องตามลำดับที่บันทึกจริง (session 18)
 - [x] **Dashboard V2** — Hero Summary Bar (5 slots) + WoW Strip + Campaign Leaderboard 3×2 (Joins/CPS/Spend/CTR/Clicks/Views) — layout C, ลบ Budget Alerts + Top Performers + Wallet Card + KPI grid เดิม — browser verified ✅ (session 18)
 - [x] **Dashboard Enhancements** — delta indicators บน KPI cards (วันนี้ vs เมื่อวาน), Budget Alerts (critical/warning/ok เรียง urgency), Top Performers 7d (Best CPS, Most Startbot/Joins, Best CTR) — browser verified ✅ (session 18)
