@@ -7,16 +7,18 @@ export interface ExportData {
   campaignAllocations?: any[]
   walletBalanceTon?: string
   campaigns: any[]
+  dailyConversions?: any[]
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, walletDeposits, campaignAllocations] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations, dailyConversions] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.walletDeposit.findMany({ orderBy: { depositedAt: 'asc' } }),
     prisma.campaignAllocation.findMany(),
+    prisma.dailyConversion.findMany({ orderBy: { date: 'asc' } }),
   ])
 
   return {
@@ -72,6 +74,15 @@ export async function exportData(): Promise<ExportData> {
         createdAt: e.createdAt.toISOString(),
       })),
     })),
+    dailyConversions: dailyConversions.map(r => ({
+      id: r.id,
+      date: r.date.toISOString().slice(0, 10),
+      registrations: r.registrations,
+      depositCount: r.depositCount,
+      depositAmountThb: r.depositAmountThb.toString(),
+      note: r.note,
+      createdAt: r.createdAt.toISOString(),
+    })),
   }
 }
 
@@ -81,6 +92,7 @@ export async function importData(data: ExportData): Promise<void> {
     await tx.performanceEntry.deleteMany()
     await tx.campaign.deleteMany()
     await tx.walletDeposit.deleteMany()
+    await tx.dailyConversion.deleteMany()
 
     for (const c of data.campaigns) {
       await tx.campaign.create({
@@ -139,6 +151,19 @@ export async function importData(data: ExportData): Promise<void> {
           campaignId: a.campaignId,
           amountTon: a.amountTon,
           ...(a.allocatedAt ? { allocatedAt: new Date(a.allocatedAt) } : {}),
+        },
+      })
+    }
+
+    for (const r of data.dailyConversions ?? []) {
+      await tx.dailyConversion.create({
+        data: {
+          id: r.id,
+          date: new Date(r.date),
+          registrations: r.registrations ?? 0,
+          depositCount: r.depositCount ?? 0,
+          depositAmountThb: r.depositAmountThb ?? 0,
+          note: r.note ?? null,
         },
       })
     }
