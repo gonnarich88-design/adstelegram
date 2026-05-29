@@ -8,7 +8,10 @@
 (ไม่มี)
 
 ## เสร็จแล้ว (session 21)
-- [x] **Daily Performance Summary บน Dashboard** — สรุปยอดรวมทุกแคมเปญรายวัน ล่างสุดของหน้า Dashboard: component ใหม่ `DailyTotalTable`, aggregate entries ทุก campaign ที่มีข้อมูลวันนั้น, accordion รายเดือน (ล่าสุดเปิดอัตโนมัติ), columns: Views/Clicks/Joins/Spend TON/฿/CTR/CR/CPC/CPS/BSP, monthly summary row — browser verified ✅ (session 21)
+- [x] **Daily Performance Summary บน Dashboard** — สรุปยอดรวมทุกแคมเปญรายวัน ล่างสุดของหน้า Dashboard: component ใหม่ `DailyTotalTable`, aggregate entries ทุก campaign ที่มีข้อมูลวันนั้น, accordion รายเดือน (ล่าสุดเปิดอัตโนมัติ), columns: Views/Clicks/Joins/Spend TON/฿/CTR/CR/CPC/CPS/BSP, monthly summary row — browser verified ✅ (commit `2a83216`)
+- [x] **Daily Performance: เพิ่มคอลัมน์ สมัคร + ฝาก** — join DailyConversion ตาม date เข้า dailyTotals, สมัคร (สีม่วง) / ฝาก (สีน้ำเงิน), แสดง `—` วันที่ไม่มีข้อมูล Conversion, monthly summary รวมยอด — browser verified ✅ (commit `5d4f92a`)
+- [x] **Daily Performance: Day/Week toggle** — ปุ่ม รายวัน | รายอาทิตย์, week mode aggregate Mon–Sun UTC, label range "27 เม.ย. – 3 พ.ค.", group ตาม Monday's month — client-side ล้วน (commit `be1c04b`)
+- [x] **Daily Performance: Drill-down week → days** — week mode: คลิก week row ที่มี 2+ วัน → ขยาย daily sub-rows ข้างใน, ▶/▼ toggle, muted indent style, หลาย week expand พร้อมกันได้ — browser verified ✅ (commit `bdfa24e`)
 
 ## เสร็จแล้ว (session 20)
 - [x] **entry form default date → เมื่อวาน** — เปลี่ยน `today` → `yesterday` ใน entry-form.tsx, ปุ่ม "บันทึกวันนี้" → "บันทึกข้อมูล" (commit `df96a44`)
