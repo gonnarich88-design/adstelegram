@@ -8,10 +8,11 @@ export interface ExportData {
   walletBalanceTon?: string
   campaigns: any[]
   dailyConversions?: any[]
+  campaignChangeLogs?: any[]
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, walletDeposits, campaignAllocations, dailyConversions] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
@@ -19,6 +20,7 @@ export async function exportData(): Promise<ExportData> {
     prisma.walletDeposit.findMany({ orderBy: { depositedAt: 'asc' } }),
     prisma.campaignAllocation.findMany(),
     prisma.dailyConversion.findMany({ orderBy: { date: 'asc' } }),
+    prisma.campaignChangeLog.findMany({ orderBy: { changedAt: 'asc' } }),
   ])
 
   return {
@@ -84,11 +86,21 @@ export async function exportData(): Promise<ExportData> {
       note: r.note,
       createdAt: r.createdAt.toISOString(),
     })),
+    campaignChangeLogs: campaignChangeLogs.map(l => ({
+      id: l.id,
+      campaignId: l.campaignId,
+      changedAt: l.changedAt.toISOString(),
+      field: l.field ?? null,
+      oldValue: l.oldValue ?? null,
+      newValue: l.newValue ?? null,
+      note: l.note ?? null,
+    })),
   }
 }
 
 export async function importData(data: ExportData): Promise<void> {
   await prisma.$transaction(async tx => {
+    await tx.campaignChangeLog.deleteMany()
     await tx.campaignAllocation.deleteMany()
     await tx.performanceEntry.deleteMany()
     await tx.campaign.deleteMany()
@@ -166,6 +178,20 @@ export async function importData(data: ExportData): Promise<void> {
           depositTxCount: r.depositTxCount ?? 0,
           depositAmountThb: r.depositAmountThb ?? 0,
           note: r.note ?? null,
+        },
+      })
+    }
+
+    for (const l of data.campaignChangeLogs ?? []) {
+      await tx.campaignChangeLog.create({
+        data: {
+          id: l.id,
+          campaignId: l.campaignId,
+          changedAt: new Date(l.changedAt),
+          field: l.field ?? null,
+          oldValue: l.oldValue ?? null,
+          newValue: l.newValue ?? null,
+          note: l.note ?? null,
         },
       })
     }

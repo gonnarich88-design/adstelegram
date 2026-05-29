@@ -25,6 +25,11 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       deleteMany: vi.fn(),
     },
+    campaignChangeLog: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     $transaction: vi.fn(async (fn: (tx: any) => Promise<void>) =>
       fn({
         campaign: { create: vi.fn(), deleteMany: vi.fn() },
@@ -32,6 +37,7 @@ vi.mock('@/lib/prisma', () => ({
         walletDeposit: { create: vi.fn(), deleteMany: vi.fn() },
         campaignAllocation: { create: vi.fn(), deleteMany: vi.fn() },
         dailyConversion: { create: vi.fn(), deleteMany: vi.fn() },
+        campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
       })
     ),
   },
@@ -41,6 +47,7 @@ describe('importData backward compat', () => {
   it('accepts campaign without bidCpmTon (old JSON) and stores null', async () => {
     const { prisma } = await import('@/lib/prisma')
     const mockTx = {
+      campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
       campaignAllocation: { deleteMany: vi.fn() },
       performanceEntry: { deleteMany: vi.fn() },
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
@@ -85,6 +92,7 @@ describe('exportData', () => {
     vi.mocked(prisma.walletDeposit.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.campaignAllocation.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.dailyConversion.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.campaignChangeLog.findMany).mockResolvedValueOnce([])
 
     const { exportData } = await import('@/lib/export')
     const result = await exportData()
@@ -103,6 +111,7 @@ describe('exportData includes dailyConversions', () => {
     vi.mocked(prisma.campaign.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.walletDeposit.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.campaignAllocation.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.campaignChangeLog.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.dailyConversion.findMany).mockResolvedValueOnce([
       {
         id: 'dc1',
@@ -135,6 +144,7 @@ describe('importData backward compat — missing dailyConversions', () => {
   it('handles JSON without dailyConversions field gracefully', async () => {
     const { prisma } = await import('@/lib/prisma')
     const mockTx = {
+      campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
       campaignAllocation: { deleteMany: vi.fn() },
       performanceEntry: { deleteMany: vi.fn() },
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
@@ -153,5 +163,41 @@ describe('importData backward compat — missing dailyConversions', () => {
 
     expect(mockTx.dailyConversion.deleteMany).toHaveBeenCalled()
     expect(mockTx.dailyConversion.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('importData backward compat — missing campaignChangeLogs', () => {
+  it('handles JSON without campaignChangeLogs field gracefully', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const mockTx = {
+      campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
+      campaignAllocation: { deleteMany: vi.fn() },
+      performanceEntry: { deleteMany: vi.fn() },
+      campaign: { deleteMany: vi.fn(), create: vi.fn() },
+      walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+    }
+    vi.mocked(prisma.$transaction).mockImplementationOnce((fn: any) => fn(mockTx))
+    const { importData } = await import('@/lib/export')
+    await importData({ version: 2, exportedAt: new Date().toISOString(), campaigns: [] })
+    expect(mockTx.campaignChangeLog.deleteMany).toHaveBeenCalled()
+    expect(mockTx.campaignChangeLog.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('exportData includes campaignChangeLogs', () => {
+  it('returns campaignChangeLogs array with serialized records', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    vi.mocked(prisma.campaign.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.walletDeposit.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.campaignAllocation.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.dailyConversion.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.campaignChangeLog.findMany).mockResolvedValueOnce([
+      { id: 'log1', campaignId: 'c1', changedAt: new Date('2026-05-29T10:00:00Z'), field: 'dailyBudgetTon', oldValue: '5.00000000', newValue: '7.00000000', note: null } as any,
+    ])
+    const { exportData } = await import('@/lib/export')
+    const result = await exportData()
+    expect(result.campaignChangeLogs).toHaveLength(1)
+    expect(result.campaignChangeLogs![0]).toMatchObject({ id: 'log1', campaignId: 'c1', field: 'dailyBudgetTon', oldValue: '5.00000000', newValue: '7.00000000', note: null })
   })
 })
