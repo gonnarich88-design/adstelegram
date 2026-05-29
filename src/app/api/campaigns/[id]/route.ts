@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { logCampaignChanges, diffCampaignFields } from '@/lib/changelog'
 
 export async function GET(
   _req: NextRequest,
@@ -30,6 +31,10 @@ export async function PUT(
     if (bidCpmTon !== null && (isNaN(bidCpmTon) || bidCpmTon <= 0)) {
       return NextResponse.json({ error: 'bidCpmTon must be > 0' }, { status: 400 })
     }
+
+    const old = await prisma.campaign.findUnique({ where: { id } })
+    if (!old) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
     const campaign = await prisma.campaign.update({
       where: { id },
       data: {
@@ -46,6 +51,27 @@ export async function PUT(
         note: body.note ?? null,
       },
     })
+
+    const changes = diffCampaignFields(old, {
+      name: body.name,
+      targetType: body.targetType,
+      targetName: body.targetName,
+      startDate: body.startDate,
+      endDate: body.endDate ?? null,
+      budgetTon: body.budgetTon ?? null,
+      dailyBudgetTon: body.dailyBudgetTon,
+      bidCpmTon: bidCpmTon,
+      status: body.status,
+      placementName: body.placementName ?? null,
+    })
+
+    const changeNote = typeof body.changeNote === 'string' && body.changeNote.trim()
+      ? body.changeNote.trim()
+      : null
+
+    if (changeNote) changes.push({ field: null, note: changeNote })
+    await logCampaignChanges(id, changes)
+
     return NextResponse.json(campaign)
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
