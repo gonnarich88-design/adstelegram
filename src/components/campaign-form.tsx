@@ -42,6 +42,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     budgetTon: initialData?.budgetTon ?? '',
     status: initialData?.status ?? 'ACTIVE',
     note: initialData?.note ?? '',
+    changeNote: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -60,6 +61,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       endDate: form.endDate || null,
       placementName: form.placementName || null,
       note: form.note || null,
+      changeNote: form.changeNote || '',
       dailyBudgetTon: parseFloat(form.dailyBudgetTon),
       bidCpmTon: form.bidCpmTon ? parseFloat(form.bidCpmTon) : null,
       budgetTon: form.budgetTon ? parseFloat(form.budgetTon) : null,
@@ -194,6 +196,18 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         <Label>Note (optional)</Label>
         <Textarea value={form.note ?? ''} onChange={e => set('note', e.target.value)} rows={3} />
       </div>
+
+      {isEdit && (
+        <div className="space-y-2">
+          <Label htmlFor="changeNote">เหตุผลที่แก้ไข (optional)</Label>
+          <Input
+            id="changeNote"
+            value={form.changeNote}
+            onChange={e => set('changeNote', e.target.value)}
+            placeholder="เช่น ปรับ CPM เพราะ CTR ตก"
+          />
+        </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
