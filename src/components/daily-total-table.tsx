@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { bspColor } from '@/lib/bsp-color'
 
 export interface DailyTotal {
@@ -45,10 +45,9 @@ function fmtDay(dateStr: string) {
   return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' })
 }
 
-// Get Monday (UTC) of the week containing dateStr
 function getMondayStr(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00Z')
-  const dow = d.getUTCDay() // 0=Sun
+  const dow = d.getUTCDay()
   const offset = dow === 0 ? 6 : dow - 1
   const mon = new Date(d)
   mon.setUTCDate(d.getUTCDate() - offset)
@@ -58,8 +57,7 @@ function getMondayStr(dateStr: string): string {
 function weekLabel(monStr: string): string {
   const sun = new Date(monStr + 'T00:00:00Z')
   sun.setUTCDate(sun.getUTCDate() + 6)
-  const sunStr = sun.toISOString().slice(0, 10)
-  return `${fmtDay(monStr)} – ${fmtDay(sunStr)}`
+  return `${fmtDay(monStr)} – ${fmtDay(sun.toISOString().slice(0, 10))}`
 }
 
 function sumRows(rows: AggRow[]) {
@@ -114,14 +112,23 @@ function toWeekRows(dailyTotals: DailyTotal[]): AggRow[] {
         }),
         { views: 0, clicks: 0, joins: 0, spendTon: 0, spendThb: 0, dailyBudgetTon: 0, registrations: undefined as number | undefined, depositCount: undefined as number | undefined }
       )
-      return {
-        key: monStr,
-        label: weekLabel(monStr),
-        monthKey: monStr.slice(0, 7),
-        ...sum,
-      }
+      return { key: monStr, label: weekLabel(monStr), monthKey: monStr.slice(0, 7), ...sum }
     })
     .sort((a, b) => b.key.localeCompare(a.key))
+}
+
+// Map from Monday string → sorted daily AggRows for that week (newest first)
+function toWeekDaysMap(dailyTotals: DailyTotal[]): Map<string, AggRow[]> {
+  const map = new Map<string, AggRow[]>()
+  for (const r of dailyTotals) {
+    const mon = getMondayStr(r.date)
+    if (!map.has(mon)) map.set(mon, [])
+    map.get(mon)!.push({ key: r.date, label: fmtDay(r.date), monthKey: r.date.slice(0, 7), ...r })
+  }
+  for (const days of map.values()) {
+    days.sort((a, b) => b.key.localeCompare(a.key))
+  }
+  return map
 }
 
 function groupRows(rows: AggRow[]) {
@@ -133,21 +140,55 @@ function groupRows(rows: AggRow[]) {
   return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
+function RowCells({ r, joinsLabel }: { r: AggRow; joinsLabel: string }) {
+  const ctr = r.views > 0 ? (r.clicks / r.views) * 100 : 0
+  const cr = r.clicks > 0 ? (r.joins / r.clicks) * 100 : 0
+  const cpc = r.clicks > 0 ? r.spendThb / r.clicks : 0
+  const cps = r.joins > 0 ? r.spendThb / r.joins : 0
+  const bsp = r.dailyBudgetTon > 0 ? (r.spendTon / r.dailyBudgetTon) * 100 : 0
+  return (
+    <>
+      <td className="text-right py-1.5 px-2">{r.views.toLocaleString()}</td>
+      <td className="text-right py-1.5 px-2">{r.clicks.toLocaleString()}</td>
+      <td className="text-right py-1.5 px-2">{r.joins.toLocaleString()}</td>
+      <td className="text-right py-1.5 px-2 text-purple-400">{r.registrations !== undefined ? r.registrations.toLocaleString() : '—'}</td>
+      <td className="text-right py-1.5 px-2 text-blue-400">{r.depositCount !== undefined ? r.depositCount.toLocaleString() : '—'}</td>
+      <td className="text-right py-1.5 px-2 text-muted-foreground">{r.spendTon.toFixed(2)}</td>
+      <td className="text-right py-1.5 px-2 text-green-400">{fmtThbInt(r.spendThb)}</td>
+      <td className="text-right py-1.5 px-2">{ctr.toFixed(2)}%</td>
+      <td className="text-right py-1.5 px-2">{cr.toFixed(2)}%</td>
+      <td className="text-right py-1.5 px-2">{fmtThb(cpc)}</td>
+      <td className="text-right py-1.5 px-2">{r.joins > 0 ? fmtThb(cps) : '—'}</td>
+      <td className="text-right py-1.5 px-2 pr-4 font-medium" style={{ color: bspColor(bsp) }}>{bsp.toFixed(1)}%</td>
+    </>
+  )
+}
+
 export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
   dailyTotals: DailyTotal[]
   joinsLabel?: string
 }) {
   const [mode, setMode] = useState<'day' | 'week'>('day')
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
 
   const rows = mode === 'day' ? toDayRows(dailyTotals) : toWeekRows(dailyTotals)
+  const weekDaysMap = mode === 'week' ? toWeekDaysMap(dailyTotals) : new Map<string, AggRow[]>()
   const groups = groupRows(rows)
   const latestKey = groups[0]?.[0] ?? ''
   const [openMonths, setOpenMonths] = useState<Set<string>>(new Set([latestKey]))
 
   if (dailyTotals.length === 0) return null
 
-  function toggle(key: string) {
+  function toggleMonth(key: string) {
     setOpenMonths(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  function toggleWeek(key: string) {
+    setExpandedWeeks(prev => {
       const next = new Set(prev)
       next.has(key) ? next.delete(key) : next.add(key)
       return next
@@ -158,7 +199,6 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
 
   return (
     <div className="space-y-2">
-      {/* Mode toggle */}
       <div className="flex justify-end gap-1 mb-1">
         {(['day', 'week'] as const).map(m => (
           <button
@@ -183,9 +223,10 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
 
         return (
           <div key={monthKey + mode} className="border border-border rounded-lg overflow-hidden">
+            {/* Month header */}
             <button
               type="button"
-              onClick={() => toggle(monthKey)}
+              onClick={() => toggleMonth(monthKey)}
               className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
@@ -198,9 +239,7 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                 <span className="text-muted-foreground hidden sm:inline">{joinsLabel} <span className="text-foreground font-medium">{agg.joins.toLocaleString()}</span></span>
                 <span className="text-border hidden sm:inline">|</span>
                 <span className="text-green-400 font-medium">{fmtThbInt(agg.spendThb)}</span>
-                <span className="font-semibold" style={{ color: bspColor(agg.bsp) }}>
-                  BSP {agg.bsp.toFixed(1)}%
-                </span>
+                <span className="font-semibold" style={{ color: bspColor(agg.bsp) }}>BSP {agg.bsp.toFixed(1)}%</span>
                 <span className="text-muted-foreground text-base leading-none">{isOpen ? '▲' : '▼'}</span>
               </div>
             </button>
@@ -227,30 +266,42 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                   </thead>
                   <tbody>
                     {sorted.map(r => {
-                      const ctr = r.views > 0 ? (r.clicks / r.views) * 100 : 0
-                      const cr = r.clicks > 0 ? (r.joins / r.clicks) * 100 : 0
-                      const cpc = r.clicks > 0 ? r.spendThb / r.clicks : 0
-                      const cps = r.joins > 0 ? r.spendThb / r.joins : 0
-                      const bsp = r.dailyBudgetTon > 0 ? (r.spendTon / r.dailyBudgetTon) * 100 : 0
+                      const isWeekExpanded = mode === 'week' && expandedWeeks.has(r.key)
+                      const dayRows = mode === 'week' ? (weekDaysMap.get(r.key) ?? []) : []
+                      const canExpand = mode === 'week' && dayRows.length > 1
+
                       return (
-                        <tr key={r.key} className="border-b border-muted/40 hover:bg-muted/20">
-                          <td className="py-1.5 px-2 pl-4 whitespace-nowrap text-muted-foreground">{r.label}</td>
-                          <td className="text-right py-1.5 px-2">{r.views.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2">{r.clicks.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2">{r.joins.toLocaleString()}</td>
-                          <td className="text-right py-1.5 px-2 text-purple-400">{r.registrations !== undefined ? r.registrations.toLocaleString() : '—'}</td>
-                          <td className="text-right py-1.5 px-2 text-blue-400">{r.depositCount !== undefined ? r.depositCount.toLocaleString() : '—'}</td>
-                          <td className="text-right py-1.5 px-2 text-muted-foreground">{r.spendTon.toFixed(2)}</td>
-                          <td className="text-right py-1.5 px-2 text-green-400">{fmtThbInt(r.spendThb)}</td>
-                          <td className="text-right py-1.5 px-2">{ctr.toFixed(2)}%</td>
-                          <td className="text-right py-1.5 px-2">{cr.toFixed(2)}%</td>
-                          <td className="text-right py-1.5 px-2">{fmtThb(cpc)}</td>
-                          <td className="text-right py-1.5 px-2">{r.joins > 0 ? fmtThb(cps) : '—'}</td>
-                          <td className="text-right py-1.5 px-2 pr-4 font-medium" style={{ color: bspColor(bsp) }}>{bsp.toFixed(1)}%</td>
-                        </tr>
+                        <Fragment key={r.key}>
+                          {/* Week / Day row */}
+                          <tr
+                            className={`border-b border-muted/40 hover:bg-muted/20 ${canExpand ? 'cursor-pointer' : ''}`}
+                            onClick={canExpand ? () => toggleWeek(r.key) : undefined}
+                          >
+                            <td className="py-1.5 px-2 pl-4 whitespace-nowrap text-muted-foreground">
+                              {canExpand && (
+                                <span className="mr-1 text-muted-foreground/60 select-none">
+                                  {isWeekExpanded ? '▼' : '▶'}
+                                </span>
+                              )}
+                              {r.label}
+                            </td>
+                            <RowCells r={r} joinsLabel={joinsLabel} />
+                          </tr>
+
+                          {/* Daily sub-rows (week mode, expanded) */}
+                          {isWeekExpanded && dayRows.map(d => (
+                            <tr key={d.key} className="border-b border-muted/20 bg-muted/10">
+                              <td className="py-1.5 px-2 pl-10 whitespace-nowrap text-muted-foreground/70">
+                                {d.label}
+                              </td>
+                              <RowCells r={d} joinsLabel={joinsLabel} />
+                            </tr>
+                          ))}
+                        </Fragment>
                       )
                     })}
 
+                    {/* Monthly summary */}
                     <tr className="border-t-2 border-border bg-muted/30 font-semibold">
                       <td className="py-2 px-2 pl-4 text-muted-foreground">รวมเดือน</td>
                       <td className="text-right py-2 px-2">{agg.views.toLocaleString()}</td>
