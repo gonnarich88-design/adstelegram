@@ -59,8 +59,8 @@ export function diffCampaignFields(
 ): ChangeEntry[] {
   const changes: ChangeEntry[] = []
   for (const field of WATCHED_FIELDS) {
-    const oldVal = normalize(field, (oldSnap as Record<string, unknown>)[field])
-    const newVal = normalize(field, (newSnap as Record<string, unknown>)[field])
+    const oldVal = normalize(field, (oldSnap as unknown as Record<string, unknown>)[field])
+    const newVal = normalize(field, (newSnap as unknown as Record<string, unknown>)[field])
     if (oldVal !== newVal) {
       changes.push({ field, oldValue: oldVal, newValue: newVal })
     }

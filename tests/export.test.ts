@@ -118,6 +118,7 @@ describe('exportData includes dailyConversions', () => {
         date: new Date('2026-05-28'),
         registrations: 42,
         depositCount: 18,
+        depositTxCount: 0,
         depositAmountThb: { toString: () => '54000.00' } as any,
         note: 'test',
         createdAt: new Date('2026-05-28T10:00:00Z'),

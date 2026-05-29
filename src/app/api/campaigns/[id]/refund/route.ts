@@ -53,7 +53,7 @@ export async function POST(
       }),
     ])
 
-    if (updatedCampaign.status === 'CANCELLED' && campaign.status !== 'CANCELLED') {
+    if (updatedCampaign.status === 'CANCELLED') {
       await logCampaignChanges(id, [
         { field: 'status', oldValue: campaign.status, newValue: 'CANCELLED', note: 'ยกเลิกแคมเปญ' },
       ])
