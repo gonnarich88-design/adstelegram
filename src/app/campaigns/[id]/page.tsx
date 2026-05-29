@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { logCampaignChanges } from '@/lib/changelog'
+import { CampaignChangelog, type ChangeLog } from '@/components/campaign-changelog'
 import { calcAggregateMetrics } from '@/lib/metrics'
 import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
 import { MetricCards } from '@/components/metric-cards'
@@ -18,7 +19,7 @@ const STATUS_COLORS = { ACTIVE: 'default', PAUSED: 'secondary', STOPPED: 'second
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const [campaign, walletDeposits] = await Promise.all([
+  const [campaign, walletDeposits, changeLogRaw] = await Promise.all([
     prisma.campaign.findUnique({
       where: { id },
       include: {
@@ -29,6 +30,10 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
     prisma.walletDeposit.findMany({
       include: { allocations: true },
       orderBy: { depositedAt: 'asc' },
+    }),
+    prisma.campaignChangeLog.findMany({
+      where: { campaignId: id },
+      orderBy: { changedAt: 'desc' },
     }),
   ])
 
@@ -109,6 +114,16 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
     note: e.note,
   }))
 
+  const changeLogs: ChangeLog[] = changeLogRaw.map(l => ({
+    id: l.id,
+    campaignId: l.campaignId,
+    changedAt: l.changedAt.toISOString(),
+    field: l.field ?? null,
+    oldValue: l.oldValue ?? null,
+    newValue: l.newValue ?? null,
+    note: l.note ?? null,
+  }))
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -169,6 +184,8 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         <h2 className="text-lg font-semibold mb-3">Performance Log</h2>
         <PerformanceTable entries={serializedEntries} targetType={campaign.targetType} campaignDailyBudget={campaignDailyBudget} campaignId={id} />
       </div>
+
+      <CampaignChangelog campaignId={id} logs={changeLogs} />
     </div>
   )
 }
