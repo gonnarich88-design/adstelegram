@@ -54,6 +54,11 @@ export function CampaignCard({ campaign }: { campaign: any }) {
           </div>
           <p className="text-xs text-muted-foreground">
             โปรโมต: {campaign.targetType} · {campaign.targetName}
+            {campaign.placementType && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                {campaign.placementType === 'CHANNEL' ? 'Channels' : campaign.placementType === 'BOT' ? 'Bots' : 'Search'}
+              </span>
+            )}
           </p>
           {campaign.placementName && (
             <p className="text-xs text-muted-foreground">ปลายทาง: {campaign.placementName}</p>

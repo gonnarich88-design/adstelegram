@@ -48,6 +48,7 @@ export async function PUT(
         bidCpmTon: bidCpmTon,
         status: body.status,
         placementName: body.placementName ?? null,
+        placementType: body.placementType ?? null,
         note: body.note ?? null,
       },
     })
@@ -63,6 +64,7 @@ export async function PUT(
       bidCpmTon: bidCpmTon,
       status: body.status,
       placementName: body.placementName ?? null,
+      placementType: body.placementType ?? null,
     })
 
     const changeNote = typeof body.changeNote === 'string' && body.changeNote.trim()

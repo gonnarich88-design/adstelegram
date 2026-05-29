@@ -139,6 +139,14 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
             เริ่ม {new Date(campaign.startDate).toLocaleDateString('th-TH')}
             {campaign.endDate && ` — ${new Date(campaign.endDate).toLocaleDateString('th-TH')}`}
           </p>
+          {campaign.placementType && (
+            <p className="text-sm text-muted-foreground">
+              โฆษณาไปแสดงใน:{' '}
+              <span className="font-medium text-foreground">
+                {campaign.placementType === 'CHANNEL' ? 'Channels' : campaign.placementType === 'BOT' ? 'Bots' : 'Search'}
+              </span>
+            </p>
+          )}
           {campaign.placementName && (
             <p className="text-sm text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
           )}

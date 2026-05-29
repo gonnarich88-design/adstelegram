@@ -57,6 +57,7 @@ export async function exportData(): Promise<ExportData> {
       endDate: c.endDate?.toISOString() ?? null,
       status: c.status,
       placementName: c.placementName,
+      placementType: c.placementType ?? null,
       note: c.note,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
@@ -121,6 +122,7 @@ export async function importData(data: ExportData): Promise<void> {
           budgetTon: c.budgetTon ?? null,
           status: c.status,
           placementName: c.placementName ?? null,
+          placementType: c.placementType ?? null,
           note: c.note,
           entries: {
             create: c.entries.map((e: any) => ({

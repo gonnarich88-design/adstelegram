@@ -23,6 +23,7 @@ interface CampaignFormProps {
     budgetTon?: string
     status: string
     note?: string | null
+    placementType?: string | null
   }
 }
 
@@ -35,6 +36,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     targetType: initialData?.targetType ?? 'CHANNEL',
     targetName: initialData?.targetName ?? '',
     placementName: (initialData as any)?.placementName ?? '',
+    placementType: initialData?.placementType ?? '',
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
     dailyBudgetTon: initialData?.dailyBudgetTon ?? '',
@@ -60,6 +62,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       ...form,
       endDate: form.endDate || null,
       placementName: form.placementName || null,
+      placementType: form.placementType || null,
       note: form.note || null,
       changeNote: form.changeNote || '',
       dailyBudgetTon: parseFloat(form.dailyBudgetTon),
@@ -128,6 +131,29 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         <div className="space-y-2">
           <Label>วันสิ้นสุด (optional)</Label>
           <Input type="date" value={form.endDate} onChange={e => set('endDate', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>
+          โฆษณาไปแสดงใน{' '}
+          <span className="text-muted-foreground font-normal">(optional — Target ใน Telegram Ads)</span>
+        </Label>
+        <div className="flex gap-2">
+          {(['CHANNEL', 'BOT', 'SEARCH'] as const).map(v => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => set('placementType', form.placementType === v ? '' : v)}
+              className={`flex-1 py-2 rounded-md border text-sm font-medium transition-colors ${
+                form.placementType === v
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-transparent text-muted-foreground border-input hover:border-foreground/40'
+              }`}
+            >
+              {v === 'CHANNEL' ? 'Channels' : v === 'BOT' ? 'Bots' : 'Search'}
+            </button>
+          ))}
         </div>
       </div>
 

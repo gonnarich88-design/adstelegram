@@ -46,11 +46,12 @@ export interface CampaignSnapshot {
   bidCpmTon: unknown
   status: string
   placementName: string | null
+  placementType: string | null
 }
 
 const WATCHED_FIELDS = [
   'name', 'targetType', 'targetName', 'startDate', 'endDate',
-  'budgetTon', 'dailyBudgetTon', 'bidCpmTon', 'status', 'placementName',
+  'budgetTon', 'dailyBudgetTon', 'bidCpmTon', 'status', 'placementName', 'placementType',
 ] as const
 
 export function diffCampaignFields(

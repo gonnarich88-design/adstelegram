@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
         bidCpmTon: bidCpmTon,
         status: body.status ?? 'ACTIVE',
         placementName: body.placementName ?? null,
+        placementType: body.placementType ?? null,
         note: body.note ?? null,
       },
     })
