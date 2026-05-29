@@ -23,6 +23,7 @@ model Campaign {
   entries        PerformanceEntry[]
   allocations    CampaignAllocation[]
   refunds        WalletDeposit[]      @relation("CampaignRefunds")
+  changeLogs     CampaignChangeLog[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 }
@@ -90,6 +91,19 @@ enum CampaignStatus {
 enum DepositType {
   DEPOSIT
   REFUND
+}
+
+model CampaignChangeLog {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  changedAt  DateTime @default(now())
+  field      String?
+  oldValue   String?
+  newValue   String?
+  note       String?
+
+  @@index([campaignId])
 }
 
 model DailyConversion {
