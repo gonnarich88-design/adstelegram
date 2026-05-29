@@ -237,6 +237,12 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                 <span className="text-muted-foreground hidden sm:inline">Views <span className="text-foreground font-medium">{agg.views.toLocaleString()}</span></span>
                 <span className="text-muted-foreground hidden sm:inline">Clicks <span className="text-foreground font-medium">{agg.clicks.toLocaleString()}</span></span>
                 <span className="text-muted-foreground hidden sm:inline">{joinsLabel} <span className="text-foreground font-medium">{agg.joins.toLocaleString()}</span></span>
+                {agg.registrations !== undefined && (
+                  <span className="text-muted-foreground hidden sm:inline">สมัคร <span className="text-purple-400 font-medium">{agg.registrations.toLocaleString()}</span></span>
+                )}
+                {agg.depositCount !== undefined && (
+                  <span className="text-muted-foreground hidden sm:inline">ฝาก <span className="text-blue-400 font-medium">{agg.depositCount.toLocaleString()}</span></span>
+                )}
                 <span className="text-border hidden sm:inline">|</span>
                 <span className="text-green-400 font-medium">{fmtThbInt(agg.spendThb)}</span>
                 <span className="font-semibold" style={{ color: bspColor(agg.bsp) }}>BSP {agg.bsp.toFixed(1)}%</span>
