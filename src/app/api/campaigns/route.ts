@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logCampaignChanges } from '@/lib/changelog'
 
 export async function GET() {
   try {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
         note: body.note ?? null,
       },
     })
+    await logCampaignChanges(campaign.id, [{ field: null, note: 'สร้างแคมเปญ' }])
     return NextResponse.json(campaign, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

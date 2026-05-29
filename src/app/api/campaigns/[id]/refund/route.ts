@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logCampaignChanges } from '@/lib/changelog'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,12 @@ export async function POST(
         },
       }),
     ])
+
+    if (updatedCampaign.status === 'CANCELLED' && campaign.status !== 'CANCELLED') {
+      await logCampaignChanges(id, [
+        { field: 'status', oldValue: campaign.status, newValue: 'CANCELLED', note: 'ยกเลิกแคมเปญ' },
+      ])
+    }
 
     return NextResponse.json({ deposit: { id: deposit.id }, campaign: { id: updatedCampaign.id, status: updatedCampaign.status } }, { status: 201 })
   } catch {

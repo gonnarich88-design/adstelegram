@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logCampaignChanges } from '@/lib/changelog'
 
 async function autoStopIfDepleted(campaignId: string) {
   const campaign = await prisma.campaign.findUnique({
@@ -16,6 +17,9 @@ async function autoStopIfDepleted(campaignId: string) {
   const totalSpent = campaign.entries.reduce((s, e) => s + Number(e.spendTon), 0)
   if (totalSpent >= totalAllocated) {
     await prisma.campaign.update({ where: { id: campaignId }, data: { status: 'STOPPED' } })
+    await logCampaignChanges(campaignId, [
+      { field: 'status', oldValue: 'ACTIVE', newValue: 'STOPPED', note: 'งบถูกใช้หมด (auto)' },
+    ])
   }
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { logCampaignChanges } from '@/lib/changelog'
 import { calcAggregateMetrics } from '@/lib/metrics'
 import { computeWalletBalance, findCurrentRate } from '@/lib/wallet'
 import { MetricCards } from '@/components/metric-cards'
@@ -56,11 +57,17 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   if (campaign.status === 'ACTIVE' && totalAllocatedTon > 0 && totalSpendTon >= totalAllocatedTon) {
     await prisma.campaign.update({ where: { id }, data: { status: 'STOPPED' } })
     ;(campaign as { status: string }).status = 'STOPPED'
+    await logCampaignChanges(id, [
+      { field: 'status', oldValue: 'ACTIVE', newValue: 'STOPPED', note: 'งบถูกใช้หมด (auto)' },
+    ])
   }
 
   if (campaign.status === 'STOPPED' && totalAllocatedTon > 0 && totalSpendTon < totalAllocatedTon) {
     await prisma.campaign.update({ where: { id }, data: { status: 'ACTIVE' } })
     ;(campaign as { status: string }).status = 'ACTIVE'
+    await logCampaignChanges(id, [
+      { field: 'status', oldValue: 'STOPPED', newValue: 'ACTIVE', note: 'งบยังเหลือ (auto reactivate)' },
+    ])
   }
 
   const lastAllocation = campaign.allocations.at(-1)
