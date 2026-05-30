@@ -1,11 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-29 (session 22) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-31 (session 23) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 21 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
+**Session 23 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
+
+## เสร็จแล้ว (session 23)
+- [x] **Campaigns: กลุ่มตาม placementType** — เปลี่ยนจาก targetType → placementType (Channels บน / Bots ล่าง / Search / ไม่ระบุ), sort ใน group ตาม startDate desc — แก้แค่ `campaigns/page.tsx` — browser verified ✅
 
 ## เสร็จแล้ว (session 22)
 - [x] **Daily Performance header: เพิ่ม สมัคร + ฝาก ในแถบสรุปรายเดือน** — accordion header แสดง สมัคร (สีม่วง) และ ฝาก (สีน้ำเงิน) ต่อจาก Joins เดือนที่ไม่มีข้อมูล Conversion จะไม่แสดง — browser verified ✅

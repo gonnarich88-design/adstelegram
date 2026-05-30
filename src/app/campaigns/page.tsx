@@ -11,11 +11,13 @@ export default async function CampaignsPage() {
       entries: { orderBy: { date: 'asc' } },
       allocations: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { startDate: 'desc' },
   })
 
-  const channelCampaigns = campaigns.filter(c => c.targetType === 'CHANNEL')
-  const botCampaigns = campaigns.filter(c => c.targetType === 'BOT')
+  const channelCampaigns = campaigns.filter(c => c.placementType === 'CHANNEL')
+  const botCampaigns = campaigns.filter(c => c.placementType === 'BOT')
+  const searchCampaigns = campaigns.filter(c => c.placementType === 'SEARCH')
+  const unknownCampaigns = campaigns.filter(c => !c.placementType)
 
   return (
     <div className="space-y-6">
@@ -35,31 +37,25 @@ export default async function CampaignsPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {channelCampaigns.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Channel</h2>
-                <span className="text-xs text-muted-foreground">· {channelCampaigns.length}</span>
+          {[
+            { label: 'Channels', items: channelCampaigns },
+            { label: 'Bots', items: botCampaigns },
+            { label: 'Search', items: searchCampaigns },
+            { label: 'ไม่ระบุ', items: unknownCampaigns },
+          ].map(({ label, items }) =>
+            items.length > 0 ? (
+              <div key={label}>
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{label}</h2>
+                  <span className="text-xs text-muted-foreground">· {items.length}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {items.map(c => (
+                    <CampaignRow key={c.id} campaign={c} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1.5">
-                {channelCampaigns.map(c => (
-                  <CampaignRow key={c.id} campaign={c} />
-                ))}
-              </div>
-            </div>
-          )}
-          {botCampaigns.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Bot</h2>
-                <span className="text-xs text-muted-foreground">· {botCampaigns.length}</span>
-              </div>
-              <div className="space-y-1.5">
-                {botCampaigns.map(c => (
-                  <CampaignRow key={c.id} campaign={c} />
-                ))}
-              </div>
-            </div>
+            ) : null
           )}
         </div>
       )}
