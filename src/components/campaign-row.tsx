@@ -77,11 +77,16 @@ export function CampaignRow({ campaign }: { campaign: any }) {
             {campaign.status}
           </Badge>
         </div>
-        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
-          {campaign.targetType} · {campaign.targetName}
-          {placementLabel && ` · ${placementLabel}`}
-          {campaign.entries.length > 0 && (
-            <span className="ml-1">· {campaign.entries.length} วัน</span>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-[11px] text-muted-foreground truncate">
+            {campaign.targetType} · {campaign.targetName}
+            {placementLabel && ` · ${placementLabel}`}
+            {campaign.entries.length > 0 && ` · ${campaign.entries.length} วัน`}
+          </span>
+          {campaign.bidCpmTon != null && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+              Bid {Number(campaign.bidCpmTon).toFixed(2)} TON
+            </span>
           )}
         </div>
       </div>
