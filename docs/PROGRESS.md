@@ -9,6 +9,8 @@
 
 ## เสร็จแล้ว (session 23)
 - [x] **Campaigns: กลุ่มตาม placementType** — เปลี่ยนจาก targetType → placementType (Channels บน / Bots ล่าง / Search / ไม่ระบุ), sort ใน group ตาม startDate desc — แก้แค่ `campaigns/page.tsx` — browser verified ✅
+- [x] **Campaigns: กลุ่ม Cancelled ล่างสุด** — แยก CANCELLED ออกจากกลุ่มอื่น แสดงเป็น section ท้ายสุด — browser verified ✅
+- [x] **Campaign row: แสดง Bid CPM chip** — chip "Bid X.XX TON" ในบรรทัด metadata ฝั่งซ้าย, ซ่อนถ้า bidCpmTon = null — `campaign-row.tsx` — browser verified ✅
 
 ## เสร็จแล้ว (session 22)
 - [x] **Daily Performance header: เพิ่ม สมัคร + ฝาก ในแถบสรุปรายเดือน** — accordion header แสดง สมัคร (สีม่วง) และ ฝาก (สีน้ำเงิน) ต่อจาก Joins เดือนที่ไม่มีข้อมูล Conversion จะไม่แสดง — browser verified ✅
