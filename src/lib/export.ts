@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 export interface ExportData {
   version: number
   exportedAt: string
+  globalGoal?: { note: string | null } | null
   walletDeposits?: any[]
   campaignAllocations?: any[]
   walletBalanceTon?: string
@@ -12,7 +13,7 @@ export interface ExportData {
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs, globalGoal] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
@@ -21,11 +22,13 @@ export async function exportData(): Promise<ExportData> {
     prisma.campaignAllocation.findMany(),
     prisma.dailyConversion.findMany({ orderBy: { date: 'asc' } }),
     prisma.campaignChangeLog.findMany({ orderBy: { changedAt: 'asc' } }),
+    prisma.globalGoal.findUnique({ where: { id: 1 } }),
   ])
 
   return {
     version: 2,
     exportedAt: new Date().toISOString(),
+    globalGoal: globalGoal ? { note: globalGoal.note } : null,
     walletDeposits: walletDeposits.map(d => ({
       id: d.id,
       amountTon: d.amountTon.toString(),
@@ -59,6 +62,10 @@ export async function exportData(): Promise<ExportData> {
       placementName: c.placementName,
       placementType: c.placementType ?? null,
       note: c.note,
+      goalText: c.goalText ?? null,
+      planText: c.planText ?? null,
+      targetJoins: c.targetJoins ?? null,
+      targetDate: c.targetDate?.toISOString() ?? null,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
       entries: (c.entries as any[]).map((e: any) => ({
@@ -107,6 +114,7 @@ export async function importData(data: ExportData): Promise<void> {
     await tx.campaign.deleteMany()
     await tx.walletDeposit.deleteMany()
     await tx.dailyConversion.deleteMany()
+    await tx.globalGoal.deleteMany()
 
     for (const c of data.campaigns) {
       await tx.campaign.create({
@@ -124,6 +132,10 @@ export async function importData(data: ExportData): Promise<void> {
           placementName: c.placementName ?? null,
           placementType: c.placementType ?? null,
           note: c.note,
+          goalText: c.goalText ?? null,
+          planText: c.planText ?? null,
+          targetJoins: c.targetJoins ?? null,
+          targetDate: c.targetDate ? new Date(c.targetDate) : null,
           entries: {
             create: c.entries.map((e: any) => ({
               id: e.id,
@@ -140,6 +152,14 @@ export async function importData(data: ExportData): Promise<void> {
             })),
           },
         },
+      })
+    }
+
+    if (data.globalGoal) {
+      await tx.globalGoal.upsert({
+        where: { id: 1 },
+        create: { id: 1, note: data.globalGoal.note ?? null },
+        update: { note: data.globalGoal.note ?? null },
       })
     }
 
