@@ -1,11 +1,23 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-31 (session 23) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-05-31 (session 25) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 23 เสร็จสมบูรณ์ — ไม่มีงานค้าง**
+**Session 25 — Goals Page: implement ครบ 8 tasks + browser verified ✅**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
+
+## เสร็จแล้ว (session 25)
+- [x] **Goals Page — Full Implementation** — 8 tasks ครบทุก step, browser verified ✅ (6 commits: `d216624`–`737e661`)
+  - Schema: 4 goal fields บน Campaign + GlobalGoal singleton model — migration `20260530185505_add_goals`
+  - API: GET/PUT `/api/goals/global` + ขยาย PUT `/api/campaigns/[id]` รับ goal fields (ไม่ log changelog)
+  - UI: Server Component `src/app/goals/page.tsx` + Client Component `goals-client.tsx` (global note auto-save + campaign goal cards + PaceBar linear pace)
+  - Nav: เพิ่ม "เป้าหมาย" link พร้อม active highlight
+  - Export/Import: รองรับ globalGoal + goal fields ทุก campaign + backward compat
+
+## เสร็จแล้ว (session 24)
+- [x] **Goals Page — Brainstorm + Design** — ออกแบบหน้า `/goals`: global note (GlobalGoal singleton) + per-campaign goals (goalText, planText, targetJoins, targetDate) + progress bar แบบ linear pace — spec + advisor review ผ่าน ✅
+- [x] **Goals Page — Implementation Plan** — เขียน plan ครบ 8 tasks พร้อม code จริงทุก step — `docs/superpowers/plans/2026-05-31-goals-page.md`
 
 ## เสร็จแล้ว (session 23)
 - [x] **Campaigns: กลุ่มตาม placementType** — เปลี่ยนจาก targetType → placementType (Channels บน / Bots ล่าง / Search / ไม่ระบุ), sort ใน group ตาม startDate desc — แก้แค่ `campaigns/page.tsx` — browser verified ✅
@@ -141,11 +153,11 @@
 - [x] **Auto-stop depleted campaigns** — status ใหม่ `STOPPED` (migration `20260527074851_add_stopped_status`): หลัง POST entry (single+bulk) ถ้า totalSpent ≥ totalAllocated และ status=ACTIVE → เปลี่ยนเป็น STOPPED อัตโนมัติ, passive check บน dashboard+detail page สำหรับ campaigns ที่ depleted ก่อนเปิด feature (commits `55d500e`, `126bd97`, session 15)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ — migrations ที่ต้อง `prisma migrate deploy` บน production:
+1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ — migrations ที่ยังไม่ได้ deploy บน production:
    - `add_stopped_status`
    - `add_daily_conversions`
    - `add_deposit_tx_count`
-2. **(Optional)** feature ใหม่ตาม roadmap
+   - `add_goals` (Goals page session 25)
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
