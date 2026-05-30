@@ -14,10 +14,12 @@ export default async function CampaignsPage() {
     orderBy: { startDate: 'desc' },
   })
 
-  const channelCampaigns = campaigns.filter(c => c.placementType === 'CHANNEL')
-  const botCampaigns = campaigns.filter(c => c.placementType === 'BOT')
-  const searchCampaigns = campaigns.filter(c => c.placementType === 'SEARCH')
-  const unknownCampaigns = campaigns.filter(c => !c.placementType)
+  const active = campaigns.filter(c => c.status !== 'CANCELLED')
+  const channelCampaigns = active.filter(c => c.placementType === 'CHANNEL')
+  const botCampaigns = active.filter(c => c.placementType === 'BOT')
+  const searchCampaigns = active.filter(c => c.placementType === 'SEARCH')
+  const unknownCampaigns = active.filter(c => !c.placementType)
+  const cancelledCampaigns = campaigns.filter(c => c.status === 'CANCELLED')
 
   return (
     <div className="space-y-6">
@@ -42,6 +44,7 @@ export default async function CampaignsPage() {
             { label: 'Bots', items: botCampaigns },
             { label: 'Search', items: searchCampaigns },
             { label: 'ไม่ระบุ', items: unknownCampaigns },
+            { label: 'Cancelled', items: cancelledCampaigns },
           ].map(({ label, items }) =>
             items.length > 0 ? (
               <div key={label}>
