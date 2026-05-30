@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { CampaignCard } from '@/components/campaign-card'
+import { CampaignRow } from '@/components/campaign-row'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -37,26 +37,26 @@ export default async function CampaignsPage() {
         <div className="space-y-8">
           {channelCampaigns.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-lg font-semibold">CHANNEL</h2>
-                <span className="text-sm text-muted-foreground">· {channelCampaigns.length}</span>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Channel</h2>
+                <span className="text-xs text-muted-foreground">· {channelCampaigns.length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
                 {channelCampaigns.map(c => (
-                  <CampaignCard key={c.id} campaign={c} />
+                  <CampaignRow key={c.id} campaign={c} />
                 ))}
               </div>
             </div>
           )}
           {botCampaigns.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-lg font-semibold">BOT</h2>
-                <span className="text-sm text-muted-foreground">· {botCampaigns.length}</span>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Bot</h2>
+                <span className="text-xs text-muted-foreground">· {botCampaigns.length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
                 {botCampaigns.map(c => (
-                  <CampaignCard key={c.id} campaign={c} />
+                  <CampaignRow key={c.id} campaign={c} />
                 ))}
               </div>
             </div>
