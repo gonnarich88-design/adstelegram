@@ -50,6 +50,10 @@ export async function PUT(
         placementName: body.placementName ?? null,
         placementType: body.placementType ?? null,
         note: body.note ?? null,
+        goalText: body.goalText ?? null,
+        planText: body.planText ?? null,
+        targetJoins: body.targetJoins != null ? Number(body.targetJoins) : null,
+        targetDate: body.targetDate ? new Date(body.targetDate) : null,
       },
     })
 
