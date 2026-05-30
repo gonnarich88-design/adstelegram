@@ -19,6 +19,7 @@ export function Nav() {
   const links = [
     { href: '/', label: 'Dashboard' },
     { href: '/campaigns', label: 'Campaigns' },
+    { href: '/goals', label: 'เป้าหมาย' },
     { href: '/wallet', label: 'Wallet' },
     { href: '/conversions', label: 'Conversions' },
     { href: '/settings', label: 'Settings' },
@@ -27,6 +28,7 @@ export function Nav() {
   function isActive(href: string) {
     if (href === '/campaigns') return pathname.startsWith('/campaigns')
     if (href === '/conversions') return pathname.startsWith('/conversions')
+    if (href === '/goals') return pathname.startsWith('/goals')
     return pathname === href
   }
 
