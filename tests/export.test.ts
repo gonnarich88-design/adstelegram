@@ -214,3 +214,46 @@ describe('exportData includes campaignChangeLogs', () => {
     expect(result.campaignChangeLogs![0]).toMatchObject({ id: 'log1', campaignId: 'c1', field: 'dailyBudgetTon', oldValue: '5.00000000', newValue: '7.00000000', note: null })
   })
 })
+
+describe('importData backward compat — missing sortOrder', () => {
+  it('defaults sortOrder to 0 when field absent from JSON', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const mockTx = {
+      campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
+      campaignAllocation: { deleteMany: vi.fn() },
+      performanceEntry: { deleteMany: vi.fn() },
+      campaign: { deleteMany: vi.fn(), create: vi.fn() },
+      walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+      globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
+    }
+    vi.mocked(prisma.$transaction).mockImplementationOnce((fn: any) => fn(mockTx))
+
+    const { importData } = await import('@/lib/export')
+    await importData({
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      campaigns: [{
+        id: 'c1',
+        name: 'Old Campaign',
+        targetType: 'CHANNEL',
+        targetName: '@test',
+        startDate: new Date().toISOString(),
+        endDate: null,
+        dailyBudgetTon: '5',
+        budgetTon: null,
+        status: 'ACTIVE',
+        placementName: null,
+        note: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        entries: [],
+        // sortOrder intentionally absent (old JSON)
+      }],
+    })
+
+    expect(mockTx.campaign.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ sortOrder: 0 }) })
+    )
+  })
+})

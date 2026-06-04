@@ -66,6 +66,7 @@ export async function exportData(): Promise<ExportData> {
       planText: c.planText ?? null,
       targetJoins: c.targetJoins ?? null,
       targetDate: c.targetDate?.toISOString() ?? null,
+      sortOrder: c.sortOrder,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
       entries: (c.entries as any[]).map((e: any) => ({
@@ -136,6 +137,7 @@ export async function importData(data: ExportData): Promise<void> {
           planText: c.planText ?? null,
           targetJoins: c.targetJoins ?? null,
           targetDate: c.targetDate ? new Date(c.targetDate) : null,
+          sortOrder: c.sortOrder ?? 0,
           entries: {
             create: c.entries.map((e: any) => ({
               id: e.id,
