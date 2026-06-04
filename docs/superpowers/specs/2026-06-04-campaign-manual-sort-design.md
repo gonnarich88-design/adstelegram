@@ -49,14 +49,14 @@ Before swapping, always materialize sequential sortOrders for the group to avoid
 1. Get current ordered list of campaigns in the group (as displayed)
 2. Assign sequential sortOrder: index 0 → 0, index 1 → 1, ...
 3. Swap the two target indices
-4. Send only the changed records to `PATCH /api/campaigns/reorder`
+4. Send **all records in the group** to `PATCH /api/campaigns/reorder` (not just changed ones — avoids sortOrder collision when multiple items share the same value)
 
 Example — pressing ▲ on Bot_v3 (index 1):
 ```
 Before:  [Bot_v2(0), Bot_v3(0), Bot_v4(0)]
 Assign:  [Bot_v2(0), Bot_v3(1), Bot_v4(2)]
 Swap:    [Bot_v3(0), Bot_v2(1), Bot_v4(2)]
-Send:    [{id: Bot_v3, sortOrder:0}, {id: Bot_v2, sortOrder:1}]
+Send:    [{id: Bot_v3, sortOrder:0}, {id: Bot_v2, sortOrder:1}, {id: Bot_v4, sortOrder:2}]
 ```
 
 ---
