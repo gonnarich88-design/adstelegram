@@ -1,11 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-05-31 (session 25) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-04 (session 26) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 25 — Goals Page: implement ครบ 8 tasks + browser verified ✅**
+**Session 26 — Campaign List Edit Button: implement + push ✅**
 
 ## กำลังทำ / ค้างอยู่
 (ไม่มี)
+
+## เสร็จแล้ว (session 26)
+- [x] **Campaign List Edit Button** — เพิ่มปุ่ม pencil icon ท้ายแต่ละ campaign row ให้ไปหน้า edit ได้เลย โดยไม่ต้องผ่าน detail — แก้เฉพาะ `campaign-row.tsx` (commit `21f5e67`) — pushed ✅
 
 ## เสร็จแล้ว (session 25)
 - [x] **Goals Page — Full Implementation** — 8 tasks ครบทุก step, browser verified ✅ (6 commits: `d216624`–`737e661`)
