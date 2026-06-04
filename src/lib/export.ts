@@ -4,6 +4,7 @@ export interface ExportData {
   version: number
   exportedAt: string
   globalGoal?: { note: string | null } | null
+  globalGoalEntries?: any[]
   walletDeposits?: any[]
   campaignAllocations?: any[]
   walletBalanceTon?: string
@@ -13,7 +14,7 @@ export interface ExportData {
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs, globalGoal] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs, globalGoal, globalGoalEntries] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
@@ -23,12 +24,22 @@ export async function exportData(): Promise<ExportData> {
     prisma.dailyConversion.findMany({ orderBy: { date: 'asc' } }),
     prisma.campaignChangeLog.findMany({ orderBy: { changedAt: 'asc' } }),
     prisma.globalGoal.findUnique({ where: { id: 1 } }),
+    prisma.globalGoalEntry.findMany({ orderBy: { date: 'asc' } }),
   ])
 
   return {
     version: 2,
     exportedAt: new Date().toISOString(),
     globalGoal: globalGoal ? { note: globalGoal.note } : null,
+    globalGoalEntries: globalGoalEntries.map(e => ({
+      id: e.id,
+      date: e.date.toISOString().slice(0, 10),
+      goalText: e.goalText ?? null,
+      planText: e.planText ?? null,
+      targetText: e.targetText ?? null,
+      deadline: e.deadline?.toISOString() ?? null,
+      createdAt: e.createdAt.toISOString(),
+    })),
     walletDeposits: walletDeposits.map(d => ({
       id: d.id,
       amountTon: d.amountTon.toString(),
@@ -116,6 +127,7 @@ export async function importData(data: ExportData): Promise<void> {
     await tx.walletDeposit.deleteMany()
     await tx.dailyConversion.deleteMany()
     await tx.globalGoal.deleteMany()
+    await tx.globalGoalEntry.deleteMany()
 
     for (const c of data.campaigns) {
       await tx.campaign.create({
@@ -216,6 +228,19 @@ export async function importData(data: ExportData): Promise<void> {
           oldValue: l.oldValue ?? null,
           newValue: l.newValue ?? null,
           note: l.note ?? null,
+        },
+      })
+    }
+
+    for (const e of data.globalGoalEntries ?? []) {
+      await tx.globalGoalEntry.create({
+        data: {
+          id: e.id,
+          date: new Date(e.date),
+          goalText: e.goalText ?? null,
+          planText: e.planText ?? null,
+          targetText: e.targetText ?? null,
+          deadline: e.deadline ? new Date(e.deadline) : null,
         },
       })
     }

@@ -1,11 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-04 (session 28) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-04 (session 29) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 28 — AI Analysis Feature: Implementation เสร็จสมบูรณ์ ✅**
+**Session 29 — Goals Daily Entries: Implementation เสร็จสมบูรณ์ ✅**
 
 ## กำลังทำ / ค้างอยู่
 - ไม่มี
+
+## เสร็จแล้ว (session 29)
+- [x] **Goals: บันทึกรายวันใน "บันทึกรวม"** — เพิ่ม `GlobalGoalEntry` model + migration `20260604125844_add_global_goal_entries`, API GET/POST `/api/goals/entries` + PATCH/DELETE `/api/goals/entries/[id]`, GoalsClient section ใหม่ใต้ textarea (list entries + AddEntryForm + GoalEntryItem inline edit/delete), export/import รองรับ backward compat — browser verified ✅
 
 ## เสร็จแล้ว (session 28)
 - [x] **AI Analysis Feature — Implementation Plan** — `docs/superpowers/plans/2026-06-04-ai-analysis.md` ✅

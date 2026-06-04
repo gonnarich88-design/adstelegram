@@ -4,13 +4,14 @@ import { GoalsClient } from './goals-client'
 export const dynamic = 'force-dynamic'
 
 export default async function GoalsPage() {
-  const [globalGoal, campaigns] = await Promise.all([
+  const [globalGoal, campaigns, goalEntries] = await Promise.all([
     prisma.globalGoal.findUnique({ where: { id: 1 } }),
     prisma.campaign.findMany({
       where: { status: { notIn: ['CANCELLED', 'DONE'] } },
       include: { entries: true },
       orderBy: [{ status: 'asc' }, { startDate: 'desc' }],
     }),
+    prisma.globalGoalEntry.findMany({ orderBy: { date: 'desc' } }),
   ])
 
   return (
@@ -28,6 +29,15 @@ export default async function GoalsPage() {
         goalText: c.goalText ?? null,
         planText: c.planText ?? null,
         totalJoins: c.entries.reduce((s: number, e: any) => s + e.joins, 0),
+      }))}
+      goalEntries={goalEntries.map(e => ({
+        id: e.id,
+        date: e.date.toISOString(),
+        goalText: e.goalText ?? null,
+        planText: e.planText ?? null,
+        targetText: e.targetText ?? null,
+        deadline: e.deadline?.toISOString() ?? null,
+        createdAt: e.createdAt.toISOString(),
       }))}
     />
   )

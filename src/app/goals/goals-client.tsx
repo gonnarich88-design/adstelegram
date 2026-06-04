@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Check, X } from 'lucide-react'
+import { Pencil, Check, X, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface CampaignGoal {
@@ -19,9 +19,20 @@ interface CampaignGoal {
   totalJoins: number
 }
 
+interface GoalEntry {
+  id: string
+  date: string
+  goalText: string | null
+  planText: string | null
+  targetText: string | null
+  deadline: string | null
+  createdAt: string
+}
+
 interface Props {
   globalNote: string | null
   campaigns: CampaignGoal[]
+  goalEntries: GoalEntry[]
 }
 
 function daysBetween(a: Date, b: Date) {
@@ -224,11 +235,220 @@ function CampaignGoalCard({ campaign, onSaved }: { campaign: CampaignGoal; onSav
   )
 }
 
-export function GoalsClient({ globalNote, campaigns }: Props) {
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
+}
+
+const EMPTY_FORM = { date: today(), goalText: '', planText: '', targetText: '', deadline: '' }
+
+function GoalEntryItem({ entry, onSaved, onDeleted }: {
+  entry: GoalEntry
+  onSaved: () => void
+  onDeleted: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({
+    date: entry.date.slice(0, 10),
+    goalText: entry.goalText ?? '',
+    planText: entry.planText ?? '',
+    targetText: entry.targetText ?? '',
+    deadline: entry.deadline ? entry.deadline.slice(0, 10) : '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/goals/entries/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: form.date,
+          goalText: form.goalText,
+          planText: form.planText,
+          targetText: form.targetText,
+          deadline: form.deadline || null,
+        }),
+      })
+      if (res.ok) { setEditing(false); onSaved() }
+    } finally { setSaving(false) }
+  }
+
+  async function remove() {
+    if (!confirm('ลบรายการนี้?')) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/goals/entries/${entry.id}`, { method: 'DELETE' })
+      onDeleted()
+    } finally { setDeleting(false) }
+  }
+
+  function cancel() {
+    setForm({
+      date: entry.date.slice(0, 10),
+      goalText: entry.goalText ?? '',
+      planText: entry.planText ?? '',
+      targetText: entry.targetText ?? '',
+      deadline: entry.deadline ? entry.deadline.slice(0, 10) : '',
+    })
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="border border-ring rounded-lg p-4 space-y-3 bg-background">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] text-muted-foreground">วันที่</label>
+            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+              className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground">กำหนด</label>
+            <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
+              className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">เป้าหมาย</label>
+          <textarea value={form.goalText} onChange={e => setForm(f => ({ ...f, goalText: e.target.value }))}
+            placeholder="จะทำอะไร เป้าหมายคืออะไร..." rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข/ผลลัพธ์)</label>
+          <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
+            placeholder="เช่น 500 joins, 1,000 THB revenue..."
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">วิธีทำ / แผน</label>
+          <textarea value={form.planText} onChange={e => setForm(f => ({ ...f, planText: e.target.value }))}
+            placeholder="แผนการ วิธีการที่จะใช้..." rows={3}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={cancel} disabled={saving}><X className="w-3.5 h-3.5 mr-1" /> ยกเลิก</Button>
+          <Button size="sm" onClick={save} disabled={saving}><Check className="w-3.5 h-3.5 mr-1" /> {saving ? 'บันทึก...' : 'บันทึก'}</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-border rounded-lg p-4 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs font-semibold text-muted-foreground">{formatDate(entry.date)}</div>
+        <div className="flex gap-1">
+          <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1 rounded">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={remove} disabled={deleting} className="text-muted-foreground hover:text-destructive p-1 rounded">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+      {entry.goalText && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">เป้าหมาย</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.goalText}</p>
+        </div>
+      )}
+      {entry.targetText && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">เป้า</div>
+          <p className="text-sm">{entry.targetText}</p>
+        </div>
+      )}
+      {entry.planText && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">แผน</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.planText}</p>
+        </div>
+      )}
+      {entry.deadline && (
+        <div className="text-[11px] text-muted-foreground">กำหนด: {formatDate(entry.deadline)}</div>
+      )}
+    </div>
+  )
+}
+
+function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    if (!form.date) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/goals/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: form.date,
+          goalText: form.goalText,
+          planText: form.planText,
+          targetText: form.targetText,
+          deadline: form.deadline || null,
+        }),
+      })
+      if (res.ok) { onSaved() }
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="border border-ring rounded-lg p-4 space-y-3 bg-background">
+      <div className="text-xs font-semibold text-muted-foreground">เพิ่มบันทึกใหม่</div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[11px] text-muted-foreground">วันที่</label>
+          <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">กำหนด</label>
+          <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">เป้าหมาย</label>
+        <textarea value={form.goalText} onChange={e => setForm(f => ({ ...f, goalText: e.target.value }))}
+          placeholder="จะทำอะไร เป้าหมายคืออะไร..." rows={2}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข/ผลลัพธ์)</label>
+        <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
+          placeholder="เช่น 500 joins, 1,000 THB revenue..."
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">วิธีทำ / แผน</label>
+        <textarea value={form.planText} onChange={e => setForm(f => ({ ...f, planText: e.target.value }))}
+          placeholder="แผนการ วิธีการที่จะใช้..." rows={3}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}><X className="w-3.5 h-3.5 mr-1" /> ยกเลิก</Button>
+        <Button size="sm" onClick={save} disabled={saving || !form.date}><Check className="w-3.5 h-3.5 mr-1" /> {saving ? 'บันทึก...' : 'บันทึก'}</Button>
+      </div>
+    </div>
+  )
+}
+
+export function GoalsClient({ globalNote, campaigns, goalEntries: initialEntries }: Props) {
   const router = useRouter()
   const [note, setNote] = useState(globalNote ?? '')
   const [noteSaving, setNoteSaving] = useState(false)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [entries, setEntries] = useState<GoalEntry[]>(initialEntries)
+  const [addingEntry, setAddingEntry] = useState(false)
 
   const saveNote = useCallback(async (value: string) => {
     setNoteSaving(true)
@@ -242,6 +462,11 @@ export function GoalsClient({ globalNote, campaigns }: Props) {
       setNoteSaving(false)
     }
   }, [])
+
+  async function refreshEntries() {
+    const res = await fetch('/api/goals/entries')
+    if (res.ok) setEntries(await res.json())
+  }
 
   function handleNoteChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const value = e.target.value
@@ -257,7 +482,7 @@ export function GoalsClient({ globalNote, campaigns }: Props) {
       </div>
 
       {/* Global note */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">บันทึกรวม</h2>
           {noteSaving && <span className="text-[11px] text-muted-foreground">กำลังบันทึก...</span>}
@@ -266,9 +491,40 @@ export function GoalsClient({ globalNote, campaigns }: Props) {
           value={note}
           onChange={handleNoteChange}
           placeholder="จดเป้าหมายโดยรวมของการยิงโฆษณา วิธีคิด แนวทาง..."
-          rows={5}
+          rows={4}
           className="w-full text-sm border border-border rounded-lg px-4 py-3 bg-background resize-y focus:outline-none focus:ring-1 focus:ring-ring"
         />
+
+        {/* Dated goal entries */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wide">บันทึกรายวัน · {entries.length} รายการ</span>
+            {!addingEntry && (
+              <Button size="sm" variant="outline" onClick={() => setAddingEntry(true)}>
+                <Plus className="w-3.5 h-3.5 mr-1" /> เพิ่ม
+              </Button>
+            )}
+          </div>
+          {addingEntry && (
+            <AddEntryForm
+              onSaved={() => { setAddingEntry(false); refreshEntries() }}
+              onCancel={() => setAddingEntry(false)}
+            />
+          )}
+          {entries.length === 0 && !addingEntry && (
+            <p className="text-[12px] text-muted-foreground italic">ยังไม่มีบันทึก — กด + เพิ่ม เพื่อสร้างรายการแรก</p>
+          )}
+          <div className="space-y-2">
+            {entries.map(e => (
+              <GoalEntryItem
+                key={e.id}
+                entry={e}
+                onSaved={refreshEntries}
+                onDeleted={refreshEntries}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Per-campaign goals */}
