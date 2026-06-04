@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { buildOverviewPrompt, buildCampaignPrompt, parseAnalysisResult } from '@/lib/analysis'
-import type { CampaignSummary, EntryRow } from '@/lib/analysis'
+import type { CampaignSummary, EntryRow, OverviewContext, CampaignContext } from '@/lib/analysis'
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า API key' }, { status: 500 })
   }
 
-  let body: { type: string; campaignId?: string }
+  let body: { type: string; campaignId?: string; context?: OverviewContext | CampaignContext }
   try {
     body = await req.json()
   } catch {
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    prompt = buildOverviewPrompt(summaries, globalGoal?.note ?? null, today)
+    prompt = buildOverviewPrompt(summaries, globalGoal?.note ?? null, today, body.context as OverviewContext | undefined)
   } else {
     const [globalGoal, campaign] = await Promise.all([
       prisma.globalGoal.findUnique({ where: { id: 1 } }),
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       joins: e.joins,
     }))
 
-    prompt = buildCampaignPrompt(summary, entryRows, globalGoal?.note ?? null, today)
+    prompt = buildCampaignPrompt(summary, entryRows, globalGoal?.note ?? null, today, body.context as CampaignContext | undefined)
   }
 
   let aiResponse: Response
