@@ -38,6 +38,18 @@ export interface AnalysisResult {
   }[]
 }
 
+export interface OverviewContext {
+  problems: string[]
+  question: string
+}
+
+export interface CampaignContext {
+  problems: string[]
+  budgetDepletionTime: string
+  bidInfo: string
+  question: string
+}
+
 interface PromptMessages {
   system: string
   user: string
@@ -47,6 +59,7 @@ export function buildOverviewPrompt(
   campaigns: CampaignSummary[],
   globalNote: string | null,
   today: string,
+  context?: OverviewContext,
 ): PromptMessages {
   const systemLines = [
     'คุณเป็นผู้เชี่ยวชาญด้านโฆษณา Telegram Ads',
@@ -55,6 +68,8 @@ export function buildOverviewPrompt(
     `วันที่ปัจจุบัน: ${today} (Asia/Bangkok)`,
   ]
   if (globalNote) systemLines.push(`กลยุทธ์ภาพรวม: ${globalNote}`)
+  if (context?.problems.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
+  if (context?.question) systemLines.push(`โจทย์: ${context.question}`)
 
   const campaignLines = campaigns.map(c => {
     const parts = [
@@ -92,6 +107,7 @@ export function buildCampaignPrompt(
   entries: EntryRow[],
   globalNote: string | null,
   today: string,
+  context?: CampaignContext,
 ): PromptMessages {
   const systemLines = [
     'คุณเป็นผู้เชี่ยวชาญด้านโฆษณา Telegram Ads',
@@ -100,6 +116,10 @@ export function buildCampaignPrompt(
     `วันที่ปัจจุบัน: ${today} (Asia/Bangkok)`,
   ]
   if (globalNote) systemLines.push(`กลยุทธ์ภาพรวม: ${globalNote}`)
+  if (context?.problems.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
+  if (context?.budgetDepletionTime) systemLines.push(`งบหมดเวลา: ${context.budgetDepletionTime}`)
+  if (context?.bidInfo) systemLines.push(`Bid/Floor: ${context.bidInfo}`)
+  if (context?.question) systemLines.push(`โจทย์: ${context.question}`)
 
   const infoLines = [
     `ชื่อ: ${campaign.name}`,

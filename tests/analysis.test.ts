@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildOverviewPrompt, buildCampaignPrompt, parseAnalysisResult } from '@/lib/analysis'
-import type { CampaignSummary, EntryRow } from '@/lib/analysis'
+import type { CampaignSummary, EntryRow, OverviewContext, CampaignContext } from '@/lib/analysis'
 
 const baseCampaign: CampaignSummary = {
   id: 'c1',
@@ -81,6 +81,60 @@ describe('buildCampaignPrompt', () => {
     const c = { ...baseCampaign, planText: 'ลด bid ถ้า CTR < 1%' }
     const { user } = buildCampaignPrompt(c, [], null, '2026-06-04')
     expect(user).toContain('ลด bid ถ้า CTR < 1%')
+  })
+})
+
+describe('buildOverviewPrompt with context', () => {
+  it('includes problems in system message', () => {
+    const ctx: OverviewContext = { problems: ['งบไม่เต็ม', 'CTR ต่ำ'], question: '' }
+    const { system } = buildOverviewPrompt([baseCampaign], null, '2026-06-05', ctx)
+    expect(system).toContain('ปัญหาที่รายงาน: งบไม่เต็ม, CTR ต่ำ')
+  })
+
+  it('includes question in system message', () => {
+    const ctx: OverviewContext = { problems: [], question: 'ควรปรับ campaign ไหนก่อน?' }
+    const { system } = buildOverviewPrompt([baseCampaign], null, '2026-06-05', ctx)
+    expect(system).toContain('โจทย์: ควรปรับ campaign ไหนก่อน?')
+  })
+
+  it('omits problems line when array is empty', () => {
+    const ctx: OverviewContext = { problems: [], question: '' }
+    const { system } = buildOverviewPrompt([baseCampaign], null, '2026-06-05', ctx)
+    expect(system).not.toContain('ปัญหาที่รายงาน')
+  })
+
+  it('omits question line when empty string', () => {
+    const ctx: OverviewContext = { problems: [], question: '' }
+    const { system } = buildOverviewPrompt([baseCampaign], null, '2026-06-05', ctx)
+    expect(system).not.toContain('โจทย์:')
+  })
+})
+
+describe('buildCampaignPrompt with context', () => {
+  it('includes all non-empty context fields in system message', () => {
+    const ctx: CampaignContext = {
+      problems: ['งบหมดเร็ว'],
+      budgetDepletionTime: '10:00',
+      bidInfo: 'bid 0.5, floor 0.3',
+      question: 'ควร scale budget ไหม?',
+    }
+    const { system } = buildCampaignPrompt(baseCampaign, [], null, '2026-06-05', ctx)
+    expect(system).toContain('ปัญหาที่รายงาน: งบหมดเร็ว')
+    expect(system).toContain('งบหมดเวลา: 10:00')
+    expect(system).toContain('Bid/Floor: bid 0.5, floor 0.3')
+    expect(system).toContain('โจทย์: ควร scale budget ไหม?')
+  })
+
+  it('omits budgetDepletionTime line when empty', () => {
+    const ctx: CampaignContext = { problems: [], budgetDepletionTime: '', bidInfo: '', question: '' }
+    const { system } = buildCampaignPrompt(baseCampaign, [], null, '2026-06-05', ctx)
+    expect(system).not.toContain('งบหมดเวลา')
+  })
+
+  it('omits bidInfo line when empty', () => {
+    const ctx: CampaignContext = { problems: [], budgetDepletionTime: '', bidInfo: '', question: '' }
+    const { system } = buildCampaignPrompt(baseCampaign, [], null, '2026-06-05', ctx)
+    expect(system).not.toContain('Bid/Floor')
   })
 })
 
