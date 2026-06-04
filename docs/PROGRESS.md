@@ -1,11 +1,20 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-04 (session 27) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-04 (session 28) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 27 — AI Analysis Feature: Brainstorm + Design spec เสร็จ ✅ รอเขียน implementation plan**
+**Session 28 — AI Analysis Feature: Implementation เสร็จสมบูรณ์ ✅**
 
 ## กำลังทำ / ค้างอยู่
-- [ ] **AI Analysis Feature — Implementation Plan** — spec เสร็จแล้วที่ `docs/superpowers/specs/2026-06-04-ai-analysis-design.md` ขั้นต่อไปคือ invoke `writing-plans` skill เพื่อสร้าง implementation plan แล้วเริ่ม implement
+- ไม่มี
+
+## เสร็จแล้ว (session 28)
+- [x] **AI Analysis Feature — Implementation Plan** — `docs/superpowers/plans/2026-06-04-ai-analysis.md` ✅
+- [x] **AI Analysis Feature — Full Implementation** — 5 tasks เสร็จสมบูรณ์, 74 tests pass, browser verified ✅
+  - Schema: `AnalysisType` enum + `AiAnalysis` model + `analyses` relation บน Campaign — migration `20260604115359_add_ai_analysis` (commit `49275aa`)
+  - lib: `src/lib/analysis.ts` — `buildOverviewPrompt`, `buildCampaignPrompt`, `parseAnalysisResult` + 14 unit tests (commit `a2f2609`)
+  - API: `POST /api/analysis` — ดึง DB, สร้าง prompt, เรียก OpenAI gpt-4o via fetch, parse JSON, persist, return (commit `4619d1d`)
+  - UI: `src/app/analysis/page.tsx` + `src/app/analysis/analysis-client.tsx` — overview card + per-campaign list + inline expand, JSON.parse error-safe (commit `2e69fa6`)
+  - Nav: เพิ่ม "วิเคราะห์" link + `.env.example` เพิ่ม `OPENAI_API_KEY` (commit `6649de0`)
 
 ## เสร็จแล้ว (session 26)
 - [x] **Campaign List Edit Button** — เพิ่มปุ่ม pencil icon ท้ายแต่ละ campaign row ให้ไปหน้า edit ได้เลย โดยไม่ต้องผ่าน detail — แก้เฉพาะ `campaign-row.tsx` (commit `21f5e67`) — pushed ✅
