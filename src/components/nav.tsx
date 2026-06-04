@@ -22,6 +22,7 @@ export function Nav() {
     { href: '/goals', label: 'เป้าหมาย' },
     { href: '/wallet', label: 'Wallet' },
     { href: '/conversions', label: 'Conversions' },
+    { href: '/analysis', label: 'วิเคราะห์' },
     { href: '/settings', label: 'Settings' },
   ]
 
@@ -29,6 +30,7 @@ export function Nav() {
     if (href === '/campaigns') return pathname.startsWith('/campaigns')
     if (href === '/conversions') return pathname.startsWith('/conversions')
     if (href === '/goals') return pathname.startsWith('/goals')
+    if (href === '/analysis') return pathname.startsWith('/analysis')
     return pathname === href
   }
 
