@@ -243,8 +243,6 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
-const EMPTY_FORM = { date: today(), goalText: '', planText: '', targetText: '', deadline: '' }
-
 function GoalEntryItem({ entry, onSaved, onDeleted }: {
   entry: GoalEntry
   onSaved: () => void
@@ -379,7 +377,7 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
 }
 
 function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [form, setForm] = useState(() => ({ date: today(), goalText: '', planText: '', targetText: '', deadline: '' }))
   const [saving, setSaving] = useState(false)
 
   async function save() {
