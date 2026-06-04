@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { CampaignRow } from '@/components/campaign-row'
+import { CampaignList } from '@/components/campaign-list'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -11,15 +11,51 @@ export default async function CampaignsPage() {
       entries: { orderBy: { date: 'asc' } },
       allocations: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
   })
 
-  const active = campaigns.filter(c => c.status !== 'CANCELLED')
-  const channelCampaigns = active.filter(c => c.placementType === 'CHANNEL')
-  const botCampaigns = active.filter(c => c.placementType === 'BOT')
-  const searchCampaigns = active.filter(c => c.placementType === 'SEARCH')
-  const unknownCampaigns = active.filter(c => !c.placementType)
-  const cancelledCampaigns = campaigns.filter(c => c.status === 'CANCELLED')
+  const serialized = campaigns.map(c => ({
+    id: c.id,
+    name: c.name,
+    targetType: c.targetType,
+    targetName: c.targetName,
+    startDate: c.startDate.toISOString(),
+    endDate: c.endDate?.toISOString() ?? null,
+    budgetTon: c.budgetTon?.toString() ?? null,
+    dailyBudgetTon: c.dailyBudgetTon.toString(),
+    bidCpmTon: c.bidCpmTon?.toString() ?? null,
+    status: c.status,
+    placementName: c.placementName ?? null,
+    placementType: c.placementType ?? null,
+    note: c.note ?? null,
+    goalText: c.goalText ?? null,
+    planText: c.planText ?? null,
+    targetJoins: c.targetJoins ?? null,
+    targetDate: c.targetDate?.toISOString() ?? null,
+    sortOrder: c.sortOrder,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+    entries: c.entries.map(e => ({
+      id: e.id,
+      campaignId: e.campaignId,
+      date: e.date.toISOString(),
+      spendTon: e.spendTon.toString(),
+      dailyBudgetTon: e.dailyBudgetTon.toString(),
+      tonPriceUsd: e.tonPriceUsd.toString(),
+      usdThbRate: e.usdThbRate.toString(),
+      impressions: e.impressions,
+      views: e.views,
+      clicks: e.clicks,
+      joins: e.joins,
+      note: e.note ?? null,
+    })),
+    allocations: c.allocations.map(a => ({
+      id: a.id,
+      depositId: a.depositId,
+      campaignId: a.campaignId,
+      amountTon: a.amountTon.toString(),
+    })),
+  }))
 
   return (
     <div className="space-y-6">
@@ -38,29 +74,7 @@ export default async function CampaignsPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-8">
-          {[
-            { label: 'Channels', items: channelCampaigns },
-            { label: 'Bots', items: botCampaigns },
-            { label: 'Search', items: searchCampaigns },
-            { label: 'ไม่ระบุ', items: unknownCampaigns },
-            { label: 'Cancelled', items: cancelledCampaigns },
-          ].map(({ label, items }) =>
-            items.length > 0 ? (
-              <div key={label}>
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{label}</h2>
-                  <span className="text-xs text-muted-foreground">· {items.length}</span>
-                </div>
-                <div className="space-y-1.5">
-                  {items.map(c => (
-                    <CampaignRow key={c.id} campaign={c} />
-                  ))}
-                </div>
-              </div>
-            ) : null
-          )}
-        </div>
+        <CampaignList campaigns={serialized} />
       )}
     </div>
   )
