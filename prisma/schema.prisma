@@ -32,6 +32,7 @@ model Campaign {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   sortOrder      Int                  @default(0)
+  analyses       AiAnalysis[]
 }
 
 model PerformanceEntry {
@@ -136,4 +137,21 @@ model DailyConversion {
   updatedAt         DateTime @updatedAt
 
   @@unique([date])
+}
+
+enum AnalysisType {
+  OVERVIEW
+  CAMPAIGN
+}
+
+model AiAnalysis {
+  id         String       @id @default(cuid())
+  type       AnalysisType
+  campaignId String?
+  campaign   Campaign?    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  result     String
+  model      String
+  createdAt  DateTime     @default(now())
+
+  @@index([type, campaignId])
 }
