@@ -68,7 +68,7 @@ export function buildOverviewPrompt(
     `วันที่ปัจจุบัน: ${today} (Asia/Bangkok)`,
   ]
   if (globalNote) systemLines.push(`กลยุทธ์ภาพรวม: ${globalNote}`)
-  if (context?.problems.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
+  if (context?.problems?.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
   if (context?.question) systemLines.push(`โจทย์: ${context.question}`)
 
   const campaignLines = campaigns.map(c => {
@@ -84,7 +84,7 @@ export function buildOverviewPrompt(
       `CTR: ${c.ctr.toFixed(2)}%`,
     ]
     if (c.goalText) parts.push(`เป้าหมาย: ${c.goalText}`)
-    if (c.targetJoins) parts.push(`เป้า Joins: ${c.targetJoins}`)
+    if (c.targetJoins != null) parts.push(`เป้า Joins: ${c.targetJoins}`)
     if (c.targetDate) parts.push(`วันเป้าหมาย: ${c.targetDate}`)
     return `[ID:${c.id}] ${parts.join(' | ')}`
   }).join('\n')
@@ -116,7 +116,7 @@ export function buildCampaignPrompt(
     `วันที่ปัจจุบัน: ${today} (Asia/Bangkok)`,
   ]
   if (globalNote) systemLines.push(`กลยุทธ์ภาพรวม: ${globalNote}`)
-  if (context?.problems.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
+  if (context?.problems?.length) systemLines.push(`ปัญหาที่รายงาน: ${context.problems.join(', ')}`)
   if (context?.budgetDepletionTime) systemLines.push(`งบหมดเวลา: ${context.budgetDepletionTime}`)
   if (context?.bidInfo) systemLines.push(`Bid/Floor: ${context.bidInfo}`)
   if (context?.question) systemLines.push(`โจทย์: ${context.question}`)
@@ -134,7 +134,7 @@ export function buildCampaignPrompt(
   ]
   if (campaign.goalText) infoLines.push(`เป้าหมาย: ${campaign.goalText}`)
   if (campaign.planText) infoLines.push(`แผน: ${campaign.planText}`)
-  if (campaign.targetJoins) infoLines.push(`เป้า Joins: ${campaign.targetJoins}`)
+  if (campaign.targetJoins != null) infoLines.push(`เป้า Joins: ${campaign.targetJoins}`)
   if (campaign.targetDate) infoLines.push(`วันเป้าหมาย: ${campaign.targetDate}`)
 
   const entryLines = entries

@@ -51,7 +51,7 @@ describe('buildOverviewPrompt', () => {
     const c = { ...baseCampaign, goalText: 'ได้ 500 joins', targetJoins: 500 }
     const { user } = buildOverviewPrompt([c], null, '2026-06-04')
     expect(user).toContain('ได้ 500 joins')
-    expect(user).toContain('500')
+    expect(user).toContain('เป้า Joins: 500')
   })
 })
 
