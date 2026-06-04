@@ -140,7 +140,10 @@ export function AnalysisClient({ initialOverview, campaigns }: Props) {
     })
   }
 
-  const overviewResult = overviewAnalysis ? JSON.parse(overviewAnalysis.result) as AnalysisResult : null
+  let overviewResult: AnalysisResult | null = null
+  if (overviewAnalysis) {
+    try { overviewResult = JSON.parse(overviewAnalysis.result) as AnalysisResult } catch { /* malformed stored result */ }
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -203,7 +206,10 @@ export function AnalysisClient({ initialOverview, campaigns }: Props) {
             const loading = campaignLoading[c.id] ?? false
             const error = campaignErrors[c.id]
             const isExpanded = expanded.has(c.id)
-            const parsedResult = analysis ? JSON.parse(analysis.result) as AnalysisResult : null
+            let parsedResult: AnalysisResult | null = null
+            if (analysis) {
+              try { parsedResult = JSON.parse(analysis.result) as AnalysisResult } catch { /* malformed stored result */ }
+            }
 
             return (
               <Card key={c.id}>
