@@ -11,7 +11,7 @@ export default async function CampaignsPage() {
       entries: { orderBy: { date: 'asc' } },
       allocations: true,
     },
-    orderBy: { startDate: 'desc' },
+    orderBy: { createdAt: 'desc' },
   })
 
   const active = campaigns.filter(c => c.status !== 'CANCELLED')
