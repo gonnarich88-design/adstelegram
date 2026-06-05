@@ -47,8 +47,8 @@ export default async function GoalsPage() {
           budgetTon: c.budgetTon ? Number(c.budgetTon) : null,
           dailyBudgetTon: Number(c.dailyBudgetTon),
           totalJoins: c.entries.reduce((s, e) => s + e.joins, 0),
+          bidCpmTon: c.bidCpmTon ? Number(c.bidCpmTon) : null,
           lastBsp: lastMetrics?.bsp ?? null,
-          lastCpm: lastMetrics?.cpm ?? null,
           lastCps: lastMetrics?.cps ?? null,
         }
       })}

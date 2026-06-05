@@ -19,8 +19,8 @@ interface CampaignGoal {
   budgetTon: number | null
   dailyBudgetTon: number
   totalJoins: number
+  bidCpmTon: number | null
   lastBsp: number | null
-  lastCpm: number | null
   lastCps: number | null
 }
 
@@ -275,6 +275,18 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
+function generateBaseline(selected: CampaignGoal[]): string {
+  if (selected.length === 0) return ''
+  return selected.map(c => {
+    const parts: string[] = []
+    if (c.lastBsp != null) parts.push(`BSP: ${c.lastBsp.toFixed(0)}%`)
+    if (c.bidCpmTon != null) parts.push(`Bid: ${c.bidCpmTon.toFixed(4)} TON`)
+    if (c.lastCps != null) parts.push(`CPS: ${c.lastCps.toFixed(4)} TON`)
+    const metrics = parts.length > 0 ? ` · ${parts.join(' · ')}` : ''
+    return selected.length === 1 ? (parts.join(' · ') || c.name) : `${c.name}:${metrics}`
+  }).join('\n')
+}
+
 function CampaignMultiSelectDropdown({
   campaigns,
   selectedIds,
@@ -343,8 +355,8 @@ function CampaignMultiSelectDropdown({
                           <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
                             {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
                             {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
-                            {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
-                            {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
+                            {c.bidCpmTon != null && <span>Bid {c.bidCpmTon.toFixed(4)} TON</span>}
+                            {c.lastCps != null && <span>CPS {c.lastCps.toFixed(4)} TON</span>}
                           </div>
                         )}
                       </div>
@@ -456,7 +468,11 @@ function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
               <CampaignMultiSelectDropdown
                 campaigns={campaigns}
                 selectedIds={form.campaignIds}
-                onChange={ids => setForm(f => ({ ...f, campaignIds: ids }))}
+                onChange={ids => setForm(f => ({
+                  ...f,
+                  campaignIds: ids,
+                  baseline: generateBaseline(campaigns.filter(c => ids.includes(c.id))),
+                }))}
               />
             </div>
           </div>
@@ -582,7 +598,7 @@ function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
                           {c.budgetTon != null && <span className="text-[11px] text-muted-foreground">งบ {c.budgetTon.toFixed(2)} TON</span>}
                           {c.lastBsp != null && <span className="text-[11px] text-muted-foreground">BSP {c.lastBsp.toFixed(0)}%</span>}
-                          {c.lastCpm != null && <span className="text-[11px] text-muted-foreground">CPM ${c.lastCpm.toFixed(4)}</span>}
+                          {c.bidCpmTon != null && <span className="text-[11px] text-muted-foreground">Bid {c.bidCpmTon.toFixed(4)} TON</span>}
                         </div>
                       )
                     })}
@@ -701,7 +717,11 @@ function AddEntryForm({ campaigns, onSaved, onCancel }: { campaigns: CampaignGoa
             <CampaignMultiSelectDropdown
               campaigns={campaigns}
               selectedIds={form.campaignIds}
-              onChange={ids => setForm(f => ({ ...f, campaignIds: ids }))}
+              onChange={ids => setForm(f => ({
+                ...f,
+                campaignIds: ids,
+                baseline: generateBaseline(campaigns.filter(c => ids.includes(c.id))),
+              }))}
             />
           </div>
         </div>
