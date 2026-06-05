@@ -2,13 +2,17 @@
 > อัปเดตล่าสุด: 2026-06-05 (session 30) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 30 — Goals Planner Fields: Implementation เสร็จสมบูรณ์ ✅**
+**Session 30 — Goals Ad Campaign Planner: Implementation เสร็จสมบูรณ์ ✅**
 
 ## กำลังทำ / ค้างอยู่
 - ไม่มี
 
 ## เสร็จแล้ว (session 30)
-- [x] **Goals: Planner form ครบองค์ประกอบแพลนการยิงโฆษณา** — เพิ่ม 4 columns ใน `GlobalGoalEntry` (successCriteria, constraints, risks, doneCriteria) + migration `20260605103157_add_planner_fields_to_goal_entry`, อัปเดต API GET/POST/PATCH, export/import, page.tsx, goals-client.tsx (form + display) — 81 tests pass ✅
+- [x] **Goals: Planner form ครบ 6 องค์ประกอบ** — เพิ่ม 4 columns (successCriteria, constraints, risks, doneCriteria) + migration `20260605103157` — 81 tests pass ✅
+- [x] **Goals: Collapse/expand cover** — entry card พับแสดงแค่เป้าหมาย + วันที่ กดขยายดูรายละเอียดครบ — commit `2144b05` ✅
+- [x] **Goals: Baseline field** — เพิ่ม `baseline String?` + migration `20260605111859`, font-mono, placeholder BSP/CPM/CPS — commit `ee85da5` ✅
+- [x] **Goals: Campaign multi-select + relation** — เปลี่ยน `campaignScope String?` → join table `GlobalGoalEntryCampaign` (migration `20260605113123`), form แสดง checkbox list ของแคมเปญ active พร้อม BSP%/CPM/CPS จาก last entry เมื่อ check, ชื่อแคมเปญแสดงเป็น chip สีน้ำเงินใน cover — commit `92c2f10` ✅
+- [x] **Goals: Linked planners ใน campaign goal cards** — section "แพลนที่เชื่อม" ด้านล่าง CampaignGoalCard แสดง planner ที่ link มา (วันที่ + เป้าหมาย) — commit `92c2f10` ✅
 
 ## เสร็จแล้ว (session 29)
 - [x] **Goals: บันทึกรายวันใน "บันทึกรวม"** — เพิ่ม `GlobalGoalEntry` model + migration `20260604125844_add_global_goal_entries`, API GET/POST `/api/goals/entries` + PATCH/DELETE `/api/goals/entries/[id]`, GoalsClient section ใหม่ใต้ textarea (list entries + AddEntryForm + GoalEntryItem inline edit/delete), export/import รองรับ backward compat — browser verified ✅
