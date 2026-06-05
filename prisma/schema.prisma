@@ -126,14 +126,18 @@ model GlobalGoal {
 }
 
 model GlobalGoalEntry {
-  id          String    @id @default(cuid())
-  date        DateTime  @db.Date
-  goalText    String?
-  planText    String?
-  targetText  String?
-  deadline    DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  date             DateTime  @db.Date
+  goalText         String?
+  successCriteria  String?
+  constraints      String?
+  planText         String?
+  risks            String?
+  doneCriteria     String?
+  targetText       String?
+  deadline         DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model DailyConversion {

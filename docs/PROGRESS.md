@@ -1,11 +1,14 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-04 (session 29) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-05 (session 30) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 29 — Goals Daily Entries: Implementation เสร็จสมบูรณ์ ✅**
+**Session 30 — Goals Planner Fields: Implementation เสร็จสมบูรณ์ ✅**
 
 ## กำลังทำ / ค้างอยู่
 - ไม่มี
+
+## เสร็จแล้ว (session 30)
+- [x] **Goals: Planner form ครบองค์ประกอบแพลนการยิงโฆษณา** — เพิ่ม 4 columns ใน `GlobalGoalEntry` (successCriteria, constraints, risks, doneCriteria) + migration `20260605103157_add_planner_fields_to_goal_entry`, อัปเดต API GET/POST/PATCH, export/import, page.tsx, goals-client.tsx (form + display) — 81 tests pass ✅
 
 ## เสร็จแล้ว (session 29)
 - [x] **Goals: บันทึกรายวันใน "บันทึกรวม"** — เพิ่ม `GlobalGoalEntry` model + migration `20260604125844_add_global_goal_entries`, API GET/POST `/api/goals/entries` + PATCH/DELETE `/api/goals/entries/[id]`, GoalsClient section ใหม่ใต้ textarea (list entries + AddEntryForm + GoalEntryItem inline edit/delete), export/import รองรับ backward compat — browser verified ✅

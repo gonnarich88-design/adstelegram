@@ -10,7 +10,11 @@ export async function GET() {
     id: e.id,
     date: e.date.toISOString(),
     goalText: e.goalText,
+    successCriteria: e.successCriteria,
+    constraints: e.constraints,
     planText: e.planText,
+    risks: e.risks,
+    doneCriteria: e.doneCriteria,
     targetText: e.targetText,
     deadline: e.deadline?.toISOString() ?? null,
     createdAt: e.createdAt.toISOString(),
@@ -19,7 +23,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json()
-  const { date, goalText, planText, targetText, deadline } = body
+  const { date, goalText, successCriteria, constraints, planText, risks, doneCriteria, targetText, deadline } = body
 
   if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 })
 
@@ -27,7 +31,11 @@ export async function POST(req: Request) {
     data: {
       date: new Date(date),
       goalText: goalText?.trim() || null,
+      successCriteria: successCriteria?.trim() || null,
+      constraints: constraints?.trim() || null,
       planText: planText?.trim() || null,
+      risks: risks?.trim() || null,
+      doneCriteria: doneCriteria?.trim() || null,
       targetText: targetText?.trim() || null,
       deadline: deadline ? new Date(deadline) : null,
     },
@@ -37,7 +45,11 @@ export async function POST(req: Request) {
     id: entry.id,
     date: entry.date.toISOString(),
     goalText: entry.goalText,
+    successCriteria: entry.successCriteria,
+    constraints: entry.constraints,
     planText: entry.planText,
+    risks: entry.risks,
+    doneCriteria: entry.doneCriteria,
     targetText: entry.targetText,
     deadline: entry.deadline?.toISOString() ?? null,
     createdAt: entry.createdAt.toISOString(),

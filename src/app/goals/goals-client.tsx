@@ -23,7 +23,11 @@ interface GoalEntry {
   id: string
   date: string
   goalText: string | null
+  successCriteria: string | null
+  constraints: string | null
   planText: string | null
+  risks: string | null
+  doneCriteria: string | null
   targetText: string | null
   deadline: string | null
   createdAt: string
@@ -252,7 +256,11 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   const [form, setForm] = useState({
     date: entry.date.slice(0, 10),
     goalText: entry.goalText ?? '',
+    successCriteria: entry.successCriteria ?? '',
+    constraints: entry.constraints ?? '',
     planText: entry.planText ?? '',
+    risks: entry.risks ?? '',
+    doneCriteria: entry.doneCriteria ?? '',
     targetText: entry.targetText ?? '',
     deadline: entry.deadline ? entry.deadline.slice(0, 10) : '',
   })
@@ -268,7 +276,11 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
         body: JSON.stringify({
           date: form.date,
           goalText: form.goalText,
+          successCriteria: form.successCriteria,
+          constraints: form.constraints,
           planText: form.planText,
+          risks: form.risks,
+          doneCriteria: form.doneCriteria,
           targetText: form.targetText,
           deadline: form.deadline || null,
         }),
@@ -290,7 +302,11 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
     setForm({
       date: entry.date.slice(0, 10),
       goalText: entry.goalText ?? '',
+      successCriteria: entry.successCriteria ?? '',
+      constraints: entry.constraints ?? '',
       planText: entry.planText ?? '',
+      risks: entry.risks ?? '',
+      doneCriteria: entry.doneCriteria ?? '',
       targetText: entry.targetText ?? '',
       deadline: entry.deadline ? entry.deadline.slice(0, 10) : '',
     })
@@ -302,33 +318,57 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
       <div className="border border-ring rounded-lg p-4 space-y-3 bg-background">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] text-muted-foreground">วันที่</label>
+            <label className="text-[11px] text-muted-foreground">วันที่วางแพลน</label>
             <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
               className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground">กำหนด</label>
+            <label className="text-[11px] text-muted-foreground">กำหนดเสร็จ</label>
             <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
               className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground">เป้าหมาย</label>
+          <label className="text-[11px] text-muted-foreground">1. เป้าหมาย</label>
           <textarea value={form.goalText} onChange={e => setForm(f => ({ ...f, goalText: e.target.value }))}
-            placeholder="จะทำอะไร เป้าหมายคืออะไร..." rows={2}
+            placeholder="ยิงโฆษณาแล้วได้อะไร เช่น ได้ 500 joins ใน 30 วัน ด้วยงบ 10 TON" rows={2}
             className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข/ผลลัพธ์)</label>
-          <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
-            placeholder="เช่น 500 joins, 1,000 THB revenue..."
-            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+          <label className="text-[11px] text-muted-foreground">2. เกณฑ์วัดผล</label>
+          <textarea value={form.successCriteria} onChange={e => setForm(f => ({ ...f, successCriteria: e.target.value }))}
+            placeholder="เช่น CPM ≤ 0.05 TON, CTR > 1%, joins ≥ 500" rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground">วิธีทำ / แผน</label>
+          <label className="text-[11px] text-muted-foreground">3. งบ / ข้อจำกัด</label>
+          <textarea value={form.constraints} onChange={e => setForm(f => ({ ...f, constraints: e.target.value }))}
+            placeholder="เช่น งบ 10 TON, placement: @channelname, ห้ามเกิน 0.5 TON/วัน" rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">4. แผนการยิง</label>
           <textarea value={form.planText} onChange={e => setForm(f => ({ ...f, planText: e.target.value }))}
-            placeholder="แผนการ วิธีการที่จะใช้..." rows={3}
+            placeholder="bid strategy, ช่วงเวลา, targeting, เพิ่ม/ลด bid ยังไง..." rows={3}
             className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">5. ความเสี่ยง</label>
+          <textarea value={form.risks} onChange={e => setForm(f => ({ ...f, risks: e.target.value }))}
+            placeholder="เช่น CPM พุ่งสูง, joins ต่ำกว่าคาด, placement ไม่ active" rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">6. รู้ว่าสำเร็จเมื่อ</label>
+          <textarea value={form.doneCriteria} onChange={e => setForm(f => ({ ...f, doneCriteria: e.target.value }))}
+            placeholder="เช่น ได้ครบ 500 joins หรือใช้ครบงบ 10 TON แล้ว CPM ≤ 0.05" rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข)</label>
+          <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
+            placeholder="เช่น 500 joins, 10 TON budget"
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="sm" onClick={cancel} disabled={saving}><X className="w-3.5 h-3.5 mr-1" /> ยกเลิก</Button>
@@ -341,7 +381,10 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   return (
     <div className="border border-border rounded-lg p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <div className="text-xs font-semibold text-muted-foreground">{formatDate(entry.date)}</div>
+        <div className="text-xs font-semibold text-muted-foreground">
+          {formatDate(entry.date)}
+          {entry.deadline && <span className="ml-2 font-normal">· กำหนด {formatDate(entry.deadline)}</span>}
+        </div>
         <div className="flex gap-1">
           <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1 rounded">
             <Pencil className="w-3.5 h-3.5" />
@@ -353,31 +396,59 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
       </div>
       {entry.goalText && (
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">เป้าหมาย</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">1. เป้าหมาย</div>
           <p className="text-sm whitespace-pre-wrap">{entry.goalText}</p>
         </div>
       )}
-      {entry.targetText && (
+      {entry.successCriteria && (
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">เป้า</div>
-          <p className="text-sm">{entry.targetText}</p>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">2. เกณฑ์วัดผล</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.successCriteria}</p>
+        </div>
+      )}
+      {entry.constraints && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">3. งบ / ข้อจำกัด</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.constraints}</p>
         </div>
       )}
       {entry.planText && (
         <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">แผน</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">4. แผนการยิง</div>
           <p className="text-sm whitespace-pre-wrap">{entry.planText}</p>
         </div>
       )}
-      {entry.deadline && (
-        <div className="text-[11px] text-muted-foreground">กำหนด: {formatDate(entry.deadline)}</div>
+      {entry.risks && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">5. ความเสี่ยง</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.risks}</p>
+        </div>
+      )}
+      {entry.doneCriteria && (
+        <div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">6. รู้ว่าสำเร็จเมื่อ</div>
+          <p className="text-sm whitespace-pre-wrap">{entry.doneCriteria}</p>
+        </div>
+      )}
+      {entry.targetText && (
+        <div className="text-[11px] text-muted-foreground">เป้า: {entry.targetText}</div>
       )}
     </div>
   )
 }
 
 function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
-  const [form, setForm] = useState(() => ({ date: today(), goalText: '', planText: '', targetText: '', deadline: '' }))
+  const [form, setForm] = useState(() => ({
+    date: today(),
+    goalText: '',
+    successCriteria: '',
+    constraints: '',
+    planText: '',
+    risks: '',
+    doneCriteria: '',
+    targetText: '',
+    deadline: '',
+  }))
   const [saving, setSaving] = useState(false)
 
   async function save() {
@@ -390,7 +461,11 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
         body: JSON.stringify({
           date: form.date,
           goalText: form.goalText,
+          successCriteria: form.successCriteria,
+          constraints: form.constraints,
           planText: form.planText,
+          risks: form.risks,
+          doneCriteria: form.doneCriteria,
           targetText: form.targetText,
           deadline: form.deadline || null,
         }),
@@ -401,36 +476,60 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
 
   return (
     <div className="border border-ring rounded-lg p-4 space-y-3 bg-background">
-      <div className="text-xs font-semibold text-muted-foreground">เพิ่มบันทึกใหม่</div>
+      <div className="text-xs font-semibold text-muted-foreground">แพลนการยิงโฆษณาใหม่</div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] text-muted-foreground">วันที่</label>
+          <label className="text-[11px] text-muted-foreground">วันที่วางแพลน</label>
           <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
             className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground">กำหนด</label>
+          <label className="text-[11px] text-muted-foreground">กำหนดเสร็จ</label>
           <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
             className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
       </div>
       <div>
-        <label className="text-[11px] text-muted-foreground">เป้าหมาย</label>
+        <label className="text-[11px] text-muted-foreground">1. เป้าหมาย</label>
         <textarea value={form.goalText} onChange={e => setForm(f => ({ ...f, goalText: e.target.value }))}
-          placeholder="จะทำอะไร เป้าหมายคืออะไร..." rows={2}
+          placeholder="ยิงโฆษณาแล้วได้อะไร เช่น ได้ 500 joins ใน 30 วัน ด้วยงบ 10 TON" rows={2}
           className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
       </div>
       <div>
-        <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข/ผลลัพธ์)</label>
-        <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
-          placeholder="เช่น 500 joins, 1,000 THB revenue..."
-          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+        <label className="text-[11px] text-muted-foreground">2. เกณฑ์วัดผล</label>
+        <textarea value={form.successCriteria} onChange={e => setForm(f => ({ ...f, successCriteria: e.target.value }))}
+          placeholder="เช่น CPM ≤ 0.05 TON, CTR > 1%, joins ≥ 500" rows={2}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
       </div>
       <div>
-        <label className="text-[11px] text-muted-foreground">วิธีทำ / แผน</label>
+        <label className="text-[11px] text-muted-foreground">3. งบ / ข้อจำกัด</label>
+        <textarea value={form.constraints} onChange={e => setForm(f => ({ ...f, constraints: e.target.value }))}
+          placeholder="เช่น งบ 10 TON, placement: @channelname, ห้ามเกิน 0.5 TON/วัน" rows={2}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">4. แผนการยิง</label>
         <textarea value={form.planText} onChange={e => setForm(f => ({ ...f, planText: e.target.value }))}
-          placeholder="แผนการ วิธีการที่จะใช้..." rows={3}
+          placeholder="bid strategy, ช่วงเวลา, targeting, เพิ่ม/ลด bid ยังไง..." rows={3}
           className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">5. ความเสี่ยง</label>
+        <textarea value={form.risks} onChange={e => setForm(f => ({ ...f, risks: e.target.value }))}
+          placeholder="เช่น CPM พุ่งสูง, joins ต่ำกว่าคาด, placement ไม่ active" rows={2}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">6. รู้ว่าสำเร็จเมื่อ</label>
+        <textarea value={form.doneCriteria} onChange={e => setForm(f => ({ ...f, doneCriteria: e.target.value }))}
+          placeholder="เช่น ได้ครบ 500 joins หรือใช้ครบงบ 10 TON แล้ว CPM ≤ 0.05" rows={2}
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground">เป้า (ตัวเลข)</label>
+        <input type="text" value={form.targetText} onChange={e => setForm(f => ({ ...f, targetText: e.target.value }))}
+          placeholder="เช่น 500 joins, 10 TON budget"
+          className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
       </div>
       <div className="flex gap-2 justify-end">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}><X className="w-3.5 h-3.5 mr-1" /> ยกเลิก</Button>
