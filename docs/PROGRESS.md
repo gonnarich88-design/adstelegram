@@ -1,11 +1,21 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-05 (session 30) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-05 (session 31) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 30 — Goals Ad Campaign Planner: Implementation เสร็จสมบูรณ์ ✅**
+**Session 31 — Goals UX fixes + Analysis Chat Design: Design spec เสร็จแล้ว รอ implement**
 
 ## กำลังทำ / ค้างอยู่
-- ไม่มี
+- **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
+  - Spec: `docs/superpowers/specs/2026-06-05-analysis-chat-design.md`
+  - ต้องสร้าง: `src/app/api/analysis/chat/route.ts` + `src/app/analysis/analysis-chat.tsx`
+  - ต้องแก้: `src/app/analysis/analysis-client.tsx` เพิ่ม chat toggle
+
+## เสร็จแล้ว (session 31)
+- [x] **fix: TypeScript build error (campaignScope)** — ลบ `campaignScope: form.campaignScope` บรรทัดเดียวออกจาก `GoalEntryItem.save()` — commit `9bb0fdc` ✅
+- [x] **Goals: Campaign dropdown multi-select** — เปลี่ยน checkbox list ยาว → Popover dropdown (search + checkboxes) `CampaignMultiSelectDropdown` component ใน `goals-client.tsx` — commit `59e9973` ✅
+- [x] **Goals: Auto-fill Baseline จาก campaign ที่เลือก** — เมื่อเลือก campaign จาก dropdown → baseline textarea auto-fill ด้วย BSP/Bid/CPS, เปลี่ยน CPM → Bid (`bidCpmTon`), เพิ่ม `bidCpmTon` ใน interface + page.tsx query — commit `c63cb4a` ✅
+- [x] **fix: campaignIds ไม่ถูก save ตอน edit entry** — `GoalEntryItem.save()` (PATCH) ไม่ได้ส่ง `campaignIds` ทำให้ campaign relation ไม่ถูก update — เพิ่ม `campaignIds: form.campaignIds` ในบอดี้ PATCH — commit `290ce20` ✅
+- [x] **Analysis Chat: Design Spec** — brainstorm ครบ → spec อนุมัติ → commit `db0b9cc` ✅
 
 ## เสร็จแล้ว (session 30)
 - [x] **Goals: Planner form ครบ 6 องค์ประกอบ** — เพิ่ม 4 columns (successCriteria, constraints, risks, doneCriteria) + migration `20260605103157` — 81 tests pass ✅
