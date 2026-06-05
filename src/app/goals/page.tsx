@@ -33,6 +33,8 @@ export default async function GoalsPage() {
       goalEntries={goalEntries.map(e => ({
         id: e.id,
         date: e.date.toISOString(),
+        campaignScope: e.campaignScope ?? null,
+        baseline: e.baseline ?? null,
         goalText: e.goalText ?? null,
         successCriteria: e.successCriteria ?? null,
         constraints: e.constraints ?? null,

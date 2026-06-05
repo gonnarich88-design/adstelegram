@@ -9,6 +9,8 @@ export async function GET() {
   return NextResponse.json(entries.map(e => ({
     id: e.id,
     date: e.date.toISOString(),
+    campaignScope: e.campaignScope,
+    baseline: e.baseline,
     goalText: e.goalText,
     successCriteria: e.successCriteria,
     constraints: e.constraints,
@@ -23,13 +25,15 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json()
-  const { date, goalText, successCriteria, constraints, planText, risks, doneCriteria, targetText, deadline } = body
+  const { date, campaignScope, baseline, goalText, successCriteria, constraints, planText, risks, doneCriteria, targetText, deadline } = body
 
   if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 })
 
   const entry = await prisma.globalGoalEntry.create({
     data: {
       date: new Date(date),
+      campaignScope: campaignScope?.trim() || null,
+      baseline: baseline?.trim() || null,
       goalText: goalText?.trim() || null,
       successCriteria: successCriteria?.trim() || null,
       constraints: constraints?.trim() || null,
@@ -44,6 +48,8 @@ export async function POST(req: Request) {
   return NextResponse.json({
     id: entry.id,
     date: entry.date.toISOString(),
+    campaignScope: entry.campaignScope,
+    baseline: entry.baseline,
     goalText: entry.goalText,
     successCriteria: entry.successCriteria,
     constraints: entry.constraints,

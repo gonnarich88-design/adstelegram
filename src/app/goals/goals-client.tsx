@@ -22,6 +22,8 @@ interface CampaignGoal {
 interface GoalEntry {
   id: string
   date: string
+  campaignScope: string | null
+  baseline: string | null
   goalText: string | null
   successCriteria: string | null
   constraints: string | null
@@ -256,6 +258,8 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   const [expanded, setExpanded] = useState(false)
   const [form, setForm] = useState({
     date: entry.date.slice(0, 10),
+    campaignScope: entry.campaignScope ?? '',
+    baseline: entry.baseline ?? '',
     goalText: entry.goalText ?? '',
     successCriteria: entry.successCriteria ?? '',
     constraints: entry.constraints ?? '',
@@ -276,6 +280,8 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: form.date,
+          campaignScope: form.campaignScope,
+          baseline: form.baseline,
           goalText: form.goalText,
           successCriteria: form.successCriteria,
           constraints: form.constraints,
@@ -302,6 +308,8 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   function cancel() {
     setForm({
       date: entry.date.slice(0, 10),
+      campaignScope: entry.campaignScope ?? '',
+      baseline: entry.baseline ?? '',
       goalText: entry.goalText ?? '',
       successCriteria: entry.successCriteria ?? '',
       constraints: entry.constraints ?? '',
@@ -327,6 +335,22 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
             <label className="text-[11px] text-muted-foreground">กำหนดเสร็จ</label>
             <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
               className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        </div>
+        {/* Context section */}
+        <div className="rounded-md bg-muted/50 border border-border p-3 space-y-3">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
+          <div>
+            <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
+            <textarea value={form.campaignScope} onChange={e => setForm(f => ({ ...f, campaignScope: e.target.value }))}
+              placeholder="เช่น Camp-A, Camp-B หรือ ทุกแคมเปญที่ active" rows={2}
+              className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground">Baseline (ก่อนรัน)</label>
+            <textarea value={form.baseline} onChange={e => setForm(f => ({ ...f, baseline: e.target.value }))}
+              placeholder={"BSP: __% · CPM: __ TON · Cost-per-start: __ TON"} rows={2}
+              className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring font-mono" />
           </div>
         </div>
         <div>
@@ -386,13 +410,22 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
         className="w-full text-left p-4 flex items-start justify-between gap-2 hover:bg-muted/40 transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="text-xs text-muted-foreground">
-            {formatDate(entry.date)}
-            {entry.deadline && <span className="ml-2">· กำหนด {formatDate(entry.deadline)}</span>}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
+            {entry.deadline && (
+              <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                ถึง {formatDate(entry.deadline)}
+              </span>
+            )}
+            {entry.campaignScope && (
+              <span className="text-[11px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                {entry.campaignScope.length > 40 ? entry.campaignScope.slice(0, 40) + '…' : entry.campaignScope}
+              </span>
+            )}
           </div>
           {entry.goalText
-            ? <p className="text-sm font-medium">{entry.goalText}</p>
+            ? <p className="text-sm font-medium leading-snug">{entry.goalText}</p>
             : <p className="text-sm text-muted-foreground italic">ยังไม่มีเป้าหมาย</p>
           }
         </div>
@@ -415,6 +448,23 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
+          {(entry.campaignScope || entry.baseline) && (
+            <div className="rounded-md bg-muted/50 border border-border p-3 space-y-2">
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
+              {entry.campaignScope && (
+                <div>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">แคมเปญที่รัน</div>
+                  <p className="text-sm whitespace-pre-wrap">{entry.campaignScope}</p>
+                </div>
+              )}
+              {entry.baseline && (
+                <div>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">Baseline</div>
+                  <p className="text-sm font-mono whitespace-pre-wrap">{entry.baseline}</p>
+                </div>
+              )}
+            </div>
+          )}
           {entry.successCriteria && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">2. เกณฑ์วัดผล</div>
@@ -457,6 +507,8 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
 function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
   const [form, setForm] = useState(() => ({
     date: today(),
+    campaignScope: '',
+    baseline: '',
     goalText: '',
     successCriteria: '',
     constraints: '',
@@ -477,6 +529,8 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: form.date,
+          campaignScope: form.campaignScope,
+          baseline: form.baseline,
           goalText: form.goalText,
           successCriteria: form.successCriteria,
           constraints: form.constraints,
@@ -504,6 +558,22 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
           <label className="text-[11px] text-muted-foreground">กำหนดเสร็จ</label>
           <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
             className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+      </div>
+      {/* Context section */}
+      <div className="rounded-md bg-muted/50 border border-border p-3 space-y-3">
+        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
+          <textarea value={form.campaignScope} onChange={e => setForm(f => ({ ...f, campaignScope: e.target.value }))}
+            placeholder="เช่น Camp-A, Camp-B หรือ ทุกแคมเปญที่ active" rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Baseline (ก่อนรัน)</label>
+          <textarea value={form.baseline} onChange={e => setForm(f => ({ ...f, baseline: e.target.value }))}
+            placeholder={"BSP: __% · CPM: __ TON · Cost-per-start: __ TON"} rows={2}
+            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring font-mono" />
         </div>
       </div>
       <div>

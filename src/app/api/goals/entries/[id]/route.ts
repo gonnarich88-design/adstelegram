@@ -4,12 +4,14 @@ import { prisma } from '@/lib/prisma'
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const body = await req.json()
-  const { date, goalText, successCriteria, constraints, planText, risks, doneCriteria, targetText, deadline } = body
+  const { date, campaignScope, baseline, goalText, successCriteria, constraints, planText, risks, doneCriteria, targetText, deadline } = body
 
   const entry = await prisma.globalGoalEntry.update({
     where: { id },
     data: {
       ...(date ? { date: new Date(date) } : {}),
+      campaignScope: campaignScope?.trim() || null,
+      baseline: baseline?.trim() || null,
       goalText: goalText?.trim() || null,
       successCriteria: successCriteria?.trim() || null,
       constraints: constraints?.trim() || null,
@@ -24,6 +26,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({
     id: entry.id,
     date: entry.date.toISOString(),
+    campaignScope: entry.campaignScope,
+    baseline: entry.baseline,
     goalText: entry.goalText,
     successCriteria: entry.successCriteria,
     constraints: entry.constraints,
