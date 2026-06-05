@@ -403,6 +403,7 @@ function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: form.date,
+          campaignIds: form.campaignIds,
           baseline: form.baseline,
           goalText: form.goalText,
           successCriteria: form.successCriteria,
