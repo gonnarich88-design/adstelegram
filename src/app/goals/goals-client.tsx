@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Check, X, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Check, X, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface CampaignGoal {
@@ -253,6 +253,7 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   onDeleted: () => void
 }) {
   const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [form, setForm] = useState({
     date: entry.date.slice(0, 10),
     goalText: entry.goalText ?? '',
@@ -379,59 +380,75 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   }
 
   return (
-    <div className="border border-border rounded-lg p-4 space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-xs font-semibold text-muted-foreground">
-          {formatDate(entry.date)}
-          {entry.deadline && <span className="ml-2 font-normal">· กำหนด {formatDate(entry.deadline)}</span>}
+    <div className="border border-border rounded-lg overflow-hidden">
+      {/* Cover — always visible, click to toggle */}
+      <button
+        className="w-full text-left p-4 flex items-start justify-between gap-2 hover:bg-muted/40 transition-colors"
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="text-xs text-muted-foreground">
+            {formatDate(entry.date)}
+            {entry.deadline && <span className="ml-2">· กำหนด {formatDate(entry.deadline)}</span>}
+          </div>
+          {entry.goalText
+            ? <p className="text-sm font-medium">{entry.goalText}</p>
+            : <p className="text-sm text-muted-foreground italic">ยังไม่มีเป้าหมาย</p>
+          }
         </div>
-        <div className="flex gap-1">
-          <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1 rounded">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={remove} disabled={deleting} className="text-muted-foreground hover:text-destructive p-1 rounded">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+          {expanded
+            ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+            : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          }
         </div>
-      </div>
-      {entry.goalText && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">1. เป้าหมาย</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.goalText}</p>
+      </button>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="border-t border-border px-4 pb-4 pt-3 space-y-2">
+          <div className="flex justify-end gap-1 mb-1">
+            <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1 rounded">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={remove} disabled={deleting} className="text-muted-foreground hover:text-destructive p-1 rounded">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {entry.successCriteria && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">2. เกณฑ์วัดผล</div>
+              <p className="text-sm whitespace-pre-wrap">{entry.successCriteria}</p>
+            </div>
+          )}
+          {entry.constraints && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">3. งบ / ข้อจำกัด</div>
+              <p className="text-sm whitespace-pre-wrap">{entry.constraints}</p>
+            </div>
+          )}
+          {entry.planText && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">4. แผนการยิง</div>
+              <p className="text-sm whitespace-pre-wrap">{entry.planText}</p>
+            </div>
+          )}
+          {entry.risks && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">5. ความเสี่ยง</div>
+              <p className="text-sm whitespace-pre-wrap">{entry.risks}</p>
+            </div>
+          )}
+          {entry.doneCriteria && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">6. รู้ว่าสำเร็จเมื่อ</div>
+              <p className="text-sm whitespace-pre-wrap">{entry.doneCriteria}</p>
+            </div>
+          )}
+          {entry.targetText && (
+            <div className="text-[11px] text-muted-foreground">เป้า: {entry.targetText}</div>
+          )}
         </div>
-      )}
-      {entry.successCriteria && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">2. เกณฑ์วัดผล</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.successCriteria}</p>
-        </div>
-      )}
-      {entry.constraints && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">3. งบ / ข้อจำกัด</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.constraints}</p>
-        </div>
-      )}
-      {entry.planText && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">4. แผนการยิง</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.planText}</p>
-        </div>
-      )}
-      {entry.risks && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">5. ความเสี่ยง</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.risks}</p>
-        </div>
-      )}
-      {entry.doneCriteria && (
-        <div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">6. รู้ว่าสำเร็จเมื่อ</div>
-          <p className="text-sm whitespace-pre-wrap">{entry.doneCriteria}</p>
-        </div>
-      )}
-      {entry.targetText && (
-        <div className="text-[11px] text-muted-foreground">เป้า: {entry.targetText}</div>
       )}
     </div>
   )
