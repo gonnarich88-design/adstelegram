@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Pencil, Check, X, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -275,6 +275,90 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
+function CampaignMultiSelectDropdown({
+  campaigns,
+  selectedIds,
+  onChange,
+}: {
+  campaigns: CampaignGoal[]
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const filtered = campaigns.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+  const label = selectedIds.length === 0 ? 'เลือกแคมเปญ...' : `${selectedIds.length} แคมเปญ`
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full text-left text-sm border border-border rounded-md px-3 py-2 bg-background flex items-center justify-between gap-2 hover:bg-muted/40 transition-colors"
+      >
+        <span className={selectedIds.length === 0 ? 'text-muted-foreground' : ''}>{label}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-50 w-full mt-1 border border-border rounded-md bg-background shadow-lg">
+          <div className="p-2 border-b border-border">
+            <input
+              type="text"
+              placeholder="ค้นหา..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full text-sm px-2 py-1.5 bg-muted/40 rounded focus:outline-none focus:ring-1 focus:ring-ring"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto divide-y divide-border">
+            {filtered.length === 0
+              ? <p className="px-3 py-2 text-sm text-muted-foreground italic">ไม่พบแคมเปญ</p>
+              : filtered.map(c => {
+                  const checked = selectedIds.includes(c.id)
+                  return (
+                    <label key={c.id} className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => onChange(checked ? selectedIds.filter(id => id !== c.id) : [...selectedIds, c.id])}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium leading-tight">{c.name}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
+                        </div>
+                        {checked && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
+                            {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
+                            {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
+                            {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
+                            {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  )
+                })
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
   entry: GoalEntry
   campaigns: CampaignGoal[]
@@ -368,42 +452,12 @@ function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
           <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
           <div>
             <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
-            <div className="mt-1 border border-border rounded-md overflow-hidden divide-y divide-border bg-background">
-              {campaigns.length === 0
-                ? <p className="px-3 py-2 text-sm text-muted-foreground italic">ไม่มีแคมเปญที่ active</p>
-                : campaigns.map(c => {
-                    const checked = form.campaignIds.includes(c.id)
-                    return (
-                      <label key={c.id} className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => setForm(f => ({
-                            ...f,
-                            campaignIds: checked
-                              ? f.campaignIds.filter(id => id !== c.id)
-                              : [...f.campaignIds, c.id],
-                          }))}
-                          className="mt-0.5 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium leading-tight">{c.name}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
-                          </div>
-                          {checked && (
-                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
-                              {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
-                              {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
-                              {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
-                              {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
-                            </div>
-                          )}
-                        </div>
-                      </label>
-                    )
-                  })
-              }
+            <div className="mt-1">
+              <CampaignMultiSelectDropdown
+                campaigns={campaigns}
+                selectedIds={form.campaignIds}
+                onChange={ids => setForm(f => ({ ...f, campaignIds: ids }))}
+              />
             </div>
           </div>
           <div>
@@ -643,42 +697,12 @@ function AddEntryForm({ campaigns, onSaved, onCancel }: { campaigns: CampaignGoa
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
         <div>
           <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
-          <div className="mt-1 border border-border rounded-md overflow-hidden divide-y divide-border bg-background">
-            {campaigns.length === 0
-              ? <p className="px-3 py-2 text-sm text-muted-foreground italic">ไม่มีแคมเปญที่ active</p>
-              : campaigns.map(c => {
-                  const checked = form.campaignIds.includes(c.id)
-                  return (
-                    <label key={c.id} className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => setForm(f => ({
-                          ...f,
-                          campaignIds: checked
-                            ? f.campaignIds.filter(id => id !== c.id)
-                            : [...f.campaignIds, c.id],
-                        }))}
-                        className="mt-0.5 shrink-0"
-                      />
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium leading-tight">{c.name}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
-                        </div>
-                        {checked && (
-                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
-                            {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
-                            {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
-                            {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
-                            {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  )
-                })
-            }
+          <div className="mt-1">
+            <CampaignMultiSelectDropdown
+              campaigns={campaigns}
+              selectedIds={form.campaignIds}
+              onChange={ids => setForm(f => ({ ...f, campaignIds: ids }))}
+            />
           </div>
         </div>
         <div>
