@@ -29,6 +29,7 @@ model Campaign {
   allocations    CampaignAllocation[]
   refunds        WalletDeposit[]      @relation("CampaignRefunds")
   changeLogs     CampaignChangeLog[]
+  plannerEntries GlobalGoalEntryCampaign[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   sortOrder      Int                  @default(0)
@@ -126,9 +127,8 @@ model GlobalGoal {
 }
 
 model GlobalGoalEntry {
-  id               String    @id @default(cuid())
-  date             DateTime  @db.Date
-  campaignScope    String?
+  id               String                   @id @default(cuid())
+  date             DateTime                 @db.Date
   baseline         String?
   goalText         String?
   successCriteria  String?
@@ -138,8 +138,18 @@ model GlobalGoalEntry {
   doneCriteria     String?
   targetText       String?
   deadline         DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  campaigns        GlobalGoalEntryCampaign[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+}
+
+model GlobalGoalEntryCampaign {
+  entryId    String
+  campaignId String
+  entry      GlobalGoalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  campaign   Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, campaignId])
 }
 
 model DailyConversion {

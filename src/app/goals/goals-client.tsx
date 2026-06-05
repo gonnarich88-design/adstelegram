@@ -16,13 +16,17 @@ interface CampaignGoal {
   targetJoins: number | null
   goalText: string | null
   planText: string | null
+  budgetTon: number | null
+  dailyBudgetTon: number
   totalJoins: number
+  lastBsp: number | null
+  lastCpm: number | null
+  lastCps: number | null
 }
 
 interface GoalEntry {
   id: string
   date: string
-  campaignScope: string | null
   baseline: string | null
   goalText: string | null
   successCriteria: string | null
@@ -32,6 +36,7 @@ interface GoalEntry {
   doneCriteria: string | null
   targetText: string | null
   deadline: string | null
+  campaignIds: string[]
   createdAt: string
 }
 
@@ -39,6 +44,12 @@ interface Props {
   globalNote: string | null
   campaigns: CampaignGoal[]
   goalEntries: GoalEntry[]
+}
+
+function statusColor(status: string) {
+  if (status === 'ACTIVE') return 'bg-green-500/10 text-green-600 dark:text-green-400'
+  if (status === 'PAUSED') return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
+  return 'bg-muted text-muted-foreground'
 }
 
 function daysBetween(a: Date, b: Date) {
@@ -92,7 +103,7 @@ function PaceBar({ startDate, targetDate, targetJoins, actualJoins }: {
   )
 }
 
-function CampaignGoalCard({ campaign, onSaved }: { campaign: CampaignGoal; onSaved: () => void }) {
+function CampaignGoalCard({ campaign, linkedPlanners, onSaved }: { campaign: CampaignGoal; linkedPlanners: GoalEntry[]; onSaved: () => void }) {
   const [editing, setEditing] = useState(false)
   const [goalText, setGoalText] = useState(campaign.goalText ?? '')
   const [planText, setPlanText] = useState(campaign.planText ?? '')
@@ -237,6 +248,21 @@ function CampaignGoalCard({ campaign, onSaved }: { campaign: CampaignGoal; onSav
           )}
         </div>
       )}
+
+      {linkedPlanners.length > 0 && (
+        <div className="border-t border-border pt-3 mt-1 space-y-1.5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">แพลนที่เชื่อม · {linkedPlanners.length}</div>
+          {linkedPlanners.map(p => (
+            <div key={p.id} className="flex items-start gap-2 text-[12px]">
+              <span className="text-muted-foreground shrink-0 mt-0.5">{formatDate(p.date)}</span>
+              {p.goalText
+                ? <span className="text-foreground/80 line-clamp-1">{p.goalText}</span>
+                : <span className="text-muted-foreground italic">ไม่มีเป้าหมาย</span>
+              }
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -249,8 +275,9 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
-function GoalEntryItem({ entry, onSaved, onDeleted }: {
+function GoalEntryItem({ entry, campaigns, onSaved, onDeleted }: {
   entry: GoalEntry
+  campaigns: CampaignGoal[]
   onSaved: () => void
   onDeleted: () => void
 }) {
@@ -258,7 +285,7 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   const [expanded, setExpanded] = useState(false)
   const [form, setForm] = useState({
     date: entry.date.slice(0, 10),
-    campaignScope: entry.campaignScope ?? '',
+    campaignIds: entry.campaignIds,
     baseline: entry.baseline ?? '',
     goalText: entry.goalText ?? '',
     successCriteria: entry.successCriteria ?? '',
@@ -308,7 +335,7 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   function cancel() {
     setForm({
       date: entry.date.slice(0, 10),
-      campaignScope: entry.campaignScope ?? '',
+      campaignIds: entry.campaignIds,
       baseline: entry.baseline ?? '',
       goalText: entry.goalText ?? '',
       successCriteria: entry.successCriteria ?? '',
@@ -342,9 +369,43 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
           <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
           <div>
             <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
-            <textarea value={form.campaignScope} onChange={e => setForm(f => ({ ...f, campaignScope: e.target.value }))}
-              placeholder="เช่น Camp-A, Camp-B หรือ ทุกแคมเปญที่ active" rows={2}
-              className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+            <div className="mt-1 border border-border rounded-md overflow-hidden divide-y divide-border bg-background">
+              {campaigns.length === 0
+                ? <p className="px-3 py-2 text-sm text-muted-foreground italic">ไม่มีแคมเปญที่ active</p>
+                : campaigns.map(c => {
+                    const checked = form.campaignIds.includes(c.id)
+                    return (
+                      <label key={c.id} className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setForm(f => ({
+                            ...f,
+                            campaignIds: checked
+                              ? f.campaignIds.filter(id => id !== c.id)
+                              : [...f.campaignIds, c.id],
+                          }))}
+                          className="mt-0.5 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium leading-tight">{c.name}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
+                          </div>
+                          {checked && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
+                              {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
+                              {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
+                              {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
+                              {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    )
+                  })
+              }
+            </div>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground">Baseline (ก่อนรัน)</label>
@@ -418,11 +479,15 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
                 ถึง {formatDate(entry.deadline)}
               </span>
             )}
-            {entry.campaignScope && (
-              <span className="text-[11px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
-                {entry.campaignScope.length > 40 ? entry.campaignScope.slice(0, 40) + '…' : entry.campaignScope}
-              </span>
-            )}
+            {entry.campaignIds.map(cid => {
+              const c = campaigns.find(x => x.id === cid)
+              if (!c) return null
+              return (
+                <span key={cid} className="text-[11px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                  {c.name}
+                </span>
+              )
+            })}
           </div>
           {entry.goalText
             ? <p className="text-sm font-medium leading-snug">{entry.goalText}</p>
@@ -448,13 +513,27 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-          {(entry.campaignScope || entry.baseline) && (
+          {(entry.campaignIds.length > 0 || entry.baseline) && (
             <div className="rounded-md bg-muted/50 border border-border p-3 space-y-2">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
-              {entry.campaignScope && (
+              {entry.campaignIds.length > 0 && (
                 <div>
-                  <div className="text-[10px] text-muted-foreground mb-0.5">แคมเปญที่รัน</div>
-                  <p className="text-sm whitespace-pre-wrap">{entry.campaignScope}</p>
+                  <div className="text-[10px] text-muted-foreground mb-1.5">แคมเปญที่รัน</div>
+                  <div className="space-y-1.5">
+                    {entry.campaignIds.map(cid => {
+                      const c = campaigns.find(x => x.id === cid)
+                      if (!c) return null
+                      return (
+                        <div key={cid} className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">{c.name}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
+                          {c.budgetTon != null && <span className="text-[11px] text-muted-foreground">งบ {c.budgetTon.toFixed(2)} TON</span>}
+                          {c.lastBsp != null && <span className="text-[11px] text-muted-foreground">BSP {c.lastBsp.toFixed(0)}%</span>}
+                          {c.lastCpm != null && <span className="text-[11px] text-muted-foreground">CPM ${c.lastCpm.toFixed(4)}</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
               {entry.baseline && (
@@ -504,10 +583,10 @@ function GoalEntryItem({ entry, onSaved, onDeleted }: {
   )
 }
 
-function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+function AddEntryForm({ campaigns, onSaved, onCancel }: { campaigns: CampaignGoal[]; onSaved: () => void; onCancel: () => void }) {
   const [form, setForm] = useState(() => ({
     date: today(),
-    campaignScope: '',
+    campaignIds: [] as string[],
     baseline: '',
     goalText: '',
     successCriteria: '',
@@ -529,7 +608,7 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: form.date,
-          campaignScope: form.campaignScope,
+          campaignIds: form.campaignIds,
           baseline: form.baseline,
           goalText: form.goalText,
           successCriteria: form.successCriteria,
@@ -565,9 +644,43 @@ function AddEntryForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: ()
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">บริบทก่อนรัน</div>
         <div>
           <label className="text-[11px] text-muted-foreground">แคมเปญที่จะรัน</label>
-          <textarea value={form.campaignScope} onChange={e => setForm(f => ({ ...f, campaignScope: e.target.value }))}
-            placeholder="เช่น Camp-A, Camp-B หรือ ทุกแคมเปญที่ active" rows={2}
-            className="w-full mt-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring" />
+          <div className="mt-1 border border-border rounded-md overflow-hidden divide-y divide-border bg-background">
+            {campaigns.length === 0
+              ? <p className="px-3 py-2 text-sm text-muted-foreground italic">ไม่มีแคมเปญที่ active</p>
+              : campaigns.map(c => {
+                  const checked = form.campaignIds.includes(c.id)
+                  return (
+                    <label key={c.id} className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => setForm(f => ({
+                          ...f,
+                          campaignIds: checked
+                            ? f.campaignIds.filter(id => id !== c.id)
+                            : [...f.campaignIds, c.id],
+                        }))}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium leading-tight">{c.name}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor(c.status)}`}>{c.status}</span>
+                        </div>
+                        {checked && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
+                            {c.budgetTon != null && <span>งบ {c.budgetTon.toFixed(2)} TON</span>}
+                            {c.lastBsp != null && <span>BSP {c.lastBsp.toFixed(0)}%</span>}
+                            {c.lastCpm != null && <span>CPM ${c.lastCpm.toFixed(4)}</span>}
+                            {c.lastCps != null && <span>CPS ${c.lastCps.toFixed(4)}</span>}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  )
+                })
+            }
+          </div>
         </div>
         <div>
           <label className="text-[11px] text-muted-foreground">Baseline (ก่อนรัน)</label>
@@ -691,6 +804,7 @@ export function GoalsClient({ globalNote, campaigns, goalEntries: initialEntries
           </div>
           {addingEntry && (
             <AddEntryForm
+              campaigns={campaigns}
               onSaved={() => { setAddingEntry(false); refreshEntries() }}
               onCancel={() => setAddingEntry(false)}
             />
@@ -703,6 +817,7 @@ export function GoalsClient({ globalNote, campaigns, goalEntries: initialEntries
               <GoalEntryItem
                 key={e.id}
                 entry={e}
+                campaigns={campaigns}
                 onSaved={refreshEntries}
                 onDeleted={refreshEntries}
               />
@@ -725,6 +840,7 @@ export function GoalsClient({ globalNote, campaigns, goalEntries: initialEntries
               <CampaignGoalCard
                 key={c.id}
                 campaign={c}
+                linkedPlanners={entries.filter(e => e.campaignIds.includes(c.id))}
                 onSaved={() => router.refresh()}
               />
             ))}

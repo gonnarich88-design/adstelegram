@@ -34,7 +34,6 @@ export async function exportData(): Promise<ExportData> {
     globalGoalEntries: globalGoalEntries.map(e => ({
       id: e.id,
       date: e.date.toISOString().slice(0, 10),
-      campaignScope: e.campaignScope ?? null,
       baseline: e.baseline ?? null,
       goalText: e.goalText ?? null,
       successCriteria: e.successCriteria ?? null,
@@ -243,7 +242,6 @@ export async function importData(data: ExportData): Promise<void> {
         data: {
           id: e.id,
           date: new Date(e.date),
-          campaignScope: e.campaignScope ?? null,
           baseline: e.baseline ?? null,
           goalText: e.goalText ?? null,
           successCriteria: e.successCriteria ?? null,
