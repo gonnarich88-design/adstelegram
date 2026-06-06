@@ -52,6 +52,10 @@ export function CampaignList({ campaigns: initial }: { campaigns: SerializedCamp
     persistOrder(newGroup)
   }
 
+  function handleBidUpdate(id: string, bidCpmTon: string | null) {
+    setCampaigns(prev => prev.map(c => c.id === id ? { ...c, bidCpmTon } : c))
+  }
+
   const active = campaigns.filter(c => c.status !== 'CANCELLED')
   const groups: { label: string; items: SerializedCampaign[]; sortable: boolean }[] = [
     { label: 'Channels', items: sortGroup(active.filter(c => c.placementType === 'CHANNEL')), sortable: true },
@@ -96,7 +100,7 @@ export function CampaignList({ campaigns: initial }: { campaigns: SerializedCamp
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <CampaignRow campaign={c} />
+                    <CampaignRow campaign={c} onBidUpdate={handleBidUpdate} />
                   </div>
                 </div>
               ))}

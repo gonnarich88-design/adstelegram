@@ -87,6 +87,50 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await req.json()
+    const bidCpmTon = body.bidCpmTon != null ? Number(body.bidCpmTon) : null
+    if (bidCpmTon !== null && (isNaN(bidCpmTon) || bidCpmTon <= 0)) {
+      return NextResponse.json({ error: 'bidCpmTon must be > 0' }, { status: 400 })
+    }
+
+    const old = await prisma.campaign.findUnique({ where: { id } })
+    if (!old) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    const campaign = await prisma.campaign.update({
+      where: { id },
+      data: { bidCpmTon },
+    })
+
+    const changes = diffCampaignFields(old, {
+      name: old.name,
+      targetType: old.targetType,
+      targetName: old.targetName,
+      startDate: old.startDate,
+      endDate: old.endDate,
+      budgetTon: old.budgetTon,
+      dailyBudgetTon: old.dailyBudgetTon,
+      bidCpmTon,
+      status: old.status,
+      placementName: old.placementName,
+      placementType: old.placementType,
+    })
+    await logCampaignChanges(id, changes)
+
+    return NextResponse.json({ bidCpmTon: campaign.bidCpmTon?.toString() ?? null })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

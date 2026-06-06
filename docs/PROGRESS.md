@@ -1,14 +1,21 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-05 (session 31) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-07 (session 32) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 31 — Goals UX fixes + Analysis Chat Design: Design spec เสร็จแล้ว รอ implement**
+**Session 32 — Inline Bid Edit บน Campaigns list**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
   - Spec: `docs/superpowers/specs/2026-06-05-analysis-chat-design.md`
   - ต้องสร้าง: `src/app/api/analysis/chat/route.ts` + `src/app/analysis/analysis-chat.tsx`
   - ต้องแก้: `src/app/analysis/analysis-client.tsx` เพิ่ม chat toggle
+
+## เสร็จแล้ว (session 32)
+- [x] **Inline Bid Edit บน Campaigns list** — กดที่ chip "Bid X.XX TON" หรือ "+ Bid" ได้เลยจากหน้า list โดยไม่ต้องเข้าหน้า edit
+  - API: เพิ่ม PATCH `/api/campaigns/[id]` รับเฉพาะ `{ bidCpmTon }` + log changelog
+  - `campaign-row.tsx`: เพิ่ม `'use client'`, state `editingBid/bidInput/saving`, Enter=save, Escape=cancel, blur=save
+  - `campaign-list.tsx`: เพิ่ม `handleBidUpdate` callback → อัปเดต state ทันทีหลัง save
+  - browser verified ✅ (เพิ่ม bid ใหม่, แก้ bid เดิม, Escape ยกเลิก ทุกกรณีทำงานถูก)
 
 ## เสร็จแล้ว (session 31)
 - [x] **fix: TypeScript build error (campaignScope)** — ลบ `campaignScope: form.campaignScope` บรรทัดเดียวออกจาก `GoalEntryItem.save()` — commit `9bb0fdc` ✅

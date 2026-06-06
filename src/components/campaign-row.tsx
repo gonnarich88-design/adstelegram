@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { calcAggregateMetrics } from '@/lib/metrics'
@@ -31,7 +34,19 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
   )
 }
 
-export function CampaignRow({ campaign }: { campaign: any }) {
+export function CampaignRow({
+  campaign,
+  onBidUpdate,
+}: {
+  campaign: any
+  onBidUpdate?: (id: string, bidCpmTon: string | null) => void
+}) {
+  const [editingBid, setEditingBid] = useState(false)
+  const [bidInput, setBidInput] = useState('')
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const cancelledRef = useRef(false)
+
   const dailyBudget = Number(campaign.dailyBudgetTon)
 
   const metrics =
@@ -64,6 +79,58 @@ export function CampaignRow({ campaign }: { campaign: any }) {
       ? 'Search'
       : null
 
+  function startEdit(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    cancelledRef.current = false
+    setBidInput(campaign.bidCpmTon ? Number(campaign.bidCpmTon).toFixed(4) : '')
+    setEditingBid(true)
+    setTimeout(() => { inputRef.current?.select() }, 0)
+  }
+
+  async function save() {
+    if (saving) return
+    const trimmed = bidInput.trim()
+    const newBid = trimmed === '' ? null : parseFloat(trimmed)
+    if (trimmed !== '' && (isNaN(newBid!) || newBid! <= 0)) {
+      setEditingBid(false)
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bidCpmTon: newBid }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        onBidUpdate?.(campaign.id, data.bidCpmTon)
+      }
+    } finally {
+      setSaving(false)
+      setEditingBid(false)
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      save()
+    } else if (e.key === 'Escape') {
+      cancelledRef.current = true
+      setEditingBid(false)
+    }
+  }
+
+  function handleBlur() {
+    if (cancelledRef.current) {
+      cancelledRef.current = false
+      return
+    }
+    save()
+  }
+
   return (
     <div className="flex items-center rounded-lg border border-border hover:bg-muted/30 transition-colors group">
       {/* Content area → campaign detail */}
@@ -85,9 +152,40 @@ export function CampaignRow({ campaign }: { campaign: any }) {
               {placementLabel && ` · ${placementLabel}`}
               {campaign.entries.length > 0 && ` · ${campaign.entries.length} วัน`}
             </span>
-            {campaign.bidCpmTon != null && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+            {/* Bid chip — click to edit inline */}
+            {editingBid ? (
+              <span
+                className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted shrink-0"
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
+              >
+                <input
+                  ref={inputRef}
+                  value={bidInput}
+                  onChange={e => setBidInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleBlur}
+                  disabled={saving}
+                  className="w-14 bg-transparent outline-none text-foreground text-[10px] border-b border-foreground/40"
+                  placeholder="0.0000"
+                  autoFocus
+                />
+                <span className="text-muted-foreground">TON</span>
+              </span>
+            ) : campaign.bidCpmTon != null ? (
+              <span
+                onClick={startEdit}
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0 cursor-pointer hover:bg-primary/10 hover:text-foreground transition-colors"
+                title="คลิกเพื่อแก้ไข Bid"
+              >
                 Bid {Number(campaign.bidCpmTon).toFixed(2)} TON
+              </span>
+            ) : (
+              <span
+                onClick={startEdit}
+                className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-muted-foreground/30 text-muted-foreground/40 shrink-0 cursor-pointer hover:text-muted-foreground hover:border-muted-foreground/50 transition-colors"
+                title="คลิกเพื่อตั้ง Bid"
+              >
+                + Bid
               </span>
             )}
           </div>
