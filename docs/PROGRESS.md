@@ -1,14 +1,17 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-07 (session 32) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-11 (session 33) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 32 — Inline Bid Edit บน Campaigns list**
+**Session 33 — เพิ่ม CPR/CPD ในตาราง Daily Performance (Dashboard)**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
   - Spec: `docs/superpowers/specs/2026-06-05-analysis-chat-design.md`
   - ต้องสร้าง: `src/app/api/analysis/chat/route.ts` + `src/app/analysis/analysis-chat.tsx`
   - ต้องแก้: `src/app/analysis/analysis-client.tsx` เพิ่ม chat toggle
+
+## เสร็จแล้ว (session 33)
+- [x] **Dashboard Daily Performance: เพิ่มคอลัมน์ CPR/CPD** — `daily-total-table.tsx`: `sumRows()` คำนวณ `cpr = spendThb/registrations`, `cpd = spendThb/depositCount` (null ถ้าไม่มีข้อมูล), `RowCells` + monthly summary เพิ่ม 2 คอลัมน์ "CPR (฿)"/"CPD (฿)" สีเหลือง (amber) ต่อจาก CPS — สูตรเดียวกับหน้า Conversions, browser verified ✅ (81 tests pass)
 
 ## เสร็จแล้ว (session 32)
 - [x] **Inline Bid Edit บน Campaigns list** — กดที่ chip "Bid X.XX TON" หรือ "+ Bid" ได้เลยจากหน้า list โดยไม่ต้องเข้าหน้า edit

@@ -69,14 +69,18 @@ function sumRows(rows: AggRow[]) {
   const dailyBudgetTon = rows.reduce((s, r) => s + r.dailyBudgetTon, 0)
   const hasReg = rows.some(r => r.registrations !== undefined)
   const hasDep = rows.some(r => r.depositCount !== undefined)
+  const registrations = hasReg ? rows.reduce((s, r) => s + (r.registrations ?? 0), 0) : undefined
+  const depositCount = hasDep ? rows.reduce((s, r) => s + (r.depositCount ?? 0), 0) : undefined
   return {
     views, clicks, joins, spendTon, spendThb, dailyBudgetTon,
-    registrations: hasReg ? rows.reduce((s, r) => s + (r.registrations ?? 0), 0) : undefined,
-    depositCount: hasDep ? rows.reduce((s, r) => s + (r.depositCount ?? 0), 0) : undefined,
+    registrations,
+    depositCount,
     ctr: views > 0 ? (clicks / views) * 100 : 0,
     cr: clicks > 0 ? (joins / clicks) * 100 : 0,
     cpc: clicks > 0 ? spendThb / clicks : 0,
     cps: joins > 0 ? spendThb / joins : 0,
+    cpr: registrations !== undefined && registrations > 0 ? spendThb / registrations : null,
+    cpd: depositCount !== undefined && depositCount > 0 ? spendThb / depositCount : null,
     bsp: dailyBudgetTon > 0 ? (spendTon / dailyBudgetTon) * 100 : 0,
   }
 }
@@ -145,6 +149,8 @@ function RowCells({ r, joinsLabel }: { r: AggRow; joinsLabel: string }) {
   const cr = r.clicks > 0 ? (r.joins / r.clicks) * 100 : 0
   const cpc = r.clicks > 0 ? r.spendThb / r.clicks : 0
   const cps = r.joins > 0 ? r.spendThb / r.joins : 0
+  const cpr = r.registrations !== undefined && r.registrations > 0 ? r.spendThb / r.registrations : null
+  const cpd = r.depositCount !== undefined && r.depositCount > 0 ? r.spendThb / r.depositCount : null
   const bsp = r.dailyBudgetTon > 0 ? (r.spendTon / r.dailyBudgetTon) * 100 : 0
   return (
     <>
@@ -159,6 +165,8 @@ function RowCells({ r, joinsLabel }: { r: AggRow; joinsLabel: string }) {
       <td className="text-right py-1.5 px-2">{cr.toFixed(2)}%</td>
       <td className="text-right py-1.5 px-2">{fmtThb(cpc)}</td>
       <td className="text-right py-1.5 px-2">{r.joins > 0 ? fmtThb(cps) : '—'}</td>
+      <td className="text-right py-1.5 px-2 text-amber-400">{cpr !== null ? fmtThb(cpr) : '—'}</td>
+      <td className="text-right py-1.5 px-2 text-amber-400">{cpd !== null ? fmtThb(cpd) : '—'}</td>
       <td className="text-right py-1.5 px-2 pr-4 font-medium" style={{ color: bspColor(bsp) }}>{bsp.toFixed(1)}%</td>
     </>
   )
@@ -267,6 +275,8 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                       <th className="text-right py-2 px-2">CR</th>
                       <th className="text-right py-2 px-2">CPC</th>
                       <th className="text-right py-2 px-2">CPS</th>
+                      <th className="text-right py-2 px-2 text-amber-400">CPR (฿)</th>
+                      <th className="text-right py-2 px-2 text-amber-400">CPD (฿)</th>
                       <th className="text-right py-2 px-2 pr-4">BSP</th>
                     </tr>
                   </thead>
@@ -321,6 +331,8 @@ export function DailyTotalTable({ dailyTotals, joinsLabel = 'Joins' }: {
                       <td className="text-right py-2 px-2">{agg.cr.toFixed(2)}%</td>
                       <td className="text-right py-2 px-2">{fmtThb(agg.cpc)}</td>
                       <td className="text-right py-2 px-2">{agg.joins > 0 ? fmtThb(agg.cps) : '—'}</td>
+                      <td className="text-right py-2 px-2 text-amber-400">{agg.cpr !== null ? fmtThb(agg.cpr) : '—'}</td>
+                      <td className="text-right py-2 px-2 text-amber-400">{agg.cpd !== null ? fmtThb(agg.cpd) : '—'}</td>
                       <td className="text-right py-2 px-2 pr-4" style={{ color: bspColor(agg.bsp) }}>{agg.bsp.toFixed(1)}%</td>
                     </tr>
                   </tbody>
