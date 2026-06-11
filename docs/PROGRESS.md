@@ -2,7 +2,7 @@
 > อัปเดตล่าสุด: 2026-06-11 (session 33) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 33 — เพิ่ม CPR/CPD ในตาราง Daily Performance (Dashboard)**
+**Session 33 — เพิ่ม CPR/CPD ในตาราง Daily Performance + เส้นสมัคร/ฝากใน Trend chart**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
@@ -12,6 +12,7 @@
 
 ## เสร็จแล้ว (session 33)
 - [x] **Dashboard Daily Performance: เพิ่มคอลัมน์ CPR/CPD** — `daily-total-table.tsx`: `sumRows()` คำนวณ `cpr = spendThb/registrations`, `cpd = spendThb/depositCount` (null ถ้าไม่มีข้อมูล), `RowCells` + monthly summary เพิ่ม 2 คอลัมน์ "CPR (฿)"/"CPD (฿)" สีเหลือง (amber) ต่อจาก CPS — สูตรเดียวกับหน้า Conversions, browser verified ✅ (81 tests pass)
+- [x] **Dashboard Trend chart: เพิ่มเส้นสมัคร/ฝาก** — `lib/chart.ts`: `ChartDataPoint` เพิ่ม `registrations?`/`depositCount?` (optional, ไม่กระทบ `groupEntriesByDate` เดิม), `page.tsx`: ย้าย `conversionByDate` map ขึ้นมาก่อน merge เข้า `chartData` ตามวันที่, `dashboard-chart.tsx`: เพิ่ม `Line` สีม่วง (สมัคร #c084fc) + สีฟ้า (ฝาก #60a5fa) บน count axis พร้อม `dot={{r:3}}` + `connectNulls` (ข้อมูล conversion มักไม่ครบทุกวัน), legend + tooltip label ภาษาไทย — browser verified ✅ (81 tests pass)
 
 ## เสร็จแล้ว (session 32)
 - [x] **Inline Bid Edit บน Campaigns list** — กดที่ chip "Bid X.XX TON" หรือ "+ Bid" ได้เลยจากหน้า list โดยไม่ต้องเข้าหน้า edit

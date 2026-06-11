@@ -3,6 +3,8 @@ export type ChartDataPoint = {
   spendTon: number
   joins: number    // CHANNEL campaigns
   startbot: number // BOT campaigns
+  registrations?: number
+  depositCount?: number
 }
 
 export function groupEntriesByDate(

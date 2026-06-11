@@ -29,6 +29,8 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
 
   const hasChannel = useMemo(() => chartData.some(d => d.joins > 0), [chartData])
   const hasBot = useMemo(() => chartData.some(d => d.startbot > 0), [chartData])
+  const hasReg = useMemo(() => chartData.some(d => (d.registrations ?? 0) > 0), [chartData])
+  const hasDep = useMemo(() => chartData.some(d => (d.depositCount ?? 0) > 0), [chartData])
 
   if (chartData.length === 0) {
     return (
@@ -94,6 +96,8 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
               if (name === 'spendTon') return [`${Number(value).toFixed(3)} TON`, 'Spend']
               if (name === 'joins') return [value, 'Joins']
               if (name === 'startbot') return [value, 'Startbot']
+              if (name === 'registrations') return [value, 'สมัคร']
+              if (name === 'depositCount') return [value, 'ฝาก']
               return [value, name]
             }}
           />
@@ -126,6 +130,28 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
               dot={false}
             />
           )}
+          {hasReg && (
+            <Line
+              yAxisId="count"
+              type="monotone"
+              dataKey="registrations"
+              stroke="#c084fc"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              connectNulls
+            />
+          )}
+          {hasDep && (
+            <Line
+              yAxisId="count"
+              type="monotone"
+              dataKey="depositCount"
+              stroke="#60a5fa"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              connectNulls
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
       <div className="flex gap-4 mt-2 justify-center">
@@ -140,6 +166,16 @@ export function DashboardChart({ chartData }: { chartData: ChartDataPoint[] }) {
         {hasBot && (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-block w-3 h-0.5 bg-amber-500" /> Startbot
+          </span>
+        )}
+        {hasReg && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-3 h-0.5 bg-purple-400" /> สมัคร
+          </span>
+        )}
+        {hasDep && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-3 h-0.5 bg-blue-400" /> ฝาก
           </span>
         )}
       </div>

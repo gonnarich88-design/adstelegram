@@ -25,6 +25,9 @@ export default async function DashboardPage() {
     prisma.dailyConversion.findMany(),
   ])
   const last30Conversions = allConversions.filter(r => new Date(r.date) >= thirtyDaysAgo)
+  const conversionByDate = new Map(
+    allConversions.map(r => [r.date.toISOString().slice(0, 10), r])
+  )
 
   // Auto-stop campaigns whose allocated budget is fully spent
   const depletedIds = campaigns
@@ -64,7 +67,14 @@ export default async function DashboardPage() {
         targetType: c.targetType,
       }))
     )
-  )
+  ).map(d => {
+    const conv = conversionByDate.get(d.date)
+    return {
+      ...d,
+      registrations: conv?.registrations,
+      depositCount: conv?.depositCount,
+    }
+  })
 
   // Wallet
   const depositsNum = deposits.map(d => ({
@@ -235,9 +245,6 @@ export default async function DashboardPage() {
   const hasLeaderboard = stats7d.length > 0
 
   // Daily totals across all campaigns
-  const conversionByDate = new Map(
-    allConversions.map(r => [r.date.toISOString().slice(0, 10), r])
-  )
   const dailyTotalsMap = new Map<string, { views: number; clicks: number; joins: number; spendTon: number; spendThb: number; dailyBudgetTon: number }>()
   campaigns.forEach(c => {
     const campaignBudget = Number(c.dailyBudgetTon)
