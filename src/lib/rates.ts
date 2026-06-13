@@ -14,18 +14,22 @@ export async function fetchHistoricalRates(
   to: string,
 ): Promise<Record<string, DayRate>> {
   const msPerDay = 86_400_000
-  const daysBack = Math.ceil((Date.now() - new Date(from + 'T00:00:00Z').getTime()) / msPerDay) + 5
-  const limit = Math.min(Math.max(daysBack, 90), 365)
 
-  // fetch Frankfurter 7 days before `from` to seed lastThb when range starts on a weekend
+  // seed window: 7 days before `from` so gap-fill works when range starts on a weekend
   const fromDate = new Date(from + 'T00:00:00Z')
-  const fxFrom = new Date(fromDate.getTime() - 7 * 86_400_000).toISOString().split('T')[0]
+  const toDate = new Date(to + 'T00:00:00Z')
+  const seedFrom = new Date(fromDate.getTime() - 7 * msPerDay)
+  const fxFrom = seedFrom.toISOString().split('T')[0]
+
+  const tonFromUnix = Math.floor(seedFrom.getTime() / 1000)
+  const tonToUnix = Math.floor(toDate.getTime() / 1000) + msPerDay / 1000
 
   const [tonRes, fxRes] = await Promise.all([
-    fetch(`https://min-api.cryptocompare.com/data/v2/histoday?fsym=TON&tsym=USD&limit=${limit}`, {
-      cache: 'no-store',
-    }),
-    fetch(`https://api.frankfurter.app/${fxFrom}..${to}?from=USD&to=THB`, {
+    fetch(
+      `https://api.coingecko.com/api/v3/coins/the-open-network/market_chart/range?vs_currency=usd&from=${tonFromUnix}&to=${tonToUnix}`,
+      { cache: 'no-store' },
+    ),
+    fetch(`https://api.frankfurter.dev/v1/${fxFrom}..${to}?from=USD&to=THB`, {
       cache: 'no-store',
     }),
   ])
@@ -36,9 +40,9 @@ export async function fetchHistoricalRates(
   const fxData = await fxRes.json()
 
   const tonMap: Record<string, number> = {}
-  for (const row of (tonData.Data?.Data ?? []) as { time: number; close: number }[]) {
-    const date = new Date(row.time * 1000).toISOString().split('T')[0]
-    tonMap[date] = row.close
+  for (const [timestamp, price] of (tonData.prices ?? []) as [number, number][]) {
+    const date = new Date(timestamp).toISOString().split('T')[0]
+    tonMap[date] = price
   }
 
   const thbMap: Record<string, number> = {}
@@ -46,7 +50,6 @@ export async function fetchHistoricalRates(
     thbMap[date] = (rates as { THB: number }).THB
   }
 
-  // seed lastTon/lastThb from the 7-day pre-window so gap-fill works even when range starts on a weekend
   let lastTon = 0
   let lastThb = 0
   const seed = new Date(fxFrom + 'T00:00:00Z')

@@ -1,14 +1,17 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-11 (session 33) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-13 (session 34) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 33 — เพิ่ม CPR/CPD ในตาราง Daily Performance + เส้นสมัคร/ฝากใน Trend chart**
+**Session 34 — fix: historical rate auto-fetch พังเพราะ CryptoCompare ต้องใช้ API key**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
   - Spec: `docs/superpowers/specs/2026-06-05-analysis-chat-design.md`
   - ต้องสร้าง: `src/app/api/analysis/chat/route.ts` + `src/app/analysis/analysis-chat.tsx`
   - ต้องแก้: `src/app/analysis/analysis-client.tsx` เพิ่ม chat toggle
+
+## เสร็จแล้ว (session 34)
+- [x] **fix: historical TON/USD rate auto-fetch กลับมาทำงาน** — `src/lib/rates.ts`: `fetchHistoricalRates` เปลี่ยนจาก CryptoCompare `histoday` (ตอบ 401 — ต้องใช้ API key แล้ว) → CoinGecko `coins/the-open-network/market_chart/range` (unix timestamp from/to, hourly granularity ใน ~90 วัน) + Frankfurter `.app` → `.dev` (ตัด 301 redirect) — gap-fill logic เดิมไม่เปลี่ยน, browser verified ✅ (deposit form auto-fill TON/USD=1.7046, USD/THB=32.7450, 81 tests pass) — กระทบ: deposit-form, wallet-client (edit allocation), refund-button, csv-import ทั้งหมดใช้ endpoint เดียวกัน
 
 ## เสร็จแล้ว (session 33)
 - [x] **Dashboard Daily Performance: เพิ่มคอลัมน์ CPR/CPD** — `daily-total-table.tsx`: `sumRows()` คำนวณ `cpr = spendThb/registrations`, `cpd = spendThb/depositCount` (null ถ้าไม่มีข้อมูล), `RowCells` + monthly summary เพิ่ม 2 คอลัมน์ "CPR (฿)"/"CPD (฿)" สีเหลือง (amber) ต่อจาก CPS — สูตรเดียวกับหน้า Conversions, browser verified ✅ (81 tests pass)
@@ -208,7 +211,8 @@
 - 2026-05-20: merge targetType + targetName เป็น input เดียว — ลด UX friction
 - 2026-05-21: dailyBudgetTon อยู่ระดับ Campaign แล้ว pre-fill ลง entry — ข้อมูล Campaign เป็นต้นทาง
 - 2026-05-22: CTR/CPM ใช้ Views ไม่ใช่ Impressions — Telegram Ads ไม่ expose Impressions
-- 2026-05-22: Historical rates ใช้ CryptoCompare + Frankfurter (ฟรี ไม่ต้อง API key ใหม่) — 2 calls ต่อ import
+- 2026-05-22: Historical rates ใช้ CryptoCompare + Frankfurter (ฟรี ไม่ต้อง API key ใหม่) — 2 calls ต่อ import — **[REVERSED 2026-06-13]** CryptoCompare เปลี่ยนนโยบาย ตอบ 401 ต้องใช้ API key แล้ว
+- 2026-06-13: Historical TON/USD เปลี่ยนเป็น CoinGecko `market_chart/range` (ไม่ต้อง API key, รองรับ from/to unix timestamp ภายใน 365 วันจาก "now") + Frankfurter `.dev` แทน `.app` — ยังคง 2 calls ต่อ import
 - 2026-05-22: BSP fallback ใช้ campaign.dailyBudgetTon แทนการ migrate data เก่า — non-destructive fix
 - 2026-05-22: swap budgetTon/dailyBudgetTon nullability — dailyBudgetTon required, budgetTon optional
 - 2026-05-22: BSP color ใช้ HSL interpolation (hue 0°→120°) — ไม่ใช้ Tailwind class เพราะ dynamic value ไม่ work ใน production build
@@ -229,7 +233,7 @@
 - "Total in May 2026" row ใน billing file ถูก JS parse เป็น date — ต้อง skip ด้วย regex
 - UTC timezone bug: `new Date('1 May 2026').toISOString()` ให้วันผิดใน UTC+7 — ใช้ `getFullYear/getMonth/getDate` แทน
 - schema change ที่ทำ nullable field ต้องตรวจ TypeScript ทุกไฟล์ที่ใช้ field นั้น (budgetTon.toString() → budgetTon?.toString())
-- CoinGecko market_chart/range ใช้ไม่ได้บน free tier สำหรับ date range ที่ต้องการ — ใช้ CryptoCompare histoday แทน
+- ~~CoinGecko market_chart/range ใช้ไม่ได้บน free tier สำหรับ date range ที่ต้องการ — ใช้ CryptoCompare histoday แทน~~ **[แก้ 2026-06-13]** ทดสอบจริงแล้ว market_chart/range ใช้ได้ปกติ (from/to เป็น unix timestamp, ขอย้อนหลังได้ไม่เกิน 365 วันจาก "now" จริงของ CoinGecko) — สาเหตุที่พังคือ CryptoCompare ตอบ 401 (ต้องใช้ API key) ไม่ใช่ CoinGecko
 - local .env: JWT_SECRET ต้องมี ≥32 ตัวอักษร และ DATABASE_URL ต้องใช้ user ที่มีจริงใน local PostgreSQL
 - CampaignAllocation เคยเป็น @unique campaignId — เปลี่ยนเป็น @index แล้ว (multi-allocation) ระวัง code เก่าที่ใช้ `campaign.allocation` (singular) ต้องเปลี่ยนเป็น `campaign.allocations[]`
 - Frankfurter API ไม่มีอัตราวันหยุดสุดสัปดาห์/นักขัตฤกษ์ — ต้อง seed lastThb จากวันก่อน from เสมอ ไม่งั้น weekend range start ขาด rate 2 วัน
