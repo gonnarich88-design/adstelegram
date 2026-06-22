@@ -54,7 +54,7 @@ export function CampaignRow({
       ? calcAggregateMetrics(
           campaign.entries.map((e: any) => ({
             spendTon: Number(e.spendTon),
-            dailyBudgetTon: Number(e.dailyBudgetTon) || dailyBudget,
+            dailyBudgetTon: dailyBudget || Number(e.dailyBudgetTon),
             tonPriceUsd: Number(e.tonPriceUsd),
             usdThbRate: Number(e.usdThbRate),
             impressions: e.impressions,
