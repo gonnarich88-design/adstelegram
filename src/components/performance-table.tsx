@@ -103,7 +103,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
 
         const agg = calcAggregateMetrics(sorted.map(e => ({
           spendTon: Number(e.spendTon),
-          dailyBudgetTon: campaignDailyBudget || Number(e.dailyBudgetTon),
+          dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
           tonPriceUsd: Number(e.tonPriceUsd),
           usdThbRate: Number(e.usdThbRate),
           impressions: e.impressions,
@@ -169,7 +169,7 @@ export function PerformanceTable({ entries, targetType, campaignDailyBudget = 0,
                       const thb = Number(e.usdThbRate)
                       const m = calcEntryMetrics({
                         spendTon: Number(e.spendTon),
-                        dailyBudgetTon: campaignDailyBudget || Number(e.dailyBudgetTon),
+                        dailyBudgetTon: Number(e.dailyBudgetTon) || campaignDailyBudget,
                         tonPriceUsd: Number(e.tonPriceUsd),
                         usdThbRate: thb,
                         impressions: e.impressions,
