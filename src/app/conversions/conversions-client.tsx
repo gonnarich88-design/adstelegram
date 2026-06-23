@@ -3,7 +3,7 @@
 import { useState, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 
 export interface BreakdownItem {
   id: string
@@ -29,22 +29,13 @@ export interface ConversionRow {
   breakdowns: BreakdownItem[]
 }
 
-// channelKey: "tgc" | campaignId
-interface BreakdownFormRow {
+// channelKey: '__tgc__' | campaignId
+interface ChannelRow {
   channelKey: string
   registrations: string
   depositCount: string
   depositTxCount: string
   depositAmountThb: string
-}
-
-interface FormState {
-  date: string
-  registrations: string
-  depositCount: string
-  depositTxCount: string
-  depositAmountThb: string
-  note: string
 }
 
 const TGC_KEY = '__tgc__'
@@ -67,8 +58,57 @@ function fmtThb(n: number) {
   return '฿' + Math.round(n).toLocaleString('th-TH')
 }
 
-function emptyBreakdown(): BreakdownFormRow {
+function emptyRow(): ChannelRow {
   return { channelKey: '', registrations: '0', depositCount: '0', depositTxCount: '0', depositAmountThb: '0' }
+}
+
+function computeTotals(rows: ChannelRow[]) {
+  return rows.filter(r => r.channelKey).reduce(
+    (acc, r) => ({
+      registrations: acc.registrations + (parseInt(r.registrations) || 0),
+      depositCount: acc.depositCount + (parseInt(r.depositCount) || 0),
+      depositTxCount: acc.depositTxCount + (parseInt(r.depositTxCount) || 0),
+      depositAmountThb: acc.depositAmountThb + (parseFloat(r.depositAmountThb) || 0),
+    }),
+    { registrations: 0, depositCount: 0, depositTxCount: 0, depositAmountThb: 0 }
+  )
+}
+
+function serializeRows(rows: ChannelRow[], campaigns: { id: string; name: string }[]) {
+  return rows.filter(r => r.channelKey).map(r => {
+    if (r.channelKey === TGC_KEY) {
+      return {
+        channelName: 'tgc',
+        campaignId: null,
+        registrations: parseInt(r.registrations) || 0,
+        depositCount: parseInt(r.depositCount) || 0,
+        depositTxCount: parseInt(r.depositTxCount) || 0,
+        depositAmountThb: parseFloat(r.depositAmountThb) || 0,
+      }
+    }
+    const campaign = campaigns.find(c => c.id === r.channelKey)
+    return {
+      channelName: campaign?.name ?? r.channelKey,
+      campaignId: r.channelKey,
+      registrations: parseInt(r.registrations) || 0,
+      depositCount: parseInt(r.depositCount) || 0,
+      depositTxCount: parseInt(r.depositTxCount) || 0,
+      depositAmountThb: parseFloat(r.depositAmountThb) || 0,
+    }
+  })
+}
+
+function breakdownsToRows(
+  breakdowns: BreakdownItem[],
+  campaigns: { id: string; name: string }[]
+): ChannelRow[] {
+  return breakdowns.map(b => ({
+    channelKey: b.channelName === 'tgc' ? TGC_KEY : (b.campaignId ?? b.channelName),
+    registrations: b.registrations.toString(),
+    depositCount: b.depositCount.toString(),
+    depositTxCount: b.depositTxCount.toString(),
+    depositAmountThb: b.depositAmountThb.toFixed(2),
+  }))
 }
 
 function SummaryCard({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -80,52 +120,21 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
   )
 }
 
-// --- Extracted to avoid re-mount on parent re-render (preserves input focus) ---
+// --- Channel rows form (extracted outside main component to avoid focus loss) ---
 
-function InputRow({ f, setF }: { f: FormState; setF: (fn: (prev: FormState) => FormState) => void }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium">วันที่ *</label>
-        <input type="date" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-          value={f.date} onChange={e => setF(p => ({ ...p, date: e.target.value }))} />
-      </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium">จำนวนสมาชิกสมัครใหม่ *</label>
-        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-          value={f.registrations} onChange={e => setF(p => ({ ...p, registrations: e.target.value }))} />
-      </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium">จำนวนสมาชิกที่ฝากเงิน *</label>
-        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-          value={f.depositCount} onChange={e => setF(p => ({ ...p, depositCount: e.target.value }))} />
-      </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium">จำนวนรายการฝาก *</label>
-        <input type="number" min="0" step="1" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-          value={f.depositTxCount} onChange={e => setF(p => ({ ...p, depositTxCount: e.target.value }))} />
-      </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium">ยอดฝาก (฿) *</label>
-        <input type="number" min="0" step="0.01" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-          value={f.depositAmountThb} onChange={e => setF(p => ({ ...p, depositAmountThb: e.target.value }))} />
-      </div>
-    </div>
-  )
-}
-
-function BreakdownFormSection({
+function ChannelRowsForm({
   rows,
   campaigns,
   onChange,
 }: {
-  rows: BreakdownFormRow[]
+  rows: ChannelRow[]
   campaigns: { id: string; name: string }[]
-  onChange: (rows: BreakdownFormRow[]) => void
+  onChange: (rows: ChannelRow[]) => void
 }) {
   const usedKeys = new Set(rows.map(r => r.channelKey))
+  const maxRows = 1 + campaigns.length
 
-  function update(idx: number, field: keyof BreakdownFormRow, value: string) {
+  function update(idx: number, field: keyof ChannelRow, value: string) {
     onChange(rows.map((r, i) => i === idx ? { ...r, [field]: value } : r))
   }
 
@@ -133,146 +142,79 @@ function BreakdownFormSection({
     onChange(rows.filter((_, i) => i !== idx))
   }
 
-  // max rows = tgc + all campaigns
-  const maxRows = 1 + campaigns.length
-
   return (
-    <div className="space-y-2">
-      {rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-muted-foreground border-b">
-                <th className="text-left py-1.5 pr-2 font-medium">ช่องทาง</th>
-                <th className="text-right py-1.5 px-2 font-medium">สมัคร</th>
-                <th className="text-right py-1.5 px-2 font-medium">ฝาก</th>
-                <th className="text-right py-1.5 px-2 font-medium">รายการ</th>
-                <th className="text-right py-1.5 px-2 font-medium">ยอดฝาก</th>
-                <th className="py-1.5 w-6"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, idx) => (
-                <tr key={idx} className="border-b border-border/30">
-                  <td className="py-1.5 pr-2">
-                    <select
-                      className="w-full rounded border bg-background px-2 py-1 text-xs"
-                      value={row.channelKey}
-                      onChange={e => update(idx, 'channelKey', e.target.value)}
-                    >
-                      <option value="">-- เลือกช่องทาง --</option>
-                      <option
-                        value={TGC_KEY}
-                        disabled={usedKeys.has(TGC_KEY) && row.channelKey !== TGC_KEY}
-                      >
-                        tgc (organic)
-                      </option>
-                      {campaigns.length > 0 && (
-                        <optgroup label="แคมเปญ">
-                          {campaigns.map(c => (
-                            <option
-                              key={c.id}
-                              value={c.id}
-                              disabled={usedKeys.has(c.id) && row.channelKey !== c.id}
-                            >
-                              {c.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
-                  </td>
-                  <td className="py-1.5 px-2">
-                    <input type="number" min="0" step="1"
-                      className="w-16 rounded border bg-background px-2 py-1 text-xs text-right"
-                      value={row.registrations} onChange={e => update(idx, 'registrations', e.target.value)} />
-                  </td>
-                  <td className="py-1.5 px-2">
-                    <input type="number" min="0" step="1"
-                      className="w-16 rounded border bg-background px-2 py-1 text-xs text-right"
-                      value={row.depositCount} onChange={e => update(idx, 'depositCount', e.target.value)} />
-                  </td>
-                  <td className="py-1.5 px-2">
-                    <input type="number" min="0" step="1"
-                      className="w-16 rounded border bg-background px-2 py-1 text-xs text-right"
-                      value={row.depositTxCount} onChange={e => update(idx, 'depositTxCount', e.target.value)} />
-                  </td>
-                  <td className="py-1.5 px-2">
-                    <input type="number" min="0" step="0.01"
-                      className="w-20 rounded border bg-background px-2 py-1 text-xs text-right"
-                      value={row.depositAmountThb} onChange={e => update(idx, 'depositAmountThb', e.target.value)} />
-                  </td>
-                  <td className="py-1.5 pl-1">
-                    <button type="button" onClick={() => remove(idx)}
-                      className="text-muted-foreground hover:text-destructive transition-colors">
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="space-y-1">
+      <div className="grid text-xs text-muted-foreground font-medium border-b pb-1"
+        style={{ gridTemplateColumns: '2fr 80px 80px 80px 90px 28px' }}>
+        <span>ช่องทาง</span>
+        <span className="text-right">สมัคร</span>
+        <span className="text-right">ฝาก</span>
+        <span className="text-right">รายการ</span>
+        <span className="text-right">ยอดฝาก</span>
+        <span />
+      </div>
+
+      {rows.map((row, idx) => (
+        <div key={idx} className="grid gap-1.5 items-center"
+          style={{ gridTemplateColumns: '2fr 80px 80px 80px 90px 28px' }}>
+          <select
+            className="rounded border bg-background px-2 py-1.5 text-sm"
+            value={row.channelKey}
+            onChange={e => update(idx, 'channelKey', e.target.value)}
+          >
+            <option value="">-- ช่องทาง --</option>
+            <option
+              value={TGC_KEY}
+              disabled={usedKeys.has(TGC_KEY) && row.channelKey !== TGC_KEY}
+            >
+              tgc (organic)
+            </option>
+            {campaigns.length > 0 && (
+              <optgroup label="แคมเปญ">
+                {campaigns.map(c => (
+                  <option
+                    key={c.id}
+                    value={c.id}
+                    disabled={usedKeys.has(c.id) && row.channelKey !== c.id}
+                  >
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <input type="number" min="0" step="1"
+            className="rounded border bg-background px-2 py-1.5 text-sm text-right"
+            value={row.registrations} onChange={e => update(idx, 'registrations', e.target.value)} />
+          <input type="number" min="0" step="1"
+            className="rounded border bg-background px-2 py-1.5 text-sm text-right"
+            value={row.depositCount} onChange={e => update(idx, 'depositCount', e.target.value)} />
+          <input type="number" min="0" step="1"
+            className="rounded border bg-background px-2 py-1.5 text-sm text-right"
+            value={row.depositTxCount} onChange={e => update(idx, 'depositTxCount', e.target.value)} />
+          <input type="number" min="0" step="0.01"
+            className="rounded border bg-background px-2 py-1.5 text-sm text-right"
+            value={row.depositAmountThb} onChange={e => update(idx, 'depositAmountThb', e.target.value)} />
+          <button type="button" onClick={() => remove(idx)}
+            className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+            <Trash2 size={13} />
+          </button>
         </div>
-      )}
+      ))}
+
       <button
         type="button"
-        onClick={() => onChange([...rows, emptyBreakdown()])}
+        onClick={() => onChange([...rows, emptyRow()])}
         disabled={rows.length >= maxRows}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+        className="mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
       >
-        <Plus size={12} /> เพิ่มช่องทาง
+        + เพิ่มช่องทาง
       </button>
     </div>
   )
 }
 
-// --- Serialize form rows → API payload ---
-
-function serializeBreakdowns(
-  rows: BreakdownFormRow[],
-  campaigns: { id: string; name: string }[]
-) {
-  return rows
-    .filter(r => r.channelKey)
-    .map(r => {
-      if (r.channelKey === TGC_KEY) {
-        return {
-          channelName: 'tgc',
-          campaignId: null,
-          registrations: parseInt(r.registrations) || 0,
-          depositCount: parseInt(r.depositCount) || 0,
-          depositTxCount: parseInt(r.depositTxCount) || 0,
-          depositAmountThb: parseFloat(r.depositAmountThb) || 0,
-        }
-      }
-      const campaign = campaigns.find(c => c.id === r.channelKey)
-      return {
-        channelName: campaign?.name ?? r.channelKey,
-        campaignId: r.channelKey,
-        registrations: parseInt(r.registrations) || 0,
-        depositCount: parseInt(r.depositCount) || 0,
-        depositTxCount: parseInt(r.depositTxCount) || 0,
-        depositAmountThb: parseFloat(r.depositAmountThb) || 0,
-      }
-    })
-}
-
-// --- Convert saved breakdowns back to form rows (for edit mode) ---
-
-function breakdownsToFormRows(
-  breakdowns: BreakdownItem[],
-  campaigns: { id: string; name: string }[]
-): BreakdownFormRow[] {
-  return breakdowns.map(b => ({
-    channelKey: b.channelName === 'tgc' ? TGC_KEY : (b.campaignId ?? b.channelName),
-    registrations: b.registrations.toString(),
-    depositCount: b.depositCount.toString(),
-    depositTxCount: b.depositTxCount.toString(),
-    depositAmountThb: b.depositAmountThb.toFixed(2),
-  }))
-}
-
-// --- Main client component ---
+// --- Main component ---
 
 export function ConversionsClient({
   records,
@@ -282,19 +224,19 @@ export function ConversionsClient({
   campaigns: { id: string; name: string }[]
 }) {
   const router = useRouter()
-  const emptyForm: FormState = {
-    date: todayStr(), registrations: '', depositCount: '', depositTxCount: '', depositAmountThb: '', note: '',
-  }
 
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [formBreakdowns, setFormBreakdowns] = useState<BreakdownFormRow[]>([])
-  const [showFormBreakdown, setShowFormBreakdown] = useState(false)
+  // Add form state
+  const [addDate, setAddDate] = useState(todayStr())
+  const [addNote, setAddNote] = useState('')
+  const [addRows, setAddRows] = useState<ChannelRow[]>([emptyRow()])
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
 
+  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<FormState>(emptyForm)
-  const [editBreakdowns, setEditBreakdowns] = useState<BreakdownFormRow[]>([])
+  const [editDate, setEditDate] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [editRows, setEditRows] = useState<ChannelRow[]>([])
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
 
@@ -309,43 +251,31 @@ export function ConversionsClient({
     })
   }
 
-  function validateForm(f: FormState): string | null {
-    if (!f.date) return 'กรุณาใส่วันที่'
-    const reg = parseInt(f.registrations)
-    const dep = parseInt(f.depositCount)
-    const tx = parseInt(f.depositTxCount)
-    const amt = parseFloat(f.depositAmountThb)
-    if (isNaN(reg) || reg < 0) return 'จำนวนสมาชิกสมัครใหม่ต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
-    if (isNaN(dep) || dep < 0) return 'จำนวนสมาชิกที่ฝากเงินต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
-    if (isNaN(tx) || tx < 0) return 'จำนวนรายการฝากต้องเป็นจำนวนเต็มที่ไม่ติดลบ'
-    if (isNaN(amt) || amt < 0) return 'ยอดฝากต้องเป็นตัวเลขที่ไม่ติดลบ'
+  function validateRows(date: string, rows: ChannelRow[]): string | null {
+    if (!date) return 'กรุณาใส่วันที่'
+    const filled = rows.filter(r => r.channelKey)
+    if (filled.length === 0) return 'กรุณาเลือกช่องทางอย่างน้อย 1 ช่องทาง'
     return null
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const err = validateForm(form)
+    const err = validateRows(addDate, addRows)
     if (err) { setFormError(err); return }
     setSubmitting(true)
     setFormError('')
+    const totals = computeTotals(addRows)
+    const breakdowns = serializeRows(addRows, campaigns)
     try {
       const res = await fetch('/api/conversions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: form.date,
-          registrations: parseInt(form.registrations),
-          depositCount: parseInt(form.depositCount),
-          depositTxCount: parseInt(form.depositTxCount),
-          depositAmountThb: parseFloat(form.depositAmountThb),
-          note: form.note || null,
-          breakdowns: serializeBreakdowns(formBreakdowns, campaigns),
-        }),
+        body: JSON.stringify({ date: addDate, ...totals, note: addNote || null, breakdowns }),
       })
       if (res.ok) {
-        setForm({ ...emptyForm, date: todayStr() })
-        setFormBreakdowns([])
-        setShowFormBreakdown(false)
+        setAddDate(todayStr())
+        setAddNote('')
+        setAddRows([emptyRow()])
         router.refresh()
       } else {
         const data = await res.json()
@@ -362,36 +292,28 @@ export function ConversionsClient({
 
   function startEdit(r: ConversionRow) {
     setEditingId(r.id)
-    setEditForm({
-      date: r.date,
-      registrations: r.registrations.toString(),
-      depositCount: r.depositCount.toString(),
-      depositTxCount: r.depositTxCount.toString(),
-      depositAmountThb: r.depositAmountThb.toFixed(2),
-      note: r.note ?? '',
-    })
-    setEditBreakdowns(breakdownsToFormRows(r.breakdowns, campaigns))
+    setEditDate(r.date)
+    setEditNote(r.note ?? '')
+    setEditRows(
+      r.breakdowns.length > 0
+        ? breakdownsToRows(r.breakdowns, campaigns)
+        : [emptyRow()]
+    )
     setEditError('')
   }
 
   async function handleSaveEdit(id: string) {
-    const err = validateForm(editForm)
+    const err = validateRows(editDate, editRows)
     if (err) { setEditError(err); return }
     setEditLoading(true)
     setEditError('')
+    const totals = computeTotals(editRows)
+    const breakdowns = serializeRows(editRows, campaigns)
     try {
       const res = await fetch(`/api/conversions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: editForm.date,
-          registrations: parseInt(editForm.registrations),
-          depositCount: parseInt(editForm.depositCount),
-          depositTxCount: parseInt(editForm.depositTxCount),
-          depositAmountThb: parseFloat(editForm.depositAmountThb),
-          note: editForm.note || null,
-          breakdowns: serializeBreakdowns(editBreakdowns, campaigns),
-        }),
+        body: JSON.stringify({ date: editDate, ...totals, note: editNote || null, breakdowns }),
       })
       if (res.ok) {
         setEditingId(null)
@@ -429,48 +351,35 @@ export function ConversionsClient({
       <h1 className="text-2xl font-bold">Conversions</h1>
 
       {/* Add form */}
-      <div className="rounded-md border p-4 space-y-3">
+      <div className="rounded-md border p-4 space-y-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">บันทึกรายวัน</p>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <InputRow f={form} setF={setForm} />
-          <div className="flex items-end gap-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">วันที่ *</label>
+            <input
+              type="date"
+              className="rounded-md border bg-background px-3 py-1.5 text-sm"
+              value={addDate}
+              onChange={e => setAddDate(e.target.value)}
+            />
+          </div>
+
+          <ChannelRowsForm rows={addRows} campaigns={campaigns} onChange={setAddRows} />
+
+          <div className="flex items-end gap-3 pt-1">
             <div className="flex-1 space-y-1.5">
               <label className="text-xs font-medium">หมายเหตุ</label>
               <input
                 type="text"
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
                 placeholder="optional"
-                value={form.note}
-                onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
+                value={addNote}
+                onChange={e => setAddNote(e.target.value)}
               />
             </div>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'กำลังบันทึก...' : '+ บันทึก'}
             </Button>
-          </div>
-
-          {/* Breakdown toggle */}
-          <div className="border-t pt-3 space-y-2">
-            <button
-              type="button"
-              onClick={() => setShowFormBreakdown(p => !p)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showFormBreakdown ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              แบ่งตามช่องทาง (optional)
-              {formBreakdowns.filter(b => b.channelKey).length > 0 && (
-                <span className="ml-1 text-primary font-medium">
-                  {formBreakdowns.filter(b => b.channelKey).length} ช่องทาง
-                </span>
-              )}
-            </button>
-            {showFormBreakdown && (
-              <BreakdownFormSection
-                rows={formBreakdowns}
-                campaigns={campaigns}
-                onChange={setFormBreakdowns}
-              />
-            )}
           </div>
 
           {formError && <p className="text-xs text-destructive">{formError}</p>}
@@ -576,8 +485,8 @@ export function ConversionsClient({
                           {/* Breakdown expand */}
                           {hasBreakdowns && isExpanded && (
                             <tr>
-                              <td colSpan={8} className="px-6 pb-3 pt-0 bg-muted/5">
-                                <table className="w-full text-xs mt-1">
+                              <td colSpan={8} className="px-6 pb-3 pt-1 bg-muted/5">
+                                <table className="w-full text-xs">
                                   <thead>
                                     <tr className="text-muted-foreground border-b border-border/40">
                                       <th className="text-left py-1.5 font-medium">ช่องทาง</th>
@@ -590,7 +499,7 @@ export function ConversionsClient({
                                   <tbody>
                                     {r.breakdowns.map(b => (
                                       <tr key={b.id} className="border-b border-border/20">
-                                        <td className="py-1.5 text-muted-foreground font-mono">{b.channelName}</td>
+                                        <td className="py-1.5 font-mono text-muted-foreground">{b.channelName}</td>
                                         <td className="py-1.5 px-3 text-right text-green-400">{b.registrations.toLocaleString()}</td>
                                         <td className="py-1.5 px-3 text-right text-blue-400">{b.depositCount.toLocaleString()}</td>
                                         <td className="py-1.5 px-3 text-right text-blue-300">{b.depositTxCount.toLocaleString()}</td>
@@ -606,27 +515,33 @@ export function ConversionsClient({
                           {/* Edit inline */}
                           {editingId === r.id && (
                             <tr>
-                              <td colSpan={8} className="px-3 pb-3 pt-0">
-                                <div className="mt-1 space-y-3 rounded-md border p-3 bg-muted/10">
-                                  <InputRow f={editForm} setF={setEditForm} />
+                              <td colSpan={8} className="px-3 pb-4 pt-1">
+                                <div className="space-y-4 rounded-md border p-3 bg-muted/10">
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-medium">วันที่</label>
+                                    <input
+                                      type="date"
+                                      className="rounded-md border bg-background px-3 py-1.5 text-sm"
+                                      value={editDate}
+                                      onChange={e => setEditDate(e.target.value)}
+                                    />
+                                  </div>
+
+                                  <ChannelRowsForm
+                                    rows={editRows}
+                                    campaigns={campaigns}
+                                    onChange={setEditRows}
+                                  />
+
                                   <div className="flex items-end gap-3">
                                     <div className="flex-1 space-y-1.5">
                                       <label className="text-xs font-medium">หมายเหตุ</label>
                                       <input type="text" className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-                                        value={editForm.note} onChange={e => setEditForm(p => ({ ...p, note: e.target.value }))} />
+                                        value={editNote} onChange={e => setEditNote(e.target.value)} />
                                     </div>
                                     <Button size="sm" disabled={editLoading} onClick={() => handleSaveEdit(r.id)}>
                                       {editLoading ? 'กำลังบันทึก...' : 'บันทึก'}
                                     </Button>
-                                  </div>
-
-                                  <div className="border-t pt-3 space-y-2">
-                                    <p className="text-xs font-medium text-muted-foreground">แบ่งตามช่องทาง (optional)</p>
-                                    <BreakdownFormSection
-                                      rows={editBreakdowns}
-                                      campaigns={campaigns}
-                                      onChange={setEditBreakdowns}
-                                    />
                                   </div>
 
                                   {editError && <p className="text-xs text-destructive">{editError}</p>}
