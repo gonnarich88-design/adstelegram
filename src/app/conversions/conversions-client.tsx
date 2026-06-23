@@ -185,16 +185,20 @@ function ChannelRowsForm({
           </select>
           <input type="number" min="0" step="1"
             className="rounded border bg-background px-2 py-1.5 text-sm text-right"
-            value={row.registrations} onChange={e => update(idx, 'registrations', e.target.value)} />
+            value={row.registrations} onChange={e => update(idx, 'registrations', e.target.value)}
+            onFocus={e => e.target.select()} />
           <input type="number" min="0" step="1"
             className="rounded border bg-background px-2 py-1.5 text-sm text-right"
-            value={row.depositCount} onChange={e => update(idx, 'depositCount', e.target.value)} />
+            value={row.depositCount} onChange={e => update(idx, 'depositCount', e.target.value)}
+            onFocus={e => e.target.select()} />
           <input type="number" min="0" step="1"
             className="rounded border bg-background px-2 py-1.5 text-sm text-right"
-            value={row.depositTxCount} onChange={e => update(idx, 'depositTxCount', e.target.value)} />
+            value={row.depositTxCount} onChange={e => update(idx, 'depositTxCount', e.target.value)}
+            onFocus={e => e.target.select()} />
           <input type="number" min="0" step="0.01"
             className="rounded border bg-background px-2 py-1.5 text-sm text-right"
-            value={row.depositAmountThb} onChange={e => update(idx, 'depositAmountThb', e.target.value)} />
+            value={row.depositAmountThb} onChange={e => update(idx, 'depositAmountThb', e.target.value)}
+            onFocus={e => e.target.select()} />
           <button type="button" onClick={() => remove(idx)}
             className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
             <Trash2 size={13} />
