@@ -9,10 +9,7 @@ export default async function ConversionsPage() {
     prisma.dailyConversion.findMany({
       orderBy: { date: 'desc' },
       include: {
-        breakdowns: {
-          include: { campaign: { select: { id: true, name: true } } },
-          orderBy: { createdAt: 'asc' },
-        },
+        breakdowns: { orderBy: { createdAt: 'asc' } },
       },
     }),
     prisma.performanceEntry.findMany({
@@ -49,8 +46,8 @@ export default async function ConversionsPage() {
       cpd: spendThb !== null && r.depositCount > 0 ? spendThb / r.depositCount : null,
       breakdowns: r.breakdowns.map(b => ({
         id: b.id,
+        channelName: b.channelName,
         campaignId: b.campaignId,
-        campaignName: b.campaign.name,
         registrations: b.registrations,
         depositCount: b.depositCount,
         depositTxCount: b.depositTxCount,

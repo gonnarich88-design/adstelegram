@@ -172,15 +172,16 @@ model DailyConversionBreakdown {
   id               String          @id @default(cuid())
   conversionId     String
   conversion       DailyConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
-  campaignId       String
-  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  channelName      String
+  campaignId       String?
+  campaign         Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   registrations    Int             @default(0)
   depositCount     Int             @default(0)
   depositTxCount   Int             @default(0)
   depositAmountThb Decimal         @db.Decimal(18, 2) @default(0)
   createdAt        DateTime        @default(now())
 
-  @@unique([conversionId, campaignId])
+  @@unique([conversionId, channelName])
   @@index([conversionId])
   @@index([campaignId])
 }

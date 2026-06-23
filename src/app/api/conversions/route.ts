@@ -56,8 +56,9 @@ export async function POST(req: NextRequest) {
         note: note ?? null,
         ...(Array.isArray(breakdowns) && breakdowns.length > 0 && {
           breakdowns: {
-            create: breakdowns.map((b: any) => ({
-              campaignId: b.campaignId,
+            create: breakdowns.filter((b: any) => b.channelName).map((b: any) => ({
+              channelName: b.channelName,
+              campaignId: b.campaignId ?? null,
               registrations: b.registrations ?? 0,
               depositCount: b.depositCount ?? 0,
               depositTxCount: b.depositTxCount ?? 0,

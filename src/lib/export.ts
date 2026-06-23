@@ -116,7 +116,8 @@ export async function exportData(): Promise<ExportData> {
     dailyConversionBreakdowns: dailyConversionBreakdowns.map(b => ({
       id: b.id,
       conversionId: b.conversionId,
-      campaignId: b.campaignId,
+      channelName: b.channelName,
+      campaignId: b.campaignId ?? null,
       registrations: b.registrations,
       depositCount: b.depositCount,
       depositTxCount: b.depositTxCount,
@@ -241,7 +242,8 @@ export async function importData(data: ExportData): Promise<void> {
         data: {
           id: b.id,
           conversionId: b.conversionId,
-          campaignId: b.campaignId,
+          channelName: b.channelName ?? b.campaignId ?? 'unknown',
+          campaignId: b.campaignId ?? null,
           registrations: b.registrations ?? 0,
           depositCount: b.depositCount ?? 0,
           depositTxCount: b.depositTxCount ?? 0,

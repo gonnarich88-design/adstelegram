@@ -43,11 +43,13 @@ export async function PATCH(
       })
       if (Array.isArray(breakdowns)) {
         await tx.dailyConversionBreakdown.deleteMany({ where: { conversionId: id } })
-        if (breakdowns.length > 0) {
+        const validBreakdowns = breakdowns.filter((b: any) => b.channelName)
+        if (validBreakdowns.length > 0) {
           await tx.dailyConversionBreakdown.createMany({
-            data: breakdowns.map((b: any) => ({
+            data: validBreakdowns.map((b: any) => ({
               conversionId: id,
-              campaignId: b.campaignId,
+              channelName: b.channelName,
+              campaignId: b.campaignId ?? null,
               registrations: b.registrations ?? 0,
               depositCount: b.depositCount ?? 0,
               depositTxCount: b.depositTxCount ?? 0,

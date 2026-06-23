@@ -7,8 +7,8 @@ import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
 
 export interface BreakdownItem {
   id: string
-  campaignId: string
-  campaignName: string
+  channelName: string
+  campaignId: string | null
   registrations: number
   depositCount: number
   depositTxCount: number
@@ -29,8 +29,9 @@ export interface ConversionRow {
   breakdowns: BreakdownItem[]
 }
 
+// channelKey: "tgc" | campaignId
 interface BreakdownFormRow {
-  campaignId: string
+  channelKey: string
   registrations: string
   depositCount: string
   depositTxCount: string
@@ -45,6 +46,8 @@ interface FormState {
   depositAmountThb: string
   note: string
 }
+
+const TGC_KEY = '__tgc__'
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -65,7 +68,7 @@ function fmtThb(n: number) {
 }
 
 function emptyBreakdown(): BreakdownFormRow {
-  return { campaignId: '', registrations: '0', depositCount: '0', depositTxCount: '0', depositAmountThb: '0' }
+  return { channelKey: '', registrations: '0', depositCount: '0', depositTxCount: '0', depositAmountThb: '0' }
 }
 
 function SummaryCard({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -77,7 +80,7 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
   )
 }
 
-// --- Extracted components (outside ConversionsClient to avoid focus loss on re-render) ---
+// --- Extracted to avoid re-mount on parent re-render (preserves input focus) ---
 
 function InputRow({ f, setF }: { f: FormState; setF: (fn: (prev: FormState) => FormState) => void }) {
   return (
@@ -120,18 +123,18 @@ function BreakdownFormSection({
   campaigns: { id: string; name: string }[]
   onChange: (rows: BreakdownFormRow[]) => void
 }) {
+  const usedKeys = new Set(rows.map(r => r.channelKey))
+
   function update(idx: number, field: keyof BreakdownFormRow, value: string) {
-    const next = rows.map((r, i) => i === idx ? { ...r, [field]: value } : r)
-    onChange(next)
+    onChange(rows.map((r, i) => i === idx ? { ...r, [field]: value } : r))
   }
+
   function remove(idx: number) {
     onChange(rows.filter((_, i) => i !== idx))
   }
-  function add() {
-    onChange([...rows, emptyBreakdown()])
-  }
 
-  const usedCampaignIds = new Set(rows.map(r => r.campaignId))
+  // max rows = tgc + all campaigns
+  const maxRows = 1 + campaigns.length
 
   return (
     <div className="space-y-2">
@@ -140,7 +143,7 @@ function BreakdownFormSection({
           <table className="w-full text-xs">
             <thead>
               <tr className="text-muted-foreground border-b">
-                <th className="text-left py-1.5 pr-2 font-medium">แคมเปญ</th>
+                <th className="text-left py-1.5 pr-2 font-medium">ช่องทาง</th>
                 <th className="text-right py-1.5 px-2 font-medium">สมัคร</th>
                 <th className="text-right py-1.5 px-2 font-medium">ฝาก</th>
                 <th className="text-right py-1.5 px-2 font-medium">รายการ</th>
@@ -154,16 +157,29 @@ function BreakdownFormSection({
                   <td className="py-1.5 pr-2">
                     <select
                       className="w-full rounded border bg-background px-2 py-1 text-xs"
-                      value={row.campaignId}
-                      onChange={e => update(idx, 'campaignId', e.target.value)}
+                      value={row.channelKey}
+                      onChange={e => update(idx, 'channelKey', e.target.value)}
                     >
-                      <option value="">-- เลือกแคมเปญ --</option>
-                      {campaigns.map(c => (
-                        <option key={c.id} value={c.id}
-                          disabled={usedCampaignIds.has(c.id) && c.id !== row.campaignId}>
-                          {c.name}
-                        </option>
-                      ))}
+                      <option value="">-- เลือกช่องทาง --</option>
+                      <option
+                        value={TGC_KEY}
+                        disabled={usedKeys.has(TGC_KEY) && row.channelKey !== TGC_KEY}
+                      >
+                        tgc (organic)
+                      </option>
+                      {campaigns.length > 0 && (
+                        <optgroup label="แคมเปญ">
+                          {campaigns.map(c => (
+                            <option
+                              key={c.id}
+                              value={c.id}
+                              disabled={usedKeys.has(c.id) && row.channelKey !== c.id}
+                            >
+                              {c.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </td>
                   <td className="py-1.5 px-2">
@@ -200,14 +216,60 @@ function BreakdownFormSection({
       )}
       <button
         type="button"
-        onClick={add}
-        disabled={rows.length >= campaigns.length}
+        onClick={() => onChange([...rows, emptyBreakdown()])}
+        disabled={rows.length >= maxRows}
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
       >
-        <Plus size={12} /> เพิ่มแคมเปญ
+        <Plus size={12} /> เพิ่มช่องทาง
       </button>
     </div>
   )
+}
+
+// --- Serialize form rows → API payload ---
+
+function serializeBreakdowns(
+  rows: BreakdownFormRow[],
+  campaigns: { id: string; name: string }[]
+) {
+  return rows
+    .filter(r => r.channelKey)
+    .map(r => {
+      if (r.channelKey === TGC_KEY) {
+        return {
+          channelName: 'tgc',
+          campaignId: null,
+          registrations: parseInt(r.registrations) || 0,
+          depositCount: parseInt(r.depositCount) || 0,
+          depositTxCount: parseInt(r.depositTxCount) || 0,
+          depositAmountThb: parseFloat(r.depositAmountThb) || 0,
+        }
+      }
+      const campaign = campaigns.find(c => c.id === r.channelKey)
+      return {
+        channelName: campaign?.name ?? r.channelKey,
+        campaignId: r.channelKey,
+        registrations: parseInt(r.registrations) || 0,
+        depositCount: parseInt(r.depositCount) || 0,
+        depositTxCount: parseInt(r.depositTxCount) || 0,
+        depositAmountThb: parseFloat(r.depositAmountThb) || 0,
+      }
+    })
+}
+
+// --- Convert saved breakdowns back to form rows (for edit mode) ---
+
+function breakdownsToFormRows(
+  breakdowns: BreakdownItem[],
+  campaigns: { id: string; name: string }[]
+): BreakdownFormRow[] {
+  return breakdowns.map(b => ({
+    channelKey: b.channelName === 'tgc' ? TGC_KEY : (b.campaignId ?? b.channelName),
+    registrations: b.registrations.toString(),
+    depositCount: b.depositCount.toString(),
+    depositTxCount: b.depositTxCount.toString(),
+    depositAmountThb: b.depositAmountThb.toFixed(2),
+  }))
 }
 
 // --- Main client component ---
@@ -220,7 +282,9 @@ export function ConversionsClient({
   campaigns: { id: string; name: string }[]
 }) {
   const router = useRouter()
-  const emptyForm: FormState = { date: todayStr(), registrations: '', depositCount: '', depositTxCount: '', depositAmountThb: '', note: '' }
+  const emptyForm: FormState = {
+    date: todayStr(), registrations: '', depositCount: '', depositTxCount: '', depositAmountThb: '', note: '',
+  }
 
   const [form, setForm] = useState<FormState>(emptyForm)
   const [formBreakdowns, setFormBreakdowns] = useState<BreakdownFormRow[]>([])
@@ -258,18 +322,6 @@ export function ConversionsClient({
     return null
   }
 
-  function serializeBreakdowns(rows: BreakdownFormRow[]) {
-    return rows
-      .filter(r => r.campaignId)
-      .map(r => ({
-        campaignId: r.campaignId,
-        registrations: parseInt(r.registrations) || 0,
-        depositCount: parseInt(r.depositCount) || 0,
-        depositTxCount: parseInt(r.depositTxCount) || 0,
-        depositAmountThb: parseFloat(r.depositAmountThb) || 0,
-      }))
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const err = validateForm(form)
@@ -287,7 +339,7 @@ export function ConversionsClient({
           depositTxCount: parseInt(form.depositTxCount),
           depositAmountThb: parseFloat(form.depositAmountThb),
           note: form.note || null,
-          breakdowns: serializeBreakdowns(formBreakdowns),
+          breakdowns: serializeBreakdowns(formBreakdowns, campaigns),
         }),
       })
       if (res.ok) {
@@ -318,13 +370,7 @@ export function ConversionsClient({
       depositAmountThb: r.depositAmountThb.toFixed(2),
       note: r.note ?? '',
     })
-    setEditBreakdowns(r.breakdowns.map(b => ({
-      campaignId: b.campaignId,
-      registrations: b.registrations.toString(),
-      depositCount: b.depositCount.toString(),
-      depositTxCount: b.depositTxCount.toString(),
-      depositAmountThb: b.depositAmountThb.toFixed(2),
-    })))
+    setEditBreakdowns(breakdownsToFormRows(r.breakdowns, campaigns))
     setEditError('')
   }
 
@@ -344,7 +390,7 @@ export function ConversionsClient({
           depositTxCount: parseInt(editForm.depositTxCount),
           depositAmountThb: parseFloat(editForm.depositAmountThb),
           note: editForm.note || null,
-          breakdowns: serializeBreakdowns(editBreakdowns),
+          breakdowns: serializeBreakdowns(editBreakdowns, campaigns),
         }),
       })
       if (res.ok) {
@@ -404,30 +450,28 @@ export function ConversionsClient({
           </div>
 
           {/* Breakdown toggle */}
-          {campaigns.length > 0 && (
-            <div className="border-t pt-3 space-y-2">
-              <button
-                type="button"
-                onClick={() => setShowFormBreakdown(p => !p)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showFormBreakdown ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                แบ่งตามแคมเปญ (optional)
-                {formBreakdowns.filter(b => b.campaignId).length > 0 && (
-                  <span className="ml-1 text-primary font-medium">
-                    {formBreakdowns.filter(b => b.campaignId).length} แคมเปญ
-                  </span>
-                )}
-              </button>
-              {showFormBreakdown && (
-                <BreakdownFormSection
-                  rows={formBreakdowns}
-                  campaigns={campaigns}
-                  onChange={setFormBreakdowns}
-                />
+          <div className="border-t pt-3 space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowFormBreakdown(p => !p)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showFormBreakdown ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+              แบ่งตามช่องทาง (optional)
+              {formBreakdowns.filter(b => b.channelKey).length > 0 && (
+                <span className="ml-1 text-primary font-medium">
+                  {formBreakdowns.filter(b => b.channelKey).length} ช่องทาง
+                </span>
               )}
-            </div>
-          )}
+            </button>
+            {showFormBreakdown && (
+              <BreakdownFormSection
+                rows={formBreakdowns}
+                campaigns={campaigns}
+                onChange={setFormBreakdowns}
+              />
+            )}
+          </div>
 
           {formError && <p className="text-xs text-destructive">{formError}</p>}
         </form>
@@ -499,7 +543,7 @@ export function ConversionsClient({
                                   <button
                                     onClick={() => toggleExpand(r.id)}
                                     className="text-muted-foreground hover:text-foreground transition-colors"
-                                    title="ดู breakdown ตามแคมเปญ"
+                                    title="ดูแยกตามช่องทาง"
                                   >
                                     {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                                   </button>
@@ -529,14 +573,14 @@ export function ConversionsClient({
                             </td>
                           </tr>
 
-                          {/* Breakdown expand row */}
+                          {/* Breakdown expand */}
                           {hasBreakdowns && isExpanded && (
                             <tr>
                               <td colSpan={8} className="px-6 pb-3 pt-0 bg-muted/5">
                                 <table className="w-full text-xs mt-1">
                                   <thead>
                                     <tr className="text-muted-foreground border-b border-border/40">
-                                      <th className="text-left py-1.5 font-medium">แคมเปญ</th>
+                                      <th className="text-left py-1.5 font-medium">ช่องทาง</th>
                                       <th className="text-right py-1.5 px-3 font-medium">สมัคร</th>
                                       <th className="text-right py-1.5 px-3 font-medium">ฝาก</th>
                                       <th className="text-right py-1.5 px-3 font-medium">รายการ</th>
@@ -546,7 +590,7 @@ export function ConversionsClient({
                                   <tbody>
                                     {r.breakdowns.map(b => (
                                       <tr key={b.id} className="border-b border-border/20">
-                                        <td className="py-1.5 text-muted-foreground">{b.campaignName}</td>
+                                        <td className="py-1.5 text-muted-foreground font-mono">{b.channelName}</td>
                                         <td className="py-1.5 px-3 text-right text-green-400">{b.registrations.toLocaleString()}</td>
                                         <td className="py-1.5 px-3 text-right text-blue-400">{b.depositCount.toLocaleString()}</td>
                                         <td className="py-1.5 px-3 text-right text-blue-300">{b.depositTxCount.toLocaleString()}</td>
@@ -559,7 +603,7 @@ export function ConversionsClient({
                             </tr>
                           )}
 
-                          {/* Edit inline row */}
+                          {/* Edit inline */}
                           {editingId === r.id && (
                             <tr>
                               <td colSpan={8} className="px-3 pb-3 pt-0">
@@ -576,17 +620,14 @@ export function ConversionsClient({
                                     </Button>
                                   </div>
 
-                                  {/* Breakdown in edit mode */}
-                                  {campaigns.length > 0 && (
-                                    <div className="border-t pt-3 space-y-2">
-                                      <p className="text-xs font-medium text-muted-foreground">แบ่งตามแคมเปญ (optional)</p>
-                                      <BreakdownFormSection
-                                        rows={editBreakdowns}
-                                        campaigns={campaigns}
-                                        onChange={setEditBreakdowns}
-                                      />
-                                    </div>
-                                  )}
+                                  <div className="border-t pt-3 space-y-2">
+                                    <p className="text-xs font-medium text-muted-foreground">แบ่งตามช่องทาง (optional)</p>
+                                    <BreakdownFormSection
+                                      rows={editBreakdowns}
+                                      campaigns={campaigns}
+                                      onChange={setEditBreakdowns}
+                                    />
+                                  </div>
 
                                   {editError && <p className="text-xs text-destructive">{editError}</p>}
                                 </div>
