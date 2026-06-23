@@ -10,11 +10,12 @@ export interface ExportData {
   walletBalanceTon?: string
   campaigns: any[]
   dailyConversions?: any[]
+  dailyConversionBreakdowns?: any[]
   campaignChangeLogs?: any[]
 }
 
 export async function exportData(): Promise<ExportData> {
-  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, campaignChangeLogs, globalGoal, globalGoalEntries] = await Promise.all([
+  const [campaigns, walletDeposits, campaignAllocations, dailyConversions, dailyConversionBreakdowns, campaignChangeLogs, globalGoal, globalGoalEntries] = await Promise.all([
     prisma.campaign.findMany({
       include: { entries: { orderBy: { date: 'asc' } } },
       orderBy: { createdAt: 'asc' },
@@ -22,6 +23,7 @@ export async function exportData(): Promise<ExportData> {
     prisma.walletDeposit.findMany({ orderBy: { depositedAt: 'asc' } }),
     prisma.campaignAllocation.findMany(),
     prisma.dailyConversion.findMany({ orderBy: { date: 'asc' } }),
+    prisma.dailyConversionBreakdown.findMany({ orderBy: { createdAt: 'asc' } }),
     prisma.campaignChangeLog.findMany({ orderBy: { changedAt: 'asc' } }),
     prisma.globalGoal.findUnique({ where: { id: 1 } }),
     prisma.globalGoalEntry.findMany({ orderBy: { date: 'asc' } }),
@@ -111,6 +113,16 @@ export async function exportData(): Promise<ExportData> {
       note: r.note,
       createdAt: r.createdAt.toISOString(),
     })),
+    dailyConversionBreakdowns: dailyConversionBreakdowns.map(b => ({
+      id: b.id,
+      conversionId: b.conversionId,
+      campaignId: b.campaignId,
+      registrations: b.registrations,
+      depositCount: b.depositCount,
+      depositTxCount: b.depositTxCount,
+      depositAmountThb: b.depositAmountThb.toString(),
+      createdAt: b.createdAt.toISOString(),
+    })),
     campaignChangeLogs: campaignChangeLogs.map(l => ({
       id: l.id,
       campaignId: l.campaignId,
@@ -128,6 +140,7 @@ export async function importData(data: ExportData): Promise<void> {
     await tx.campaignChangeLog.deleteMany()
     await tx.campaignAllocation.deleteMany()
     await tx.performanceEntry.deleteMany()
+    await tx.dailyConversionBreakdown.deleteMany()
     await tx.campaign.deleteMany()
     await tx.walletDeposit.deleteMany()
     await tx.dailyConversion.deleteMany()
@@ -219,6 +232,20 @@ export async function importData(data: ExportData): Promise<void> {
           depositTxCount: r.depositTxCount ?? 0,
           depositAmountThb: r.depositAmountThb ?? 0,
           note: r.note ?? null,
+        },
+      })
+    }
+
+    for (const b of data.dailyConversionBreakdowns ?? []) {
+      await tx.dailyConversionBreakdown.create({
+        data: {
+          id: b.id,
+          conversionId: b.conversionId,
+          campaignId: b.campaignId,
+          registrations: b.registrations ?? 0,
+          depositCount: b.depositCount ?? 0,
+          depositTxCount: b.depositTxCount ?? 0,
+          depositAmountThb: b.depositAmountThb ?? 0,
         },
       })
     }

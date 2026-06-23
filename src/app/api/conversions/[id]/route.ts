@@ -8,7 +8,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await req.json()
-    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note } = body
+    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note, breakdowns } = body
 
     if (date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
@@ -29,16 +29,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'depositAmountThb must be non-negative' }, { status: 400 })
     }
 
-    await prisma.dailyConversion.update({
-      where: { id },
-      data: {
-        ...(date !== undefined && { date: new Date(date) }),
-        ...(registrations !== undefined && { registrations }),
-        ...(depositCount !== undefined && { depositCount }),
-        ...(depositTxCount !== undefined && { depositTxCount }),
-        ...(depositAmountThb !== undefined && { depositAmountThb }),
-        ...(note !== undefined && { note: note ?? null }),
-      },
+    await prisma.$transaction(async tx => {
+      await tx.dailyConversion.update({
+        where: { id },
+        data: {
+          ...(date !== undefined && { date: new Date(date) }),
+          ...(registrations !== undefined && { registrations }),
+          ...(depositCount !== undefined && { depositCount }),
+          ...(depositTxCount !== undefined && { depositTxCount }),
+          ...(depositAmountThb !== undefined && { depositAmountThb }),
+          ...(note !== undefined && { note: note ?? null }),
+        },
+      })
+      if (Array.isArray(breakdowns)) {
+        await tx.dailyConversionBreakdown.deleteMany({ where: { conversionId: id } })
+        if (breakdowns.length > 0) {
+          await tx.dailyConversionBreakdown.createMany({
+            data: breakdowns.map((b: any) => ({
+              conversionId: id,
+              campaignId: b.campaignId,
+              registrations: b.registrations ?? 0,
+              depositCount: b.depositCount ?? 0,
+              depositTxCount: b.depositTxCount ?? 0,
+              depositAmountThb: b.depositAmountThb ?? 0,
+            })),
+          })
+        }
+      }
     })
     return NextResponse.json({ ok: true })
   } catch (e: any) {

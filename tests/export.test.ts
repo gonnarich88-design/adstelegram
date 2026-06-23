@@ -25,6 +25,11 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       deleteMany: vi.fn(),
     },
+    dailyConversionBreakdown: {
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     campaignChangeLog: {
       findMany: vi.fn(),
       create: vi.fn(),
@@ -47,6 +52,7 @@ vi.mock('@/lib/prisma', () => ({
         walletDeposit: { create: vi.fn(), deleteMany: vi.fn() },
         campaignAllocation: { create: vi.fn(), deleteMany: vi.fn() },
         dailyConversion: { create: vi.fn(), deleteMany: vi.fn() },
+        dailyConversionBreakdown: { create: vi.fn(), deleteMany: vi.fn() },
         campaignChangeLog: { deleteMany: vi.fn(), create: vi.fn() },
         globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
         globalGoalEntry: { deleteMany: vi.fn(), create: vi.fn() },
@@ -65,6 +71,7 @@ describe('importData backward compat', () => {
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
       walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
       dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversionBreakdown: { deleteMany: vi.fn(), create: vi.fn() },
       globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
       globalGoalEntry: { deleteMany: vi.fn(), create: vi.fn() },
     }
@@ -106,6 +113,7 @@ describe('exportData', () => {
     vi.mocked(prisma.walletDeposit.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.campaignAllocation.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.dailyConversion.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.dailyConversionBreakdown.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.campaignChangeLog.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.globalGoal.findUnique).mockResolvedValueOnce(null)
     vi.mocked(prisma.globalGoalEntry.findMany).mockResolvedValueOnce([])
@@ -169,6 +177,7 @@ describe('importData backward compat — missing dailyConversions', () => {
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
       walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
       dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversionBreakdown: { deleteMany: vi.fn(), create: vi.fn() },
       globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
       globalGoalEntry: { deleteMany: vi.fn(), create: vi.fn() },
     }
@@ -197,6 +206,7 @@ describe('importData backward compat — missing campaignChangeLogs', () => {
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
       walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
       dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversionBreakdown: { deleteMany: vi.fn(), create: vi.fn() },
       globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
       globalGoalEntry: { deleteMany: vi.fn(), create: vi.fn() },
     }
@@ -237,6 +247,7 @@ describe('importData backward compat — missing sortOrder', () => {
       campaign: { deleteMany: vi.fn(), create: vi.fn() },
       walletDeposit: { deleteMany: vi.fn(), create: vi.fn() },
       dailyConversion: { deleteMany: vi.fn(), create: vi.fn() },
+      dailyConversionBreakdown: { deleteMany: vi.fn(), create: vi.fn() },
       globalGoal: { deleteMany: vi.fn(), upsert: vi.fn() },
       globalGoalEntry: { deleteMany: vi.fn(), create: vi.fn() },
     }

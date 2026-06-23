@@ -29,11 +29,12 @@ model Campaign {
   allocations    CampaignAllocation[]
   refunds        WalletDeposit[]      @relation("CampaignRefunds")
   changeLogs     CampaignChangeLog[]
-  plannerEntries GlobalGoalEntryCampaign[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  sortOrder      Int                  @default(0)
-  analyses       AiAnalysis[]
+  plannerEntries       GlobalGoalEntryCampaign[]
+  conversionBreakdowns DailyConversionBreakdown[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  sortOrder            Int                  @default(0)
+  analyses             AiAnalysis[]
 }
 
 model PerformanceEntry {
@@ -153,17 +154,35 @@ model GlobalGoalEntryCampaign {
 }
 
 model DailyConversion {
-  id                String   @id @default(cuid())
-  date              DateTime @db.Date
+  id                String                       @id @default(cuid())
+  date              DateTime                     @db.Date
   registrations     Int
   depositCount      Int
-  depositTxCount    Int      @default(0)
-  depositAmountThb  Decimal  @db.Decimal(18, 2)
+  depositTxCount    Int                          @default(0)
+  depositAmountThb  Decimal                      @db.Decimal(18, 2)
   note              String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+  breakdowns        DailyConversionBreakdown[]
 
   @@unique([date])
+}
+
+model DailyConversionBreakdown {
+  id               String          @id @default(cuid())
+  conversionId     String
+  conversion       DailyConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+  campaignId       String
+  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  registrations    Int             @default(0)
+  depositCount     Int             @default(0)
+  depositTxCount   Int             @default(0)
+  depositAmountThb Decimal         @db.Decimal(18, 2) @default(0)
+  createdAt        DateTime        @default(now())
+
+  @@unique([conversionId, campaignId])
+  @@index([conversionId])
+  @@index([campaignId])
 }
 
 enum AnalysisType {

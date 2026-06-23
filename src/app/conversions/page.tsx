@@ -5,10 +5,22 @@ import type { ConversionRow } from './conversions-client'
 export const dynamic = 'force-dynamic'
 
 export default async function ConversionsPage() {
-  const [rawConversions, allEntries] = await Promise.all([
-    prisma.dailyConversion.findMany({ orderBy: { date: 'desc' } }),
+  const [rawConversions, allEntries, campaigns] = await Promise.all([
+    prisma.dailyConversion.findMany({
+      orderBy: { date: 'desc' },
+      include: {
+        breakdowns: {
+          include: { campaign: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    }),
     prisma.performanceEntry.findMany({
       select: { date: true, spendTon: true, tonPriceUsd: true, usdThbRate: true },
+    }),
+    prisma.campaign.findMany({
+      select: { id: true, name: true },
+      orderBy: { sortOrder: 'asc' },
     }),
   ])
 
@@ -35,8 +47,17 @@ export default async function ConversionsPage() {
       spendThb,
       cpr: spendThb !== null && r.registrations > 0 ? spendThb / r.registrations : null,
       cpd: spendThb !== null && r.depositCount > 0 ? spendThb / r.depositCount : null,
+      breakdowns: r.breakdowns.map(b => ({
+        id: b.id,
+        campaignId: b.campaignId,
+        campaignName: b.campaign.name,
+        registrations: b.registrations,
+        depositCount: b.depositCount,
+        depositTxCount: b.depositTxCount,
+        depositAmountThb: Number(b.depositAmountThb),
+      })),
     }
   })
 
-  return <ConversionsClient records={records} />
+  return <ConversionsClient records={records} campaigns={campaigns} />
 }

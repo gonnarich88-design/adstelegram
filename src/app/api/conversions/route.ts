@@ -28,7 +28,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note } = body
+    const { date, registrations, depositCount, depositTxCount, depositAmountThb, note, breakdowns } = body
 
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 })
@@ -54,6 +54,17 @@ export async function POST(req: NextRequest) {
         depositTxCount,
         depositAmountThb,
         note: note ?? null,
+        ...(Array.isArray(breakdowns) && breakdowns.length > 0 && {
+          breakdowns: {
+            create: breakdowns.map((b: any) => ({
+              campaignId: b.campaignId,
+              registrations: b.registrations ?? 0,
+              depositCount: b.depositCount ?? 0,
+              depositTxCount: b.depositTxCount ?? 0,
+              depositAmountThb: b.depositAmountThb ?? 0,
+            })),
+          },
+        }),
       },
     })
     return NextResponse.json({ id: record.id }, { status: 201 })
