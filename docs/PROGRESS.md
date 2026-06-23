@@ -1,14 +1,29 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-13 (session 34) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-23 (session 35) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 34 — fix: historical rate auto-fetch พังเพราะ CryptoCompare ต้องใช้ API key**
+**Session 35 — Conversions: channel breakdown + BSP fix**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
   - Spec: `docs/superpowers/specs/2026-06-05-analysis-chat-design.md`
   - ต้องสร้าง: `src/app/api/analysis/chat/route.ts` + `src/app/analysis/analysis-chat.tsx`
   - ต้องแก้: `src/app/analysis/analysis-client.tsx` เพิ่ม chat toggle
+- **Production migrations ที่ยังไม่ได้ deploy** (รัน `npx prisma migrate deploy` บน server):
+  - `add_daily_conversion_breakdown`
+  - `add_channel_name_to_breakdown`
+
+## เสร็จแล้ว (session 35)
+- [x] **fix: BSP ไม่ตรงกันระหว่าง campaign-row กับ performance-table** — สาเหตุ: entries เก็บ `dailyBudgetTon` ขณะบันทึก ถ้าเปลี่ยน budget ภายหลังจะ mismatch — แก้ให้ทั้งสองที่ใช้ `campaign.dailyBudgetTon` (ค่าปัจจุบัน) เป็นหลักเสมอ — `campaign-row.tsx` + `performance-table.tsx` (commits `8eb5639`, `edce4eb`)
+- [x] **Conversions: Campaign Breakdown ตามช่องทาง** — บันทึกว่าแต่ละวันมีสมัคร/ฝากมาจากช่องทาง/แคมเปญไหนบ้าง
+  - Schema: `DailyConversionBreakdown` model ใหม่ — `channelName String` (key), `campaignId String?` (nullable link), unique `[conversionId, channelName]`, onDelete: SetNull/Cascade — migrations `add_daily_conversion_breakdown` + `add_channel_name_to_breakdown`
+  - Form ใหม่: กรอกแบบ channel-first — วันที่ + channel rows (ช่องทาง dropdown | สมัคร | ฝาก | รายการ | ยอดฝาก) + หมายเหตุ — ยอดรวม compute อัตโนมัติจาก sum ของทุก channel row ไม่ต้องกรอกแยก
+  - Dropdown: "tgc (organic)" fixed อยู่บนสุด + optgroup แคมเปญทั้งหมดในระบบ (รองรับแคมเปญใหม่อัตโนมัติ) — เลือกซ้ำไม่ได้
+  - ตาราง: แถวที่มี breakdown แสดงปุ่ม ▶ กดขยายดูรายละเอียดช่องทาง
+  - API POST/PATCH รับ `breakdowns[]` พร้อม `channelName` + `campaignId?` — PATCH ใช้ replace strategy (deleteMany + createMany)
+  - export/import: รองรับ `dailyConversionBreakdowns` array ครบถ้วน
+  - UX: number inputs ทุกช่อง `onFocus → select()` ไม่ต้องลบ 0 ก่อนพิมพ์
+  - 81 tests pass (commits `0cc0f74`, `2de0944`, `27799da`, `a72ce7f`)
 
 ## เสร็จแล้ว (session 34)
 - [x] **fix: historical TON/USD rate auto-fetch กลับมาทำงาน** — `src/lib/rates.ts`: `fetchHistoricalRates` เปลี่ยนจาก CryptoCompare `histoday` (ตอบ 401 — ต้องใช้ API key แล้ว) → CoinGecko `coins/the-open-network/market_chart/range` (unix timestamp from/to, hourly granularity ใน ~90 วัน) + Frankfurter `.app` → `.dev` (ตัด 301 redirect) — gap-fill logic เดิมไม่เปลี่ยน, browser verified ✅ (deposit form auto-fill TON/USD=1.7046, USD/THB=32.7450, 81 tests pass) — กระทบ: deposit-form, wallet-client (edit allocation), refund-button, csv-import ทั้งหมดใช้ endpoint เดียวกัน
@@ -199,11 +214,8 @@
 - [x] **Auto-stop depleted campaigns** — status ใหม่ `STOPPED` (migration `20260527074851_add_stopped_status`): หลัง POST entry (single+bulk) ถ้า totalSpent ≥ totalAllocated และ status=ACTIVE → เปลี่ยนเป็น STOPPED อัตโนมัติ, passive check บน dashboard+detail page สำหรับ campaigns ที่ depleted ก่อนเปิด feature (commits `55d500e`, `126bd97`, session 15)
 
 ## ขั้นตอนถัดไป (chat ใหม่)
-1. **Deploy** — push แล้ว EasyPanel deploy อัตโนมัติ — migrations ที่ยังไม่ได้ deploy บน production:
-   - `add_stopped_status`
-   - `add_daily_conversions`
-   - `add_deposit_tx_count`
-   - `add_goals` (Goals page session 25)
+1. **Deploy + migrate** — รัน `npx prisma migrate deploy` บน production หลัง deploy เพื่อสร้างตาราง `DailyConversionBreakdown`
+2. **Analysis Chat** — implement ตาม spec ที่อนุมัติแล้ว (`docs/superpowers/specs/2026-06-05-analysis-chat-design.md`)
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
