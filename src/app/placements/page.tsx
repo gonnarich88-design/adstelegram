@@ -12,15 +12,8 @@ const STATUS_CLASS: Record<string, string> = {
   CANCELLED: 'bg-destructive text-white hover:bg-destructive',
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  CHANNEL: 'Channels',
-  BOT: 'Bots',
-  SEARCH: 'Search',
-}
-
 export default async function PlacementsPage() {
   const [placements, legacyCampaigns] = await Promise.all([
-    // M2M Placement records
     prisma.placement.findMany({
       include: {
         campaigns: {
@@ -32,18 +25,17 @@ export default async function PlacementsPage() {
       },
       orderBy: { name: 'asc' },
     }),
-    // Legacy campaigns ที่มี placementName text แต่ยังไม่ได้ migrate เป็น M2M
     prisma.campaign.findMany({
-      where: {
-        placementName: { not: null },
-        placements: { none: {} },
+      where: { placementName: { not: null }, placements: { none: {} } },
+      select: {
+        id: true, name: true, status: true, targetType: true,
+        placementName: true, placementType: true,
       },
-      select: { id: true, name: true, status: true, targetType: true, placementName: true },
       orderBy: { createdAt: 'desc' },
     }),
   ])
 
-  const serialized = placements.map(p => ({
+  const serializedPlacements = placements.map(p => ({
     id: p.id,
     name: p.name,
     type: p.type ?? null,
@@ -57,17 +49,21 @@ export default async function PlacementsPage() {
     })),
   }))
 
-  // Group legacy campaigns by placementName
-  const legacyMap: Record<string, { id: string; name: string; status: string; targetType: string }[]> = {}
+  // Group legacy campaigns by placementName, infer type from campaigns
+  const legacyMap: Record<string, {
+    campaigns: { id: string; name: string; status: string; targetType: string }[]
+    type: string | null
+  }> = {}
   for (const c of legacyCampaigns) {
     const key = c.placementName!
-    if (!legacyMap[key]) legacyMap[key] = []
-    legacyMap[key].push({ id: c.id, name: c.name, status: c.status, targetType: c.targetType })
+    if (!legacyMap[key]) legacyMap[key] = { campaigns: [], type: c.placementType ?? null }
+    legacyMap[key].campaigns.push({ id: c.id, name: c.name, status: c.status, targetType: c.targetType })
   }
-  const legacyGroups = Object.entries(legacyMap).sort(([a], [b]) => a.localeCompare(b))
+  const legacyGroups = Object.entries(legacyMap)
+    .map(([name, { campaigns, type }]) => ({ name, campaigns, type }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const total = placements.length + legacyGroups.length
-  const isEmpty = total === 0
 
   return (
     <div className="space-y-6">
@@ -80,7 +76,7 @@ export default async function PlacementsPage() {
         </div>
       </div>
 
-      {isEmpty ? (
+      {total === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <MapPin className="w-10 h-10 mx-auto mb-3 opacity-20" />
           <p className="text-sm">ยังไม่มีปลายทาง</p>
@@ -88,10 +84,9 @@ export default async function PlacementsPage() {
         </div>
       ) : (
         <PlacementsClient
-          placements={serialized}
+          placements={serializedPlacements}
           legacyGroups={legacyGroups}
           statusClass={STATUS_CLASS}
-          typeLabel={TYPE_LABEL}
         />
       )}
     </div>
