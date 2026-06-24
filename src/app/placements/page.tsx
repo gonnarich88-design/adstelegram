@@ -12,14 +12,26 @@ const STATUS_CLASS: Record<string, string> = {
   CANCELLED: 'bg-destructive text-white hover:bg-destructive',
 }
 
+// Telegram bot usernames ต้องมี "bot" ตาม naming convention
+function inferPlacementType(name: string, explicit: string | null): 'CHANNEL' | 'BOT' | 'SEARCH' {
+  if (explicit === 'CHANNEL' || explicit === 'BOT' || explicit === 'SEARCH') return explicit
+  return /bot/i.test(name) ? 'BOT' : 'CHANNEL'
+}
+
+export type CampaignRow = { id: string; name: string; status: string; targetType: string }
+export type PlacementItem = {
+  id: string; name: string; type: string | null; note: string | null; createdAt: string
+  campaigns: CampaignRow[]
+}
+export type LegacyItem = { name: string; campaigns: CampaignRow[] }
+export type Section = { typeKey: string; m2m: PlacementItem[]; legacy: LegacyItem[] }
+
 export default async function PlacementsPage() {
   const [placements, legacyCampaigns] = await Promise.all([
     prisma.placement.findMany({
       include: {
         campaigns: {
-          include: {
-            campaign: { select: { id: true, name: true, status: true, targetType: true } },
-          },
+          include: { campaign: { select: { id: true, name: true, status: true, targetType: true } } },
           orderBy: { campaign: { createdAt: 'desc' } },
         },
       },
@@ -27,52 +39,52 @@ export default async function PlacementsPage() {
     }),
     prisma.campaign.findMany({
       where: { placementName: { not: null }, placements: { none: {} } },
-      select: {
-        id: true, name: true, status: true, targetType: true,
-        placementName: true, placementType: true,
-      },
+      select: { id: true, name: true, status: true, targetType: true, placementName: true, placementType: true },
       orderBy: { createdAt: 'desc' },
     }),
   ])
 
-  const serializedPlacements = placements.map(p => ({
-    id: p.id,
-    name: p.name,
-    type: p.type ?? null,
-    note: p.note ?? null,
-    createdAt: p.createdAt.toISOString(),
-    campaigns: p.campaigns.map(cp => ({
-      id: cp.campaign.id,
-      name: cp.campaign.name,
-      status: cp.campaign.status,
-      targetType: cp.campaign.targetType,
-    })),
-  }))
-
-  // infer type จาก URL — Telegram bots ต้องมีคำว่า "bot" ใน username เสมอ
-  function inferType(name: string, explicit: string | null): string {
-    if (explicit) return explicit
-    return /bot/i.test(name) ? 'BOT' : 'CHANNEL'
+  // Group M2M placements by type
+  const m2mByType: Record<string, PlacementItem[]> = { CHANNEL: [], BOT: [], SEARCH: [], OTHER: [] }
+  for (const p of placements) {
+    const t = p.type ?? 'OTHER'
+    if (!m2mByType[t]) m2mByType[t] = []
+    m2mByType[t].push({
+      id: p.id, name: p.name, type: p.type ?? null, note: p.note ?? null,
+      createdAt: p.createdAt.toISOString(),
+      campaigns: p.campaigns.map(cp => ({
+        id: cp.campaign.id, name: cp.campaign.name,
+        status: cp.campaign.status, targetType: cp.campaign.targetType,
+      })),
+    })
   }
 
-  // Group legacy campaigns by placementName, infer type from campaigns
-  const legacyMap: Record<string, {
-    campaigns: { id: string; name: string; status: string; targetType: string }[]
-    type: string
-  }> = {}
+  // Group legacy campaigns by placementName, then by inferred type
+  const legacyByType: Record<string, Record<string, CampaignRow[]>> = {
+    CHANNEL: {}, BOT: {}, SEARCH: {}, OTHER: {},
+  }
   for (const c of legacyCampaigns) {
-    const key = c.placementName!
-    if (!legacyMap[key]) legacyMap[key] = {
-      campaigns: [],
-      type: inferType(c.placementName!, c.placementType ?? null),
-    }
-    legacyMap[key].campaigns.push({ id: c.id, name: c.name, status: c.status, targetType: c.targetType })
+    const pName = c.placementName!
+    const pType = inferPlacementType(pName, c.placementType ?? null)
+    if (!legacyByType[pType][pName]) legacyByType[pType][pName] = []
+    legacyByType[pType][pName].push({ id: c.id, name: c.name, status: c.status, targetType: c.targetType })
   }
-  const legacyGroups = Object.entries(legacyMap)
-    .map(([name, { campaigns, type }]) => ({ name, campaigns, type }))
-    .sort((a, b) => a.name.localeCompare(b.name))
 
-  const total = placements.length + legacyGroups.length
+  // Build sections in order
+  const TYPE_ORDER = ['CHANNEL', 'BOT', 'SEARCH', 'OTHER'] as const
+  const sections: Section[] = TYPE_ORDER
+    .map(t => ({
+      typeKey: t,
+      m2m: m2mByType[t] ?? [],
+      legacy: Object.entries(legacyByType[t] ?? {})
+        .map(([name, campaigns]) => ({ name, campaigns }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .filter(s => s.m2m.length + s.legacy.length > 0)
+
+  const total = placements.length + Object.values(legacyByType).reduce(
+    (sum, g) => sum + Object.keys(g).length, 0
+  )
 
   return (
     <div className="space-y-6">
@@ -92,11 +104,7 @@ export default async function PlacementsPage() {
           <p className="text-xs mt-1">เพิ่มปลายทางได้จากหน้าสร้าง / แก้ไข Campaign</p>
         </div>
       ) : (
-        <PlacementsClient
-          placements={serializedPlacements}
-          legacyGroups={legacyGroups}
-          statusClass={STATUS_CLASS}
-        />
+        <PlacementsClient sections={sections} statusClass={STATUS_CLASS} />
       )}
     </div>
   )
