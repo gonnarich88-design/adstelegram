@@ -152,12 +152,24 @@ export function CampaignRow({
               {placementLabel && ` · ${placementLabel}`}
               {campaign.entries.length > 0 && ` · ${campaign.entries.length} วัน`}
             </span>
-            {campaign.placementName && (
-              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 max-w-[180px]">
-                <MapPin className="w-2.5 h-2.5 shrink-0" />
-                <span className="truncate">{campaign.placementName}</span>
-              </span>
-            )}
+            {/* Placement chips — M2M first, fallback to legacy placementName */}
+            {(campaign.placements ?? []).length > 0
+              ? (campaign.placements as { placementId: string; placement: { name: string } }[]).map(cp => (
+                  <span
+                    key={cp.placementId}
+                    className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 max-w-[180px]"
+                  >
+                    <MapPin className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{cp.placement.name}</span>
+                  </span>
+                ))
+              : campaign.placementName && (
+                  <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 max-w-[180px]">
+                    <MapPin className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{campaign.placementName}</span>
+                  </span>
+                )
+            }
             {/* Bid chip — click to edit inline */}
             {editingBid ? (
               <span

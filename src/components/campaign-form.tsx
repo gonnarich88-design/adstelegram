@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,13 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { X, Plus, MapPin } from 'lucide-react'
+
+interface PlacementOption {
+  id: string
+  name: string
+  type?: string | null
+}
 
 interface CampaignFormProps {
   initialData?: {
@@ -25,18 +32,24 @@ interface CampaignFormProps {
     note?: string | null
     placementName?: string | null
     placementType?: string | null
+    placements?: { placementId: string; placement: PlacementOption }[]
   }
+  allPlacements?: PlacementOption[]
 }
 
-export function CampaignForm({ initialData }: CampaignFormProps) {
+export function CampaignForm({ initialData, allPlacements = [] }: CampaignFormProps) {
   const router = useRouter()
   const isEdit = !!initialData
+
+  const initialPlacementIds = (initialData?.placements ?? []).map(p => p.placementId)
+  const initialPlacementMap = Object.fromEntries(
+    (initialData?.placements ?? []).map(p => [p.placementId, p.placement])
+  )
 
   const [form, setForm] = useState({
     name: initialData?.name ?? '',
     targetType: initialData?.targetType ?? 'CHANNEL',
     targetName: initialData?.targetName ?? '',
-    placementName: initialData?.placementName ?? '',
     placementType: initialData?.placementType ?? '',
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
@@ -47,11 +60,68 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     note: initialData?.note ?? '',
     changeNote: '',
   })
+
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialPlacementIds)
+  const [placementMap, setPlacementMap] = useState<Record<string, PlacementOption>>({
+    ...Object.fromEntries(allPlacements.map(p => [p.id, p])),
+    ...initialPlacementMap,
+  })
+  const [search, setSearch] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
   function set(key: string, value: string) {
     setForm(f => ({ ...f, [key]: value }))
+  }
+
+  const filtered = allPlacements.filter(
+    p => p.name.toLowerCase().includes(search.toLowerCase()) && !selectedIds.includes(p.id)
+  )
+  const showCreate = search.trim() && !allPlacements.some(
+    p => p.name.toLowerCase() === search.trim().toLowerCase()
+  )
+
+  async function selectPlacement(p: PlacementOption) {
+    setSelectedIds(ids => [...ids, p.id])
+    setPlacementMap(m => ({ ...m, [p.id]: p }))
+    setSearch('')
+    setDropdownOpen(false)
+  }
+
+  async function createAndSelect() {
+    const name = search.trim()
+    if (!name || creating) return
+    setCreating(true)
+    try {
+      const res = await fetch('/api/placements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (res.ok) {
+        const p = await res.json()
+        await selectPlacement({ id: p.id, name: p.name, type: p.type })
+      }
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  function removePlacement(id: string) {
+    setSelectedIds(ids => ids.filter(i => i !== id))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,13 +132,13 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     const payload = {
       ...form,
       endDate: form.endDate || null,
-      placementName: form.placementName || null,
       placementType: form.placementType || null,
       note: form.note || null,
       changeNote: form.changeNote || '',
       dailyBudgetTon: parseFloat(form.dailyBudgetTon),
       bidCpmTon: form.bidCpmTon ? parseFloat(form.bidCpmTon) : null,
       budgetTon: form.budgetTon ? parseFloat(form.budgetTon) : null,
+      placementIds: selectedIds,
     }
 
     const url = isEdit ? `/api/campaigns/${initialData!.id}` : '/api/campaigns'
@@ -80,7 +150,6 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-
       if (res.ok) {
         const data = await res.json()
         router.push(`/campaigns/${data.id}`)
@@ -158,13 +227,78 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         </div>
       </div>
 
+      {/* Placement multi-select */}
       <div className="space-y-2">
-        <Label>ปลายทาง <span className="text-muted-foreground font-normal">(optional — channel/topic ที่ ads โผล่)</span></Label>
-        <Input
-          value={form.placementName}
-          onChange={e => set('placementName', e.target.value)}
-          placeholder="เช่น Gaming, @somechannel"
-        />
+        <Label>
+          ปลายทาง{' '}
+          <span className="text-muted-foreground font-normal">(optional — channel/topic ที่ ads โผล่)</span>
+        </Label>
+
+        {/* Selected chips */}
+        {selectedIds.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {selectedIds.map(id => {
+              const p = placementMap[id]
+              if (!p) return null
+              return (
+                <span
+                  key={id}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                >
+                  <MapPin className="w-2.5 h-2.5 shrink-0" />
+                  {p.name}
+                  <button
+                    type="button"
+                    onClick={() => removePlacement(id)}
+                    className="ml-0.5 hover:text-sky-200 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Dropdown input */}
+        <div className="relative" ref={dropdownRef}>
+          <Input
+            value={search}
+            onChange={e => { setSearch(e.target.value); setDropdownOpen(true) }}
+            onFocus={() => setDropdownOpen(true)}
+            placeholder="ค้นหาหรือพิมพ์เพื่อสร้างปลายทางใหม่..."
+            className="text-sm"
+          />
+          {dropdownOpen && (filtered.length > 0 || showCreate) && (
+            <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
+              {filtered.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); selectPlacement(p) }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors"
+                >
+                  <MapPin className="w-3 h-3 text-sky-400 shrink-0" />
+                  <span>{p.name}</span>
+                  {p.type && (
+                    <span className="ml-auto text-[10px] text-muted-foreground">{p.type}</span>
+                  )}
+                </button>
+              ))}
+              {showCreate && (
+                <button
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); createAndSelect() }}
+                  disabled={creating}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-sky-400 border-t border-border"
+                >
+                  <Plus className="w-3 h-3 shrink-0" />
+                  {creating ? 'กำลังสร้าง...' : `สร้าง "${search.trim()}"`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

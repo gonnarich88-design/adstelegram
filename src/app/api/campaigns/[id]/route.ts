@@ -35,27 +35,37 @@ export async function PUT(
     const old = await prisma.campaign.findUnique({ where: { id } })
     if (!old) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const campaign = await prisma.campaign.update({
-      where: { id },
-      data: {
-        name: body.name,
-        targetType: body.targetType,
-        targetName: body.targetName,
-        startDate: new Date(body.startDate),
-        endDate: body.endDate ? new Date(body.endDate) : null,
-        budgetTon: body.budgetTon ?? null,
-        dailyBudgetTon: body.dailyBudgetTon,
-        bidCpmTon: bidCpmTon,
-        status: body.status,
-        placementName: body.placementName ?? null,
-        placementType: body.placementType ?? null,
-        note: body.note ?? null,
-        goalText: body.goalText ?? null,
-        planText: body.planText ?? null,
-        targetJoins: body.targetJoins != null ? Number(body.targetJoins) : null,
-        targetDate: body.targetDate ? new Date(body.targetDate) : null,
-      },
-    })
+    const placementIds: string[] = Array.isArray(body.placementIds) ? body.placementIds : []
+    const [campaign] = await prisma.$transaction([
+      prisma.campaign.update({
+        where: { id },
+        data: {
+          name: body.name,
+          targetType: body.targetType,
+          targetName: body.targetName,
+          startDate: new Date(body.startDate),
+          endDate: body.endDate ? new Date(body.endDate) : null,
+          budgetTon: body.budgetTon ?? null,
+          dailyBudgetTon: body.dailyBudgetTon,
+          bidCpmTon: bidCpmTon,
+          status: body.status,
+          placementName: body.placementName ?? null,
+          placementType: body.placementType ?? null,
+          note: body.note ?? null,
+          goalText: body.goalText ?? null,
+          planText: body.planText ?? null,
+          targetJoins: body.targetJoins != null ? Number(body.targetJoins) : null,
+          targetDate: body.targetDate ? new Date(body.targetDate) : null,
+        },
+      }),
+      prisma.campaignPlacement.deleteMany({ where: { campaignId: id } }),
+      ...(placementIds.length > 0
+        ? [prisma.campaignPlacement.createMany({
+            data: placementIds.map(pid => ({ campaignId: id, placementId: pid })),
+            skipDuplicates: true,
+          })]
+        : []),
+    ])
 
     const changes = diffCampaignFields(old, {
       name: body.name,

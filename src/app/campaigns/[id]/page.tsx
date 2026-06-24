@@ -11,6 +11,7 @@ import { AllocationCard } from '@/components/allocation-card'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RefundButton } from './refund-button'
+import { MapPin } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
       include: {
         entries: { orderBy: { date: 'desc' } },
         allocations: { include: { deposit: true }, orderBy: { allocatedAt: 'asc' } },
+        placements: { include: { placement: true } },
       },
     }),
     prisma.walletDeposit.findMany({
@@ -147,7 +149,16 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
               </span>
             </p>
           )}
-          {campaign.placementName && (
+          {(campaign as any).placements?.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 mt-0.5">
+              {((campaign as any).placements as { placementId: string; placement: { name: string } }[]).map(cp => (
+                <span key={cp.placementId} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <MapPin className="w-2.5 h-2.5 shrink-0" />
+                  {cp.placement.name}
+                </span>
+              ))}
+            </div>
+          ) : campaign.placementName && (
             <p className="text-sm text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
           )}
           <p className="text-sm text-muted-foreground">

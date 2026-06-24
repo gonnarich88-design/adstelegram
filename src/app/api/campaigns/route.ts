@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     if (bidCpmTon !== null && (isNaN(bidCpmTon) || bidCpmTon <= 0)) {
       return NextResponse.json({ error: 'bidCpmTon must be > 0' }, { status: 400 })
     }
+    const placementIds: string[] = Array.isArray(body.placementIds) ? body.placementIds : []
     const campaign = await prisma.campaign.create({
       data: {
         name: body.name,
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
         placementName: body.placementName ?? null,
         placementType: body.placementType ?? null,
         note: body.note ?? null,
+        placements: placementIds.length > 0
+          ? { create: placementIds.map(pid => ({ placementId: pid })) }
+          : undefined,
       },
     })
     await logCampaignChanges(campaign.id, [{ field: null, note: 'สร้างแคมเปญ' }])

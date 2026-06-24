@@ -10,6 +10,7 @@ export default async function CampaignsPage() {
     include: {
       entries: { orderBy: { date: 'asc' } },
       allocations: true,
+      placements: { include: { placement: true } },
     },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
   })
@@ -27,6 +28,10 @@ export default async function CampaignsPage() {
     status: c.status,
     placementName: c.placementName ?? null,
     placementType: c.placementType ?? null,
+    placements: c.placements.map(cp => ({
+      placementId: cp.placementId,
+      placement: { id: cp.placement.id, name: cp.placement.name, type: cp.placement.type ?? null },
+    })),
     note: c.note ?? null,
     goalText: c.goalText ?? null,
     planText: c.planText ?? null,

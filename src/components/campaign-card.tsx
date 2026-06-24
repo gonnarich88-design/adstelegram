@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { calcAggregateMetrics } from '@/lib/metrics'
+import { MapPin } from 'lucide-react'
 
 const STATUS_CLASS: Record<string, string> = {
   ACTIVE: 'bg-green-600 text-white hover:bg-green-600',
@@ -60,9 +61,18 @@ export function CampaignCard({ campaign }: { campaign: any }) {
               </span>
             )}
           </p>
-          {campaign.placementName && (
+          {(campaign.placements ?? []).length > 0 ? (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {(campaign.placements as { placementId: string; placement: { name: string } }[]).map(cp => (
+                <span key={cp.placementId} className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <MapPin className="w-2 h-2 shrink-0" />
+                  {cp.placement.name}
+                </span>
+              ))}
+            </div>
+          ) : campaign.placementName ? (
             <p className="text-xs text-muted-foreground">ปลายทาง: {campaign.placementName}</p>
-          )}
+          ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className={bidCpmTon !== null ? 'grid grid-cols-2 gap-3' : undefined}>

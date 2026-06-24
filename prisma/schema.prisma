@@ -31,6 +31,7 @@ model Campaign {
   changeLogs     CampaignChangeLog[]
   plannerEntries       GlobalGoalEntryCampaign[]
   conversionBreakdowns DailyConversionBreakdown[]
+  placements     CampaignPlacement[]
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   sortOrder            Int                  @default(0)
@@ -189,6 +190,26 @@ model DailyConversionBreakdown {
 enum AnalysisType {
   OVERVIEW
   CAMPAIGN
+}
+
+model Placement {
+  id        String              @id @default(cuid())
+  name      String              @unique
+  type      PlacementType?
+  note      String?
+  campaigns CampaignPlacement[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model CampaignPlacement {
+  campaignId  String
+  placementId String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  placement   Placement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, placementId])
+  @@index([placementId])
 }
 
 model AiAnalysis {
