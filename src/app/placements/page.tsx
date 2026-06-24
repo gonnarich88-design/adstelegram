@@ -49,14 +49,23 @@ export default async function PlacementsPage() {
     })),
   }))
 
+  // infer type จาก URL — Telegram bots ต้องมีคำว่า "bot" ใน username เสมอ
+  function inferType(name: string, explicit: string | null): string {
+    if (explicit) return explicit
+    return /bot/i.test(name) ? 'BOT' : 'CHANNEL'
+  }
+
   // Group legacy campaigns by placementName, infer type from campaigns
   const legacyMap: Record<string, {
     campaigns: { id: string; name: string; status: string; targetType: string }[]
-    type: string | null
+    type: string
   }> = {}
   for (const c of legacyCampaigns) {
     const key = c.placementName!
-    if (!legacyMap[key]) legacyMap[key] = { campaigns: [], type: c.placementType ?? null }
+    if (!legacyMap[key]) legacyMap[key] = {
+      campaigns: [],
+      type: inferType(c.placementName!, c.placementType ?? null),
+    }
     legacyMap[key].campaigns.push({ id: c.id, name: c.name, status: c.status, targetType: c.targetType })
   }
   const legacyGroups = Object.entries(legacyMap)
