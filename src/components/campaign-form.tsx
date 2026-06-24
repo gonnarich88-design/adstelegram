@@ -45,6 +45,9 @@ export function CampaignForm({ initialData, allPlacements = [] }: CampaignFormPr
   const initialPlacementMap = Object.fromEntries(
     (initialData?.placements ?? []).map(p => [p.placementId, p.placement])
   )
+  // ข้อมูล placementName เก่า (text field) ที่ยังไม่ถูก migrate เป็น M2M
+  const legacyPlacementName =
+    initialPlacementIds.length === 0 ? (initialData?.placementName ?? null) : null
 
   const [form, setForm] = useState({
     name: initialData?.name ?? '',
@@ -139,6 +142,8 @@ export function CampaignForm({ initialData, allPlacements = [] }: CampaignFormPr
       bidCpmTon: form.bidCpmTon ? parseFloat(form.bidCpmTon) : null,
       budgetTon: form.budgetTon ? parseFloat(form.budgetTon) : null,
       placementIds: selectedIds,
+      // ถ้ามี M2M placements แล้ว → ล้าง legacy text; ถ้าไม่มี → เก็บ legacy ไว้
+      placementName: selectedIds.length > 0 ? null : legacyPlacementName,
     }
 
     const url = isEdit ? `/api/campaigns/${initialData!.id}` : '/api/campaigns'
@@ -233,6 +238,17 @@ export function CampaignForm({ initialData, allPlacements = [] }: CampaignFormPr
           ปลายทาง{' '}
           <span className="text-muted-foreground font-normal">(optional — channel/topic ที่ ads โผล่)</span>
         </Label>
+
+        {/* Legacy placementName — ข้อมูลเก่าที่ยังไม่ได้ migrate */}
+        {legacyPlacementName && selectedIds.length === 0 && (
+          <div className="flex items-start gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2 mb-2">
+            <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+            <span>
+              ข้อมูลเก่า: <span className="font-medium">{legacyPlacementName}</span>
+              {' '}— เพิ่มใหม่ผ่าน dropdown ด้านล่างเพื่อแปลงเป็นรูปแบบใหม่
+            </span>
+          </div>
+        )}
 
         {/* Selected chips */}
         {selectedIds.length > 0 && (
