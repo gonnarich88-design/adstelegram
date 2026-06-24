@@ -31,10 +31,12 @@ const TYPE_COLORS: Record<string, string> = {
 
 export function PlacementsClient({
   placements: initial,
+  legacyGroups = [],
   statusClass,
   typeLabel,
 }: {
   placements: Placement[]
+  legacyGroups?: [string, Campaign[]][]
   statusClass: Record<string, string>
   typeLabel: Record<string, string>
 }) {
@@ -230,6 +232,78 @@ export function PlacementsClient({
           </div>
         )
       })}
+
+      {/* Legacy placementName groups */}
+      {legacyGroups.length > 0 && (
+        <div className="space-y-3">
+          {initial.length > 0 && (
+            <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold pt-2 border-t border-border">
+              ข้อมูลเก่า (ยังไม่ได้เพิ่มในระบบใหม่)
+            </p>
+          )}
+          {legacyGroups.map(([name, campaigns]) => (
+            <LegacyGroup
+              key={name}
+              name={name}
+              campaigns={campaigns}
+              statusClass={statusClass}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LegacyGroup({
+  name,
+  campaigns,
+  statusClass,
+}: {
+  name: string
+  campaigns: Campaign[]
+  statusClass: Record<string, string>
+}) {
+  const [open, setOpen] = useState(false)
+  const activeCount = campaigns.filter(c => c.status === 'ACTIVE').length
+
+  return (
+    <div className="rounded-lg border border-border border-dashed overflow-hidden opacity-80">
+      <div className="flex items-center gap-3 px-4 py-3 bg-card">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+        >
+          {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </button>
+        <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+        <span className="flex-1 text-sm font-medium truncate">{name}</span>
+        <span className="text-xs text-muted-foreground shrink-0">
+          {campaigns.length} แคมเปญ
+          {activeCount > 0 && <span className="ml-1 text-green-400">({activeCount} active)</span>}
+        </span>
+        <span className="text-[10px] text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+          เก่า
+        </span>
+      </div>
+      {open && (
+        <div className="border-t border-border divide-y divide-border">
+          {campaigns.map(c => (
+            <Link
+              key={c.id}
+              href={`/campaigns/${c.id}`}
+              className="flex items-center gap-3 px-10 py-2.5 hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-sm flex-1 min-w-0 truncate">{c.name}</span>
+              <span className="text-xs text-muted-foreground shrink-0">{c.targetType}</span>
+              <Badge className={`${statusClass[c.status] ?? ''} text-[10px] px-1.5 py-0 h-4 shrink-0`}>
+                {c.status}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
