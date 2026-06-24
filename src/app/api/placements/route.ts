@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
   const name = body.name?.trim()
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
 
+  const inferredType = body.type ?? (/bot/i.test(name) ? 'BOT' : 'CHANNEL')
   const placement = await prisma.placement.upsert({
     where: { name },
-    create: { name, type: body.type ?? null, note: body.note ?? null },
+    create: { name, type: inferredType, note: body.note ?? null },
     update: {},
     include: { campaigns: true },
   })

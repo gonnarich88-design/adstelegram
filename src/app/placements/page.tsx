@@ -47,7 +47,7 @@ export default async function PlacementsPage() {
   // Group M2M placements by type
   const m2mByType: Record<string, PlacementItem[]> = { CHANNEL: [], BOT: [], SEARCH: [], OTHER: [] }
   for (const p of placements) {
-    const t = p.type ?? 'OTHER'
+    const t = inferPlacementType(p.name, p.type)
     if (!m2mByType[t]) m2mByType[t] = []
     m2mByType[t].push({
       id: p.id, name: p.name, type: p.type ?? null, note: p.note ?? null,
