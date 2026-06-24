@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { calcAggregateMetrics } from '@/lib/metrics'
-import { ChevronRight, Pencil } from 'lucide-react'
+import { ChevronRight, Pencil, MapPin } from 'lucide-react'
 
 const STATUS_CLASS: Record<string, string> = {
   ACTIVE: 'bg-green-600 text-white hover:bg-green-600',
@@ -147,11 +147,17 @@ export function CampaignRow({
             </Badge>
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            <span className="text-[11px] text-muted-foreground truncate">
+            <span className="text-[11px] text-muted-foreground">
               {campaign.targetType} · {campaign.targetName}
               {placementLabel && ` · ${placementLabel}`}
               {campaign.entries.length > 0 && ` · ${campaign.entries.length} วัน`}
             </span>
+            {campaign.placementName && (
+              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 max-w-[180px]">
+                <MapPin className="w-2.5 h-2.5 shrink-0" />
+                <span className="truncate">{campaign.placementName}</span>
+              </span>
+            )}
             {/* Bid chip — click to edit inline */}
             {editingBid ? (
               <span
