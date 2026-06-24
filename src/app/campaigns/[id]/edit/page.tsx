@@ -25,6 +25,7 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
           budgetTon: campaign.budgetTon?.toString() ?? '',
           status: campaign.status,
           note: campaign.note,
+          placementName: campaign.placementName ?? '',
           placementType: campaign.placementType ?? null,
         }}
       />

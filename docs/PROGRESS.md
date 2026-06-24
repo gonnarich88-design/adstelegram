@@ -1,5 +1,5 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-23 (session 35) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-06-24 (session 36) | session โดย: Claude
 
 ## สถานะปัจจุบัน
 **Session 35 — Conversions: channel breakdown + BSP fix**
@@ -12,6 +12,9 @@
 - **Production migrations ที่ยังไม่ได้ deploy** (รัน `npx prisma migrate deploy` บน server):
   - `add_daily_conversion_breakdown`
   - `add_channel_name_to_breakdown`
+
+## เสร็จแล้ว (session 36)
+- [x] **fix: ปลายทาง (placementName) ไม่บันทึกในหน้า Edit Campaign** — `edit/page.tsx` ไม่ได้ส่ง `placementName` เข้า `initialData` ทำให้ form โหลดขึ้นมาว่างเสมอ — เพิ่ม `placementName: campaign.placementName ?? ''` + เพิ่ม field ใน interface ของ `CampaignForm` (ลบ `as any` cast) — 81 tests pass ✅
 
 ## เสร็จแล้ว (session 35)
 - [x] **fix: BSP ไม่ตรงกันระหว่าง campaign-row กับ performance-table** — สาเหตุ: entries เก็บ `dailyBudgetTon` ขณะบันทึก ถ้าเปลี่ยน budget ภายหลังจะ mismatch — แก้ให้ทั้งสองที่ใช้ `campaign.dailyBudgetTon` (ค่าปัจจุบัน) เป็นหลักเสมอ — `campaign-row.tsx` + `performance-table.tsx` (commits `8eb5639`, `edce4eb`)

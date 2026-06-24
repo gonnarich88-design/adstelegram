@@ -23,6 +23,7 @@ interface CampaignFormProps {
     budgetTon?: string
     status: string
     note?: string | null
+    placementName?: string | null
     placementType?: string | null
   }
 }
@@ -35,7 +36,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
     name: initialData?.name ?? '',
     targetType: initialData?.targetType ?? 'CHANNEL',
     targetName: initialData?.targetName ?? '',
-    placementName: (initialData as any)?.placementName ?? '',
+    placementName: initialData?.placementName ?? '',
     placementType: initialData?.placementType ?? '',
     startDate: initialData?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate?.split('T')[0] ?? '',
