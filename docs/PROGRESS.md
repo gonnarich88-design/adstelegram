@@ -2,7 +2,7 @@
 > อัปเดตล่าสุด: 2026-06-24 (session 36) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 35 — Conversions: channel breakdown + BSP fix**
+**Session 36 — Placement master list feature**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
@@ -12,8 +12,10 @@
 - **Production migrations ที่ยังไม่ได้ deploy** (รัน `npx prisma migrate deploy` บน server):
   - `add_daily_conversion_breakdown`
   - `add_channel_name_to_breakdown`
+  - `add_placement_model`
 
 ## เสร็จแล้ว (session 36)
+- [x] **feat: Placement master list + many-to-many campaign linking** — Schema `Placement` + `CampaignPlacement` (migration `add_placement_model`), API GET/POST/PATCH/DELETE `/api/placements`, campaign POST/PUT รับ `placementIds[]`, form multi-select dropdown + inline-create, campaign-row/card/detail แสดง placement chips (M2M ก่อน fallback legacy), หน้า `/placements` list + linked campaigns, Nav เพิ่ม "ปลายทาง", export/import ครบ — 81 tests pass ✅ (commit `b812802`)
 - [x] **fix: ปลายทาง (placementName) ไม่บันทึกในหน้า Edit Campaign** — `edit/page.tsx` ไม่ได้ส่ง `placementName` เข้า `initialData` ทำให้ form โหลดขึ้นมาว่างเสมอ — เพิ่ม `placementName: campaign.placementName ?? ''` + เพิ่ม field ใน interface ของ `CampaignForm` (ลบ `as any` cast) — 81 tests pass ✅
 
 ## เสร็จแล้ว (session 35)
