@@ -293,6 +293,7 @@ export function CampaignRow({
                   <th className="text-right pb-2 font-normal">Views</th>
                   <th className="text-right pb-2 font-normal">Clicks</th>
                   <th className="text-right pb-2 font-normal">{joinsLabel}</th>
+                  <th className="text-right pb-2 font-normal">Spend TON</th>
                   <th className="text-right pb-2 font-normal">Spend ฿</th>
                   <th className="text-right pb-2 font-normal">BSP</th>
                 </tr>
@@ -307,6 +308,7 @@ export function CampaignRow({
                       <td className="py-1 text-right">{n(e.views)}</td>
                       <td className="py-1 text-right">{n(e.clicks)}</td>
                       <td className="py-1 text-right">{n(e.joins)}</td>
+                      <td className="py-1 text-right text-muted-foreground">{Number(e.spendTon).toFixed(2)}</td>
                       <td className="py-1 text-right">฿{n(spendThb, 0)}</td>
                       <td className="py-1 text-right font-medium" style={{ color: bspColor(bsp) }}>
                         {n(bsp, 1)}%
@@ -321,6 +323,7 @@ export function CampaignRow({
                     <td className="pt-2 text-right">{n(monthMetrics.totalViews)}</td>
                     <td className="pt-2 text-right">{n(monthMetrics.totalClicks)}</td>
                     <td className="pt-2 text-right">{n(monthMetrics.totalJoins)}</td>
+                    <td className="pt-2 text-right text-muted-foreground">{monthMetrics.totalSpendTon.toFixed(2)}</td>
                     <td className="pt-2 text-right">฿{n(monthMetrics.spendThb, 0)}</td>
                     <td className="pt-2 text-right" style={{ color: bspColor(monthMetrics.bsp) }}>
                       {n(monthMetrics.bsp, 1)}%
