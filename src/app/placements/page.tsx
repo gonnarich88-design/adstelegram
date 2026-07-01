@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import { MapPin } from 'lucide-react'
 import { PlacementsClient } from './placements-client'
 
 export const dynamic = 'force-dynamic'
@@ -80,7 +79,8 @@ export default async function PlacementsPage() {
         .map(([name, campaigns]) => ({ name, campaigns }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     }))
-    .filter(s => s.m2m.length + s.legacy.length > 0)
+    // CHANNEL/BOT/SEARCH โชว์เสมอ (มีปุ่มเพิ่มปลายทางท้ายหมวด) OTHER โชว์เฉพาะตอนมีข้อมูลจริง
+    .filter(s => s.typeKey === 'OTHER' ? s.m2m.length + s.legacy.length > 0 : true)
 
   const total = placements.length + Object.values(legacyByType).reduce(
     (sum, g) => sum + Object.keys(g).length, 0
@@ -97,15 +97,7 @@ export default async function PlacementsPage() {
         </div>
       </div>
 
-      {total === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <MapPin className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">ยังไม่มีปลายทาง</p>
-          <p className="text-xs mt-1">เพิ่มปลายทางได้จากหน้าสร้าง / แก้ไข Campaign</p>
-        </div>
-      ) : (
-        <PlacementsClient sections={sections} statusClass={STATUS_CLASS} />
-      )}
+      <PlacementsClient sections={sections} statusClass={STATUS_CLASS} />
     </div>
   )
 }
