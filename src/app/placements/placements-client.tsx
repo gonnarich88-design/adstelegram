@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { MapPin, Pencil, Trash2, Check, X, Hash, Bot } from 'lucide-react'
+import { MapPin, Pencil, Trash2, Check, X, Hash, Bot, Plus } from 'lucide-react'
 import type { Section, PlacementItem, LegacyItem, CampaignRow } from './page'
 
 const SECTION_CONFIG: Record<string, { label: string; Icon: React.ElementType; color: string; border: string }> = {
@@ -85,6 +85,11 @@ export function PlacementsClient({
   const [saving, setSaving] = useState(false)
   const [deleteError, setDeleteError] = useState<Record<string, string>>({})
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+  const [addingType, setAddingType] = useState<string | null>(null)
+  const [addName, setAddName] = useState('')
+  const [addSaving, setAddSaving] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [addedPlacements, setAddedPlacements] = useState<Record<string, PlacementItem[]>>({})
 
   function toggle(key: string) {
     setExpanded(prev => {
@@ -124,12 +129,52 @@ export function PlacementsClient({
     }
   }
 
+  function cancelAdd() {
+    setAddingType(null)
+    setAddName('')
+    setAddError('')
+  }
+
+  async function saveAdd(typeKey: string) {
+    const name = addName.trim()
+    if (!name || addSaving) return
+    setAddSaving(true)
+    setAddError('')
+    try {
+      const res = await fetch('/api/placements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type: typeKey }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAddError(data.error ?? 'เพิ่มไม่ได้')
+        return
+      }
+      if (placements[data.id]) {
+        setAddError('มีปลายทางชื่อนี้อยู่แล้ว')
+        return
+      }
+      const newItem: PlacementItem = {
+        id: data.id, name: data.name, type: data.type ?? null, note: data.note ?? null,
+        createdAt: data.createdAt, campaigns: [],
+      }
+      setPlacements(prev => ({ ...prev, [newItem.id]: newItem }))
+      setAddedPlacements(prev => ({ ...prev, [typeKey]: [...(prev[typeKey] ?? []), newItem] }))
+      setAddingType(null)
+      setAddName('')
+    } finally {
+      setAddSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       {sections.map(section => {
         const cfg = SECTION_CONFIG[section.typeKey] ?? SECTION_CONFIG.OTHER
         const { Icon } = cfg
-        const visibleM2m = section.m2m.filter(p => !deletedIds.has(p.id))
+        const visibleM2m = [...section.m2m, ...(addedPlacements[section.typeKey] ?? [])]
+          .filter(p => !deletedIds.has(p.id))
         const count = visibleM2m.length + section.legacy.length
 
         return (
@@ -239,6 +284,44 @@ export function PlacementsClient({
                   </div>
                 )
               })}
+
+              {/* Add new placement */}
+              {addingType === section.typeKey ? (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-border bg-card">
+                  <Icon className={`w-4 h-4 ${cfg.color} shrink-0`} />
+                  <Input
+                    value={addName}
+                    onChange={e => setAddName(e.target.value)}
+                    placeholder="เช่น https://t.me/xxx"
+                    className="h-7 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') saveAdd(section.typeKey)
+                      if (e.key === 'Escape') cancelAdd()
+                    }}
+                  />
+                  <button type="button" onClick={() => saveAdd(section.typeKey)} disabled={addSaving}
+                    className="p-1.5 rounded hover:bg-muted text-green-400 transition-colors">
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={cancelAdd}
+                    className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setAddingType(section.typeKey); setAddName(''); setAddError('') }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors w-full"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  เพิ่มปลายทาง
+                </button>
+              )}
+              {addingType === section.typeKey && addError && (
+                <p className="px-1 text-xs text-destructive">{addError}</p>
+              )}
             </div>
           </div>
         )
