@@ -1,8 +1,8 @@
 # Progress Log
-> อัปเดตล่าสุด: 2026-06-25 (session 37) | session โดย: Claude
+> อัปเดตล่าสุด: 2026-07-02 (session 38) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 36 — Placement master list feature**
+**Session 37 — Campaign row accordion expand feature**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
@@ -13,6 +13,9 @@
   - `add_daily_conversion_breakdown`
   - `add_channel_name_to_breakdown`
   - `add_placement_model`
+
+## เสร็จแล้ว (session 38)
+- [x] **feat: เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ** — เพิ่มปุ่ม "+ เพิ่มปลายทาง" ต่อหมวด (CHANNEL/BOT/SEARCH) บนหน้า `/placements` — สร้าง Placement ได้โดยไม่ต้องผูกแคมเปญ, กันชื่อซ้ำด้วยการเช็ค id ที่ backend คืนกลับมา — 81 tests pass, production build verified ✅ (commits `ed8e234`, `60c00fa`)
 
 ## เสร็จแล้ว (session 37)
 - [x] **feat: Campaign row accordion expand** — กด row → expand panel แสดง entries เดือนปัจจุบัน (filter ด้วย `date.slice(0,7)` ตาม UTC convention เดิม), summary row ด้วย `calcAggregateMetrics`, empty state "ยังไม่มีข้อมูลเดือนนี้", ปุ่ม "ดูทั้งหมด →" เสมอ, ChevronDown rotate 180°, bid chip + pencil ยัง stopPropagation ถูกต้อง — 81 tests pass, browser verified ✅
