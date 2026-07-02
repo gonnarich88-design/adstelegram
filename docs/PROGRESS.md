@@ -15,7 +15,7 @@
   - `add_placement_model`
 
 ## เสร็จแล้ว (session 38)
-- [x] **feat: เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ** — เพิ่มปุ่ม "+ เพิ่มปลายทาง" ต่อหมวด (CHANNEL/BOT/SEARCH) บนหน้า `/placements` — สร้าง Placement ได้โดยไม่ต้องผูกแคมเปญ, กันชื่อซ้ำด้วยการเช็ค id ที่ backend คืนกลับมา — 81 tests pass, production build verified ✅ (commits `ed8e234`, `60c00fa`)
+- [x] **feat: เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ** — เพิ่มปุ่ม "+ เพิ่มปลายทาง" ต่อหมวด (CHANNEL/BOT/SEARCH) บนหน้า `/placements` — สร้าง Placement ได้โดยไม่ต้องผูกแคมเปญ, กันชื่อซ้ำด้วยการเช็ค id ที่ backend คืนกลับมา (`page.tsx`, `placements-client.tsx`) — 81 tests pass, production build verified ✅ (commits `ed8e234`, `60c00fa`)
 
 ## เสร็จแล้ว (session 37)
 - [x] **feat: Campaign row accordion expand** — กด row → expand panel แสดง entries เดือนปัจจุบัน (filter ด้วย `date.slice(0,7)` ตาม UTC convention เดิม), summary row ด้วย `calcAggregateMetrics`, empty state "ยังไม่มีข้อมูลเดือนนี้", ปุ่ม "ดูทั้งหมด →" เสมอ, ChevronDown rotate 180°, bid chip + pencil ยัง stopPropagation ถูกต้อง — 81 tests pass, browser verified ✅
