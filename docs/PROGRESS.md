@@ -2,7 +2,7 @@
 > อัปเดตล่าสุด: 2026-07-02 (session 38) | session โดย: Claude
 
 ## สถานะปัจจุบัน
-**Session 37 — Campaign row accordion expand feature**
+**Session 38 — เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ — commit + push ขึ้น origin/main แล้ว ✅**
 
 ## กำลังทำ / ค้างอยู่
 - **Analysis Chat** — design spec อนุมัติแล้ว ยังไม่ได้ implement
@@ -15,7 +15,10 @@
   - `add_placement_model`
 
 ## เสร็จแล้ว (session 38)
-- [x] **feat: เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ** — เพิ่มปุ่ม "+ เพิ่มปลายทาง" ต่อหมวด (CHANNEL/BOT/SEARCH) บนหน้า `/placements` — สร้าง Placement ได้โดยไม่ต้องผูกแคมเปญ, กันชื่อซ้ำด้วยการเช็ค id ที่ backend คืนกลับมา (`page.tsx`, `placements-client.tsx`) — 81 tests pass, production build verified ✅ (commits `ed8e234`, `60c00fa`)
+- [x] **feat: เพิ่มปลายทาง (Placement) แบบไม่ผูกแคมเปญ** — เพิ่มปุ่ม "+ เพิ่มปลายทาง" ต่อหมวด (CHANNEL/BOT/SEARCH) บนหน้า `/placements` — สร้าง Placement ได้โดยไม่ต้องผูกแคมเปญ, กันชื่อซ้ำด้วยการเช็ค id ที่ backend คืนกลับมา (`page.tsx`, `placements-client.tsx`) — ทำผ่าน subagent-driven-development (3 task, task review ทุก task + final whole-branch review โดย opus) → **Ready to merge: Yes**, ไม่มี Critical/Important issue — 81 tests pass, production build + browser verified ✅ — pushed ขึ้น `origin/main` แล้ว (commits `ed8e234`, `60c00fa`, `49d4f88`, `5691a79`)
+  - Spec: `docs/superpowers/specs/2026-07-01-add-placement-standalone-design.md`
+  - Plan: `docs/superpowers/plans/2026-07-01-add-placement-standalone.md`
+  - Minor follow-up ที่ยังไม่ทำ (ไม่บล็อก ไม่กระทบข้อมูล): ถ้าพิมพ์ชื่อซ้ำกับ placement แบบ "เก่า" (legacy `Campaign.placementName` string ที่ยังไม่ migrate เป็น M2M) จะเห็นแถวคล้ายซ้ำในหน้าจนกว่าจะ refresh เพราะ client ไม่รู้จัก legacy entry — แก้ได้ด้วยการเพิ่ม `router.refresh()` หลัง add สำเร็จใน `placements-client.tsx`
 
 ## เสร็จแล้ว (session 37)
 - [x] **feat: Campaign row accordion expand** — กด row → expand panel แสดง entries เดือนปัจจุบัน (filter ด้วย `date.slice(0,7)` ตาม UTC convention เดิม), summary row ด้วย `calcAggregateMetrics`, empty state "ยังไม่มีข้อมูลเดือนนี้", ปุ่ม "ดูทั้งหมด →" เสมอ, ChevronDown rotate 180°, bid chip + pencil ยัง stopPropagation ถูกต้อง — 81 tests pass, browser verified ✅
@@ -227,6 +230,7 @@
 ## ขั้นตอนถัดไป (chat ใหม่)
 1. **Deploy + migrate** — รัน `npx prisma migrate deploy` บน production หลัง deploy เพื่อสร้างตาราง `DailyConversionBreakdown`
 2. **Analysis Chat** — implement ตาม spec ที่อนุมัติแล้ว (`docs/superpowers/specs/2026-06-05-analysis-chat-design.md`)
+3. **(optional, low priority) fast-follow หน้า /placements** — เพิ่ม `router.refresh()` ใน `placements-client.tsx` หลัง add placement สำเร็จ เพื่อแก้ 2 จุด minor: (a) ตัวเลขรวม "N ปลายทาง" บนหัวหน้า (server-computed, ไม่ live update) กับตัวนับต่อหมวด (client-computed, live) เห็นไม่ตรงกันชั่วคราวหลัง add, (b) เคสพิมพ์ชื่อซ้ำกับ legacy placement (`Campaign.placementName` ที่ยังไม่ migrate) จะดูเหมือนมีแถวซ้ำจนกว่าจะ refresh
 
 ## Decision log
 - 2026-05-11: ใช้ single-password auth + JWT cookie แทน NextAuth — ระบบใช้คนเดียว ไม่ต้องการ multi-user
